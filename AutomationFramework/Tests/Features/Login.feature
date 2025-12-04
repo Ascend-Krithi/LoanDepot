@@ -1,10 +1,10 @@
 Feature: Login
-  As a user
-  I want to login to the application
-  So that I can access my dashboard
 
-  Scenario: Successful login
-    Given I am on the login page
-    When I enter valid credentials
-    And I click the login button
-    Then I should see the dashboard welcome message
+  Scenario: Successful login and loan selection
+    Given I login with valid credentials
+    When I select "Home Loan" from the loan dropdown
+    And I select "My Home Loan" from the loan list
+    And I dismiss any popup
+    And I handle delayed chat popup
+    And I select "2024-07-01" in the date picker
+    Then I should see the message "Loan selected successfully"

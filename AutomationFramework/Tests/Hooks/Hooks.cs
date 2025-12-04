@@ -1,57 +1,79 @@
 using AutomationFramework.Core.Configuration;
 using AutomationFramework.Core.Drivers;
-using AutomationFramework.Core.Locators;
+using AutomationFramework.Core.Encryption;
 using AutomationFramework.Core.SelfHealing;
-using AutomationFramework.Core.Pages;
-using AutomationFramework.Tests.Reporting;
-using TechTalk.SpecFlow;
+using AutomationFramework.Core.Utilities;
+using NUnit.Framework;
 using OpenQA.Selenium;
+using System;
+using System.Diagnostics;
+using TechTalk.SpecFlow;
+using Tests.Reporting;
 
-namespace AutomationFramework.Tests.Hooks
+namespace Tests.Hooks
 {
     [Binding]
     public class Hooks
     {
-        private static IWebDriver _driver;
-        private static SelfHealingWebDriver _shDriver;
-        private static LocatorRepository _locatorRepo;
-        private static LoginPage _loginPage;
-        private static DashboardPage _dashboardPage;
-        private static PaymentPage _paymentPage;
+        private static SelfHealingWebDriver _driver;
+        private static Stopwatch _scenarioTimer;
+        private static string _stepsLog;
+        private static string _screenshotPath;
+        private static string _error;
+        private static bool _passed = true;
 
         [BeforeScenario]
         public void BeforeScenario()
         {
-            var browser = ConfigManager.Get("Browser");
-            var baseUrl = ConfigManager.Get("BaseUrl");
-            _driver = WebDriverFactory.CreateDriver(browser);
-            _locatorRepo = new LocatorRepository();
-            _shDriver = new SelfHealingWebDriver(_driver, _locatorRepo);
+            _scenarioTimer = Stopwatch.StartNew();
+            _stepsLog = "";
+            _error = "";
+            _passed = true;
 
-            _loginPage = new LoginPage(_shDriver);
-            _dashboardPage = new DashboardPage(_shDriver);
-            _paymentPage = new PaymentPage(_shDriver);
+            var config = ConfigManager.GetConfig();
+            var browser = config.Browser;
+            var driver = WebDriverFactory.CreateDriver(browser);
+            _driver = new SelfHealingWebDriver(driver);
+            ScenarioContext.Current["DRIVER"] = _driver;
 
-            ScenarioContext.Current["LoginPage"] = _loginPage;
-            ScenarioContext.Current["DashboardPage"] = _dashboardPage;
-            ScenarioContext.Current["PaymentPage"] = _paymentPage;
-
+            var baseUrl = config.BaseUrl;
             _driver.Navigate().GoToUrl(baseUrl);
+        }
+
+        [AfterStep]
+        public void AfterStep()
+        {
+            var stepInfo = ScenarioStepContext.Current.StepInfo;
+            _stepsLog += $"{stepInfo.StepDefinitionType} {stepInfo.Text}\n";
         }
 
         [AfterScenario]
         public void AfterScenario()
         {
+            _scenarioTimer.Stop();
             var scenario = ScenarioContext.Current.ScenarioInfo.Title;
-            var status = ScenarioContext.Current.TestError == null ? "Passed" : "Failed";
-            string screenshotPath = null;
-            if (status == "Failed")
+            var config = ConfigManager.GetConfig();
+            var browser = config.Browser;
+            var environment = config.BaseUrl;
+
+            if (ScenarioContext.Current.TestError != null)
             {
-                var screenshot = ((ITakesScreenshot)_driver).GetScreenshot();
-                screenshotPath = $"Screenshots/{scenario}_{DateTime.Now:yyyyMMddHHmmss}.png";
-                screenshot.SaveAsFile(screenshotPath, ScreenshotImageFormat.Png);
+                _passed = false;
+                _error = ScenarioContext.Current.TestError.ToString();
+                _screenshotPath = ScreenshotHelper.CaptureScreenshot(_driver, scenario);
             }
-            HtmlReportManager.Instance.AddScenarioResult(scenario, status, screenshotPath, ScenarioContext.Current.TestError?.ToString());
+
+            HtmlReportManager.GenerateReport(
+                scenario,
+                _stepsLog,
+                _passed,
+                _error,
+                _screenshotPath,
+                environment,
+                browser,
+                _scenarioTimer.Elapsed
+            );
+
             _driver.Quit();
         }
     }

@@ -1,9 +1,12 @@
+using AutomationFramework.Core.Encryption;
 using AutomationFramework.Core.Pages;
 using AutomationFramework.Core.SelfHealing;
+using AutomationFramework.Core.Configuration;
+using AutomationFramework.Core.Utilities;
 using TechTalk.SpecFlow;
-using Xunit;
+using NUnit.Framework;
 
-namespace AutomationFramework.Tests.StepDefinitions
+namespace Tests.StepDefinitions
 {
     [Binding]
     public class LoginSteps
@@ -12,37 +15,60 @@ namespace AutomationFramework.Tests.StepDefinitions
         private readonly LoginPage _loginPage;
         private readonly DashboardPage _dashboardPage;
 
-        public LoginSteps(SelfHealingWebDriver driver)
+        public LoginSteps()
         {
-            _driver = driver;
+            _driver = (SelfHealingWebDriver)ScenarioContext.Current["DRIVER"];
             _loginPage = new LoginPage(_driver);
             _dashboardPage = new DashboardPage(_driver);
         }
 
-        [Given(@"I am on the login page")]
-        public void GivenIAmOnTheLoginPage()
+        [Given(@"I login with valid credentials")]
+        public void GivenILoginWithValidCredentials()
         {
-            _driver.Url = "https://example.com/login";
-        }
+            var config = ConfigManager.GetConfig();
+            var username = EncryptionManager.Decrypt(config.EncryptedUsername);
+            var password = EncryptionManager.Decrypt(config.EncryptedPassword);
 
-        [When(@"I enter valid credentials")]
-        public void WhenIEnterValidCredentials()
-        {
-            _loginPage.EnterUsername("testuser");
-            _loginPage.EnterPassword("password");
-        }
-
-        [When(@"I click the login button")]
-        public void WhenIClickTheLoginButton()
-        {
+            _loginPage.EnterUsername(username);
+            _loginPage.EnterPassword(password);
             _loginPage.ClickLogin();
         }
 
-        [Then(@"I should see the dashboard welcome message")]
-        public void ThenIShouldSeeTheDashboardWelcomeMessage()
+        [When(@"I select ""(.*)"" from the loan dropdown")]
+        public void WhenISelectFromTheLoanDropdown(string loanType)
         {
-            var message = _dashboardPage.GetWelcomeMessage();
-            Assert.Contains("Welcome", message);
+            _dashboardPage.SelectLoanType(loanType);
+        }
+
+        [When(@"I select ""(.*)"" from the loan list")]
+        public void WhenISelectFromTheLoanList(string loanName)
+        {
+            _dashboardPage.SelectLoanFromList(loanName);
+        }
+
+        [When(@"I dismiss any popup")]
+        public void WhenIDismissAnyPopup()
+        {
+            _dashboardPage.DismissPopup();
+        }
+
+        [When(@"I handle delayed chat popup")]
+        public void WhenIHandleDelayedChatPopup()
+        {
+            _dashboardPage.HandleDelayedChatPopup();
+        }
+
+        [When(@"I select ""(.*)"" in the date picker")]
+        public void WhenISelectInTheDatePicker(string date)
+        {
+            _dashboardPage.SelectDate(date);
+        }
+
+        [Then(@"I should see the message ""(.*)""")]
+        public void ThenIShouldSeeTheMessage(string expected)
+        {
+            var actual = _dashboardPage.GetMessage();
+            Assert.AreEqual(expected, actual);
         }
     }
 }

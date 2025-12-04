@@ -1,5 +1,6 @@
 using AutomationFramework.Core.SelfHealing;
 using AutomationFramework.Core.Locators;
+using OpenQA.Selenium;
 
 namespace AutomationFramework.Core.Pages
 {
@@ -14,22 +15,21 @@ namespace AutomationFramework.Core.Pages
 
         public void EnterUsername(string username)
         {
-            var element = _driver.FindElementByKey(nameof(LoginPageLocators.UsernameInputLocator));
-            element.Clear();
-            element.SendKeys(username);
+            var el = _driver.FindElementByKey(LoginPageLocators.UsernameInputKey);
+            el.Clear();
+            el.SendKeys(username);
         }
 
         public void EnterPassword(string password)
         {
-            var element = _driver.FindElementByKey(nameof(LoginPageLocators.PasswordInputLocator));
-            element.Clear();
-            element.SendKeys(password);
+            var el = _driver.FindElementByKey(LoginPageLocators.PasswordInputKey);
+            el.Clear();
+            el.SendKeys(password);
         }
 
         public void ClickLogin()
         {
-            var element = _driver.FindElementByKey(nameof(LoginPageLocators.LoginButtonLocator));
-            element.Click();
+            _driver.FindElementByKey(LoginPageLocators.LoginButtonKey).Click();
         }
     }
 }

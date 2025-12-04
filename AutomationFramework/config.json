@@ -1,0 +1,6 @@
+{
+  "BaseUrl": "https://example.com",
+  "Browser": "chrome",
+  "EncryptedUsername": "<ENCRYPTED_USERNAME>",
+  "EncryptedPassword": "<ENCRYPTED_PASSWORD>"
+}

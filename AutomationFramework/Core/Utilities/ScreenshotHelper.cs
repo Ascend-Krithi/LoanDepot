@@ -9,11 +9,12 @@ namespace AutomationFramework.Core.Utilities
         public static string CaptureScreenshot(IWebDriver driver, string scenarioName)
         {
             var screenshot = ((ITakesScreenshot)driver).GetScreenshot();
-            var fileName = $"{scenarioName}_{DateTime.Now:yyyyMMddHHmmss}.png";
-            var path = Path.Combine(Directory.GetCurrentDirectory(), "Screenshots", fileName);
-            Directory.CreateDirectory(Path.GetDirectoryName(path));
-            screenshot.SaveAsFile(path, ScreenshotImageFormat.Png);
-            return path;
+            var fileName = $"{scenarioName}_{DateTime.Now:yyyyMMdd_HHmmss}.png";
+            var dir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Screenshots");
+            Directory.CreateDirectory(dir);
+            var filePath = Path.Combine(dir, fileName);
+            screenshot.SaveAsFile(filePath, ScreenshotImageFormat.Png);
+            return filePath;
         }
     }
 }

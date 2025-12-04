@@ -1,7 +1,6 @@
-using OpenQA.Selenium;
 using System;
 using System.Collections.Generic;
-using System.Linq;
+using OpenQA.Selenium;
 using AutomationFramework.Core.Locators;
 
 namespace AutomationFramework.Core.SelfHealing
@@ -9,38 +8,58 @@ namespace AutomationFramework.Core.SelfHealing
     public class SelfHealingWebDriver : IWebDriver
     {
         private readonly IWebDriver _driver;
-        private readonly LocatorRepository _locatorRepository;
+        private readonly Dictionary<string, (By, By[])> _locatorRepo;
+        public event Action<string, By, By> OnHealed;
 
-        public SelfHealingWebDriver(IWebDriver driver, LocatorRepository locatorRepository)
+        public SelfHealingWebDriver(IWebDriver driver)
         {
             _driver = driver;
-            _locatorRepository = locatorRepository;
+            _locatorRepo = new Dictionary<string, (By, By[])>();
+
+            // Register all locators here
+            RegisterLocators();
+        }
+
+        private void RegisterLocators()
+        {
+            // LoginPage
+            _locatorRepo[LoginPageLocators.UsernameInputKey] = (LoginPageLocators.UsernameInput, LoginPageLocators.UsernameInputAlternatives);
+            _locatorRepo[LoginPageLocators.PasswordInputKey] = (LoginPageLocators.PasswordInput, LoginPageLocators.PasswordInputAlternatives);
+            _locatorRepo[LoginPageLocators.LoginButtonKey] = (LoginPageLocators.LoginButton, LoginPageLocators.LoginButtonAlternatives);
+
+            // DashboardPage
+            _locatorRepo[DashboardPageLocators.LoanDropdownKey] = (DashboardPageLocators.LoanDropdown, DashboardPageLocators.LoanDropdownAlternatives);
+            _locatorRepo[DashboardPageLocators.LoanListKey] = (DashboardPageLocators.LoanList, DashboardPageLocators.LoanListAlternatives);
+            _locatorRepo[DashboardPageLocators.PopupCloseKey] = (DashboardPageLocators.PopupClose, DashboardPageLocators.PopupCloseAlternatives);
+            _locatorRepo[DashboardPageLocators.ChatPopupKey] = (DashboardPageLocators.ChatPopup, DashboardPageLocators.ChatPopupAlternatives);
+            _locatorRepo[DashboardPageLocators.DatePickerInputKey] = (DashboardPageLocators.DatePickerInput, DashboardPageLocators.DatePickerInputAlternatives);
+            _locatorRepo[DashboardPageLocators.MessageKey] = (DashboardPageLocators.Message, DashboardPageLocators.MessageAlternatives);
         }
 
         public IWebElement FindElementByKey(string key)
         {
-            var locators = _locatorRepository.GetLocators(key);
-            Exception lastException = null;
-            foreach (var locator in locators)
+            if (!_locatorRepo.ContainsKey(key))
+                throw new Exception($"Locator key '{key}' not found in repository.");
+
+            var (primary, alternatives) = _locatorRepo[key];
+            try
             {
-                try
-                {
-                    var element = _driver.FindElement(locator);
-                    if (element.Displayed)
-                    {
-                        if (locator != locators[0])
-                        {
-                            Console.WriteLine($"[Self-Healing] Healed locator for {key} using alternative.");
-                        }
-                        return element;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    lastException = ex;
-                }
+                return _driver.FindElement(primary);
             }
-            throw new NoSuchElementException($"Element with key '{key}' not found. Last error: {lastException?.Message}");
+            catch (NoSuchElementException)
+            {
+                foreach (var alt in alternatives)
+                {
+                    try
+                    {
+                        var el = _driver.FindElement(alt);
+                        OnHealed?.Invoke(key, primary, alt);
+                        return el;
+                    }
+                    catch { }
+                }
+                throw;
+            }
         }
 
         // IWebDriver implementation (delegated)

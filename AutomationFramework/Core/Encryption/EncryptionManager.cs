@@ -7,47 +7,43 @@ namespace AutomationFramework.Core.Encryption
 {
     public static class EncryptionManager
     {
-        private static readonly string SecretKey = Environment.GetEnvironmentVariable("AUTOMATION_SECRET_KEY");
+        private static string GetKey()
+        {
+            var key = Environment.GetEnvironmentVariable("AUTOMATION_SECRET_KEY");
+            if (string.IsNullOrEmpty(key))
+                throw new Exception("Secret key not found in environment variable AUTOMATION_SECRET_KEY");
+            return key;
+        }
 
         public static string Encrypt(string plainText)
         {
-            using (Aes aesAlg = Aes.Create())
-            {
-                aesAlg.Key = Encoding.UTF8.GetBytes(SecretKey);
-                aesAlg.GenerateIV();
-                var encryptor = aesAlg.CreateEncryptor(aesAlg.Key, aesAlg.IV);
-
-                using (var msEncrypt = new MemoryStream())
-                {
-                    msEncrypt.Write(aesAlg.IV, 0, aesAlg.IV.Length);
-                    using (var csEncrypt = new CryptoStream(msEncrypt, encryptor, CryptoStreamMode.Write))
-                    using (var swEncrypt = new StreamWriter(csEncrypt))
-                    {
-                        swEncrypt.Write(plainText);
-                    }
-                    return Convert.ToBase64String(msEncrypt.ToArray());
-                }
-            }
+            var key = Convert.FromBase64String(GetKey());
+            using var aes = Aes.Create();
+            aes.Key = key;
+            aes.GenerateIV();
+            using var encryptor = aes.CreateEncryptor();
+            var plainBytes = Encoding.UTF8.GetBytes(plainText);
+            var cipherBytes = encryptor.TransformFinalBlock(plainBytes, 0, plainBytes.Length);
+            var result = new byte[aes.IV.Length + cipherBytes.Length];
+            Buffer.BlockCopy(aes.IV, 0, result, 0, aes.IV.Length);
+            Buffer.BlockCopy(cipherBytes, 0, result, aes.IV.Length, cipherBytes.Length);
+            return Convert.ToBase64String(result);
         }
 
         public static string Decrypt(string cipherText)
         {
+            var key = Convert.FromBase64String(GetKey());
             var fullCipher = Convert.FromBase64String(cipherText);
-            using (Aes aesAlg = Aes.Create())
-            {
-                aesAlg.Key = Encoding.UTF8.GetBytes(SecretKey);
-                var iv = new byte[aesAlg.BlockSize / 8];
-                Array.Copy(fullCipher, 0, iv, 0, iv.Length);
-                aesAlg.IV = iv;
-                var decryptor = aesAlg.CreateDecryptor(aesAlg.Key, aesAlg.IV);
-
-                using (var msDecrypt = new MemoryStream(fullCipher, iv.Length, fullCipher.Length - iv.Length))
-                using (var csDecrypt = new CryptoStream(msDecrypt, decryptor, CryptoStreamMode.Read))
-                using (var srDecrypt = new StreamReader(csDecrypt))
-                {
-                    return srDecrypt.ReadToEnd();
-                }
-            }
+            using var aes = Aes.Create();
+            aes.Key = key;
+            var iv = new byte[aes.BlockSize / 8];
+            var cipher = new byte[fullCipher.Length - iv.Length];
+            Buffer.BlockCopy(fullCipher, 0, iv, 0, iv.Length);
+            Buffer.BlockCopy(fullCipher, iv.Length, cipher, 0, cipher.Length);
+            aes.IV = iv;
+            using var decryptor = aes.CreateDecryptor();
+            var plainBytes = decryptor.TransformFinalBlock(cipher, 0, cipher.Length);
+            return Encoding.UTF8.GetString(plainBytes);
         }
     }
 }
