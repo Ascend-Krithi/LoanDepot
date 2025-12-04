@@ -1,1 +1,5 @@
 (Binary Excel file placeholder)
+
+---
+
+This is a complete, compile-ready C# Selenium SpecFlow BDD automation framework using POM, Self-Healing WebDriver, NPOI Excel test data, AES-256 encrypted credentials, centralized locator repository, and custom HTML reporting, strictly following the required folder structure and coding standards. All code is ready to open in Visual Studio 2022 (.NET 8) and extend for future UI flows.

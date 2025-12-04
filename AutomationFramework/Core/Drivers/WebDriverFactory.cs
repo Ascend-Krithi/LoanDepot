@@ -1,6 +1,7 @@
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium.Firefox;
+using OpenQA.Selenium.Edge;
 using System;
 
 namespace AutomationFramework.Core.Drivers
@@ -15,6 +16,8 @@ namespace AutomationFramework.Core.Drivers
                     return new ChromeDriver();
                 case "firefox":
                     return new FirefoxDriver();
+                case "edge":
+                    return new EdgeDriver();
                 default:
                     throw new ArgumentException($"Unsupported browser: {browser}");
             }

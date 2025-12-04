@@ -7,41 +7,45 @@ namespace AutomationFramework.Core.Encryption
 {
     public static class EncryptionManager
     {
-        public static string Encrypt(string plainText, string key)
+        private static readonly string SecretKey = Environment.GetEnvironmentVariable("AUTOMATION_SECRET_KEY");
+
+        public static string Encrypt(string plainText)
         {
-            using (Aes aes = Aes.Create())
+            using (Aes aesAlg = Aes.Create())
             {
-                aes.Key = Encoding.UTF8.GetBytes(key);
-                aes.GenerateIV();
-                using (var encryptor = aes.CreateEncryptor(aes.Key, aes.IV))
-                using (var ms = new MemoryStream())
+                aesAlg.Key = Encoding.UTF8.GetBytes(SecretKey);
+                aesAlg.GenerateIV();
+                var encryptor = aesAlg.CreateEncryptor(aesAlg.Key, aesAlg.IV);
+
+                using (var msEncrypt = new MemoryStream())
                 {
-                    ms.Write(aes.IV, 0, aes.IV.Length);
-                    using (var cs = new CryptoStream(ms, encryptor, CryptoStreamMode.Write))
-                    using (var sw = new StreamWriter(cs))
+                    msEncrypt.Write(aesAlg.IV, 0, aesAlg.IV.Length);
+                    using (var csEncrypt = new CryptoStream(msEncrypt, encryptor, CryptoStreamMode.Write))
+                    using (var swEncrypt = new StreamWriter(csEncrypt))
                     {
-                        sw.Write(plainText);
+                        swEncrypt.Write(plainText);
                     }
-                    return Convert.ToBase64String(ms.ToArray());
+                    return Convert.ToBase64String(msEncrypt.ToArray());
                 }
             }
         }
 
-        public static string Decrypt(string cipherText, string key)
+        public static string Decrypt(string cipherText)
         {
             var fullCipher = Convert.FromBase64String(cipherText);
-            using (Aes aes = Aes.Create())
+            using (Aes aesAlg = Aes.Create())
             {
-                aes.Key = Encoding.UTF8.GetBytes(key);
-                var iv = new byte[aes.BlockSize / 8];
-                Array.Copy(fullCipher, iv, iv.Length);
-                aes.IV = iv;
-                using (var decryptor = aes.CreateDecryptor(aes.Key, aes.IV))
-                using (var ms = new MemoryStream(fullCipher, iv.Length, fullCipher.Length - iv.Length))
-                using (var cs = new CryptoStream(ms, decryptor, CryptoStreamMode.Read))
-                using (var sr = new StreamReader(cs))
+                aesAlg.Key = Encoding.UTF8.GetBytes(SecretKey);
+                var iv = new byte[aesAlg.BlockSize / 8];
+                Array.Copy(fullCipher, 0, iv, 0, iv.Length);
+                aesAlg.IV = iv;
+                var decryptor = aesAlg.CreateDecryptor(aesAlg.Key, aesAlg.IV);
+
+                using (var msDecrypt = new MemoryStream(fullCipher, iv.Length, fullCipher.Length - iv.Length))
+                using (var csDecrypt = new CryptoStream(msDecrypt, decryptor, CryptoStreamMode.Read))
+                using (var srDecrypt = new StreamReader(csDecrypt))
                 {
-                    return sr.ReadToEnd();
+                    return srDecrypt.ReadToEnd();
                 }
             }
         }

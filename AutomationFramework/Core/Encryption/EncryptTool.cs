@@ -6,15 +6,13 @@ namespace AutomationFramework.Core.Encryption
     {
         public static void Main(string[] args)
         {
-            Console.WriteLine("Enter text to encrypt:");
-            var plainText = Console.ReadLine();
-            var key = Environment.GetEnvironmentVariable("ENCRYPTION_KEY");
-            if (string.IsNullOrEmpty(key) || key.Length != 32)
+            if (args.Length < 1)
             {
-                Console.WriteLine("Set ENCRYPTION_KEY environment variable to a 32-char string.");
+                Console.WriteLine("Usage: EncryptTool <text-to-encrypt>");
                 return;
             }
-            var encrypted = EncryptionManager.Encrypt(plainText, key);
+            string plainText = args[0];
+            string encrypted = EncryptionManager.Encrypt(plainText);
             Console.WriteLine($"Encrypted: {encrypted}");
         }
     }

@@ -2,52 +2,57 @@ using AutomationFramework.Core.Configuration;
 using AutomationFramework.Core.Drivers;
 using AutomationFramework.Core.Locators;
 using AutomationFramework.Core.SelfHealing;
+using AutomationFramework.Core.Pages;
 using AutomationFramework.Tests.Reporting;
-using OpenQA.Selenium;
-using System;
-using System.Collections.Generic;
 using TechTalk.SpecFlow;
+using OpenQA.Selenium;
 
 namespace AutomationFramework.Tests.Hooks
 {
     [Binding]
     public class Hooks
     {
-        public static SelfHealingWebDriver Driver;
-        public static Dictionary<string, (By, By[])> LocatorRepo;
+        private static IWebDriver _driver;
+        private static SelfHealingWebDriver _shDriver;
+        private static LocatorRepository _locatorRepo;
+        private static LoginPage _loginPage;
+        private static DashboardPage _dashboardPage;
+        private static PaymentPage _paymentPage;
 
         [BeforeScenario]
         public void BeforeScenario()
         {
-            var browser = ConfigManager.Get("Browser") ?? "chrome";
+            var browser = ConfigManager.Get("Browser");
             var baseUrl = ConfigManager.Get("BaseUrl");
-            var webDriver = WebDriverFactory.CreateDriver(browser);
+            _driver = WebDriverFactory.CreateDriver(browser);
+            _locatorRepo = new LocatorRepository();
+            _shDriver = new SelfHealingWebDriver(_driver, _locatorRepo);
 
-            LocatorRepo = new()
-            {
-                { LoginPageLocators.UsernameKey, (LoginPageLocators.UsernameLocator, LoginPageLocators.UsernameAlternatives) },
-                { LoginPageLocators.PasswordKey, (LoginPageLocators.PasswordLocator, LoginPageLocators.PasswordAlternatives) },
-                { LoginPageLocators.LoginButtonKey, (LoginPageLocators.LoginButtonLocator, LoginPageLocators.LoginButtonAlternatives) },
-                { DashboardPageLocators.WelcomeMessageKey, (DashboardPageLocators.WelcomeMessageLocator, DashboardPageLocators.WelcomeMessageAlternatives) },
-                { DashboardPageLocators.LoanListDropdownKey, (DashboardPageLocators.LoanListDropdownLocator, DashboardPageLocators.LoanListDropdownAlternatives) },
-                { LoanListPageLocators.LoanRowKey, (LoanListPageLocators.LoanRowLocator, LoanListPageLocators.LoanRowAlternatives) },
-                { LoanListPageLocators.PopupCloseKey, (LoanListPageLocators.PopupCloseLocator, LoanListPageLocators.PopupCloseAlternatives) }
-            };
+            _loginPage = new LoginPage(_shDriver);
+            _dashboardPage = new DashboardPage(_shDriver);
+            _paymentPage = new PaymentPage(_shDriver);
 
-            Driver = new SelfHealingWebDriver(webDriver, LocatorRepo);
-            Driver.Url = baseUrl;
+            ScenarioContext.Current["LoginPage"] = _loginPage;
+            ScenarioContext.Current["DashboardPage"] = _dashboardPage;
+            ScenarioContext.Current["PaymentPage"] = _paymentPage;
+
+            _driver.Navigate().GoToUrl(baseUrl);
         }
 
         [AfterScenario]
-        public void AfterScenario(ScenarioContext scenarioContext)
+        public void AfterScenario()
         {
-            var screenshotPath = string.Empty;
-            if (scenarioContext.TestError != null)
+            var scenario = ScenarioContext.Current.ScenarioInfo.Title;
+            var status = ScenarioContext.Current.TestError == null ? "Passed" : "Failed";
+            string screenshotPath = null;
+            if (status == "Failed")
             {
-                screenshotPath = Core.Utilities.ScreenshotHelper.CaptureScreenshot(Driver, scenarioContext.ScenarioInfo.Title);
+                var screenshot = ((ITakesScreenshot)_driver).GetScreenshot();
+                screenshotPath = $"Screenshots/{scenario}_{DateTime.Now:yyyyMMddHHmmss}.png";
+                screenshot.SaveAsFile(screenshotPath, ScreenshotImageFormat.Png);
             }
-            HtmlReportManager.GenerateReport(scenarioContext, screenshotPath, Driver);
-            Driver.Quit();
+            HtmlReportManager.Instance.AddScenarioResult(scenario, status, screenshotPath, ScenarioContext.Current.TestError?.ToString());
+            _driver.Quit();
         }
     }
 }

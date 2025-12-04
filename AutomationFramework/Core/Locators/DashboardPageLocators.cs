@@ -4,18 +4,25 @@ namespace AutomationFramework.Core.Locators
 {
     public static class DashboardPageLocators
     {
-        public const string WelcomeMessageKey = "Dashboard.WelcomeMessage";
-        public static readonly By WelcomeMessageLocator = By.XPath("//div[@id='welcome']");
-        public static readonly By[] WelcomeMessageAlternatives = {
-            By.CssSelector("div.welcome"),
-            By.XPath("//span[contains(text(),'Welcome')]")
+        public const string LoanList = "DashboardPage.LoanList";
+        public static readonly By LoanListLocator = By.XPath("//div[@class='loan-list']");
+        public static readonly By[] LoanListAlternatives = {
+            By.CssSelector(".loan-list"),
+            By.XPath("//ul[contains(@class,'loan-list')]")
         };
 
-        public const string LoanListDropdownKey = "Dashboard.LoanListDropdown";
-        public static readonly By LoanListDropdownLocator = By.XPath("//select[@id='loanList']");
-        public static readonly By[] LoanListDropdownAlternatives = {
-            By.CssSelector("select.loan-list"),
-            By.XPath("//select[contains(@name,'loan')]")
+        public const string ChatPopup = "DashboardPage.ChatPopup";
+        public static readonly By ChatPopupLocator = By.XPath("//div[@id='chat-popup']");
+        public static readonly By[] ChatPopupAlternatives = {
+            By.CssSelector("#chat-popup"),
+            By.XPath("//div[contains(@class,'chat-popup')]")
+        };
+
+        public const string DismissChatButton = "DashboardPage.DismissChatButton";
+        public static readonly By DismissChatButtonLocator = By.XPath("//button[@id='dismiss-chat']");
+        public static readonly By[] DismissChatButtonAlternatives = {
+            By.CssSelector("button.dismiss-chat"),
+            By.XPath("//button[contains(text(),'Dismiss')]")
         };
     }
 }
