@@ -1,20 +1,26 @@
-using OpenQA.Selenium;
 using System;
 using System.IO;
+using OpenQA.Selenium;
 
 namespace AutomationFramework.Core.Utilities
 {
     public static class ScreenshotHelper
     {
-        public static string CaptureScreenshot(IWebDriver driver, string scenarioName)
+        public static string Capture(IWebDriver driver, string scenarioName)
         {
-            var screenshot = ((ITakesScreenshot)driver).GetScreenshot();
-            var fileName = $"{scenarioName}_{DateTime.Now:yyyyMMdd_HHmmss}.png";
-            var dir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Screenshots");
-            Directory.CreateDirectory(dir);
-            var filePath = Path.Combine(dir, fileName);
-            screenshot.SaveAsFile(filePath, ScreenshotImageFormat.Png);
-            return filePath;
+            try
+            {
+                var ss = ((ITakesScreenshot)driver).GetScreenshot();
+                var dir = Path.Combine(Directory.GetCurrentDirectory(), "Screenshots");
+                Directory.CreateDirectory(dir);
+                var path = Path.Combine(dir, $DateTime.UtcNow:yyyyMMddHHmmss");
+                ss.SaveAsFile(path);
+                return path;
+            }
+            catch
+            {
+                return string.Empty;
+            }
         }
     }
 }

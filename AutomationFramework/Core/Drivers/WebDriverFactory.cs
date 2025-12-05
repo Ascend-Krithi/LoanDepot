@@ -1,20 +1,19 @@
+using System;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
-using OpenQA.Selenium.Firefox;
-using AutomationFramework.Core.Configuration;
 
 namespace AutomationFramework.Core.Drivers
 {
     public static class WebDriverFactory
     {
-        public static IWebDriver CreateDriver(string browser)
+        public static IWebDriver Create()
         {
-            return browser.ToLower() switch
-            {
-                "chrome" => new ChromeDriver(),
-                "firefox" => new FirefoxDriver(),
-                _ => new ChromeDriver()
-            };
+            var options = new ChromeOptions();
+            options.AddArgument("--start-maximized");
+            options.AddArgument("--disable-infobars");
+            options.AddArgument("--disable-notifications");
+            options.AddArgument("--remote-allow-origins=*");
+            return new ChromeDriver(options);
         }
     }
 }

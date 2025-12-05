@@ -4,25 +4,15 @@ namespace AutomationFramework.Core.Locators
 {
     public static class LoginPageLocators
     {
-        public const string UsernameInputKey = "LoginPage.UsernameInput";
-        public static readonly By UsernameInput = By.XPath("//input[@id='username']");
-        public static readonly By[] UsernameInputAlternatives = {
-            By.XPath("//input[@name='username']"),
-            By.XPath("//input[contains(@placeholder, 'User')]")
-        };
+        public static By UsernameById => By.Id("username");
+        public static By UsernameByXpath => By.XPath("//input[@name='username' or @placeholder='Username']");
+        public static By UsernameByCss => By.CssSelector("input[type='text'].login-field");
 
-        public const string PasswordInputKey = "LoginPage.PasswordInput";
-        public static readonly By PasswordInput = By.XPath("//input[@id='password']");
-        public static readonly By[] PasswordInputAlternatives = {
-            By.XPath("//input[@name='password']"),
-            By.XPath("//input[contains(@placeholder, 'Pass')]")
-        };
+        public static By PasswordById => By.Id("password");
+        public static By PasswordByXpath => By.XPath("//input[@name='password']");
+        public static By PasswordByCss => By.CssSelector("input[type='password']");
 
-        public const string LoginButtonKey = "LoginPage.LoginButton";
-        public static readonly By LoginButton = By.XPath("//button[@type='submit']");
-        public static readonly By[] LoginButtonAlternatives = {
-            By.XPath("//button[contains(text(),'Login')]"),
-            By.XPath("//button[@id='loginBtn']")
-        };
+        public static By LoginButtonByXpath => By.XPath("//button[normalize-space()='Log In' or @type='submit']");
+        public static By LoginButtonByCss => By.CssSelector(".btn-primary.login-btn");
     }
 }

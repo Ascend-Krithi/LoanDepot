@@ -1,38 +1,34 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
-using System.Text;
 
-namespace Tests.Reporting
+namespace AutomationFramework.Tests.Reporting
 {
-    public static class HtmlReportManager
+    public class HtmlReportManager
     {
-        public static void GenerateReport(string scenario, string steps, bool passed, string error, string screenshotPath, string environment, string browser, TimeSpan duration)
+        private readonly List<(string scenario, bool passed, string screenshot)> _results = new();
+
+        public void AddResult(string scenarioName, bool passed, string screenshotPath)
         {
-            var html = new StringBuilder();
-            html.AppendLine("<html><head><title>Test Report</title></head><body>");
-            html.AppendLine($"<h2>Scenario: {scenario}</h2>");
-            html.AppendLine($"<b>Status:</b> {(passed ? "<span style='color:green'>PASS</span>" : "<span style='color:red'>FAIL</span>")}<br>");
-            html.AppendLine($"<b>Duration:</b> {duration.TotalSeconds} seconds<br>");
-            html.AppendLine($"<b>Environment:</b> {environment}<br>");
-            html.AppendLine($"<b>Browser:</b> {browser}<br>");
-            html.AppendLine("<h3>Steps</h3>");
-            html.AppendLine($"<pre>{steps}</pre>");
-            if (!passed)
+            _results.Add((scenarioName, passed, screenshotPath));
+        }
+
+        public void Flush()
+        {
+            var dir = Path.Combine(Directory.GetCurrentDirectory(), "Reports");
+            Directory.CreateDirectory(dir);
+            var path = Path.Combine(dir, $"Report_{DateTime.UtcNow:yyyyMMddHHmmss}.html");
+            using var sw = new StreamWriter(path);
+            sw.WriteLine("<html><head><title>Test Report</title></head><body>");
+            sw.WriteLine("<h1>SpecFlow Test Report</h1>");
+            sw.WriteLine("<table border='1' cellpadding='5' cellspacing='0'>");
+            sw.WriteLine("<tr><th>Scenario</th><th>Status</th><th>Screenshot</th></tr>");
+            foreach (var r in _results)
             {
-                html.AppendLine("<h3>Error</h3>");
-                html.AppendLine($"<pre>{error}</pre>");
+                var status = r.passed ? "Passed" : "Failed";
+                sw.WriteLine($"<tr><td>{r.scenario}</td><td>{status}</td><td>{r.screenshot}</td></tr>");
             }
-            if (!string.IsNullOrEmpty(screenshotPath) && File.Exists(screenshotPath))
-            {
-                var base64 = Convert.ToBase64String(File.ReadAllBytes(screenshotPath));
-                html.AppendLine("<h3>Screenshot</h3>");
-                html.AppendLine($"<img src='data:image/png;base64,{base64}' width='600'/>");
-            }
-            html.AppendLine("</body></html>");
-            var reportDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Reports");
-            Directory.CreateDirectory(reportDir);
-            var reportPath = Path.Combine(reportDir, $"{scenario}_{DateTime.Now:yyyyMMdd_HHmmss}.html");
-            File.WriteAllText(reportPath, html.ToString());
+            sw.WriteLine("</table></body></html>");
         }
     }
 }

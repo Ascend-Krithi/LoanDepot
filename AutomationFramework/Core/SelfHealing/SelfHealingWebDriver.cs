@@ -1,81 +1,66 @@
 using System;
-using System.Collections.Generic;
 using OpenQA.Selenium;
-using AutomationFramework.Core.Locators;
+using OpenQA.Selenium.Support.UI;
+using SeleniumExtras.WaitHelpers;
 
 namespace AutomationFramework.Core.SelfHealing
 {
-    public class SelfHealingWebDriver : IWebDriver
+    public class SelfHealingWebDriver
     {
         private readonly IWebDriver _driver;
-        private readonly Dictionary<string, (By, By[])> _locatorRepo;
-        public event Action<string, By, By> OnHealed;
+        private readonly WebDriverWait _wait;
 
-        public SelfHealingWebDriver(IWebDriver driver)
+        public SelfHealingWebDriver(IWebDriver driver, TimeSpan? timeout = null)
         {
             _driver = driver;
-            _locatorRepo = new Dictionary<string, (By, By[])>();
-
-            // Register all locators here
-            RegisterLocators();
+            _wait = new WebDriverWait(_driver, timeout ?? TimeSpan.FromSeconds(20));
         }
 
-        private void RegisterLocators()
+        public IWebElement Find(By? idSelector = null, By? xpathSelector = null, By? cssSelector = null)
         {
-            // LoginPage
-            _locatorRepo[LoginPageLocators.UsernameInputKey] = (LoginPageLocators.UsernameInput, LoginPageLocators.UsernameInputAlternatives);
-            _locatorRepo[LoginPageLocators.PasswordInputKey] = (LoginPageLocators.PasswordInput, LoginPageLocators.PasswordInputAlternatives);
-            _locatorRepo[LoginPageLocators.LoginButtonKey] = (LoginPageLocators.LoginButton, LoginPageLocators.LoginButtonAlternatives);
-
-            // DashboardPage
-            _locatorRepo[DashboardPageLocators.LoanDropdownKey] = (DashboardPageLocators.LoanDropdown, DashboardPageLocators.LoanDropdownAlternatives);
-            _locatorRepo[DashboardPageLocators.LoanListKey] = (DashboardPageLocators.LoanList, DashboardPageLocators.LoanListAlternatives);
-            _locatorRepo[DashboardPageLocators.PopupCloseKey] = (DashboardPageLocators.PopupClose, DashboardPageLocators.PopupCloseAlternatives);
-            _locatorRepo[DashboardPageLocators.ChatPopupKey] = (DashboardPageLocators.ChatPopup, DashboardPageLocators.ChatPopupAlternatives);
-            _locatorRepo[DashboardPageLocators.DatePickerInputKey] = (DashboardPageLocators.DatePickerInput, DashboardPageLocators.DatePickerInputAlternatives);
-            _locatorRepo[DashboardPageLocators.MessageKey] = (DashboardPageLocators.Message, DashboardPageLocators.MessageAlternatives);
+            IWebElement? element = null;
+            Exception? lastEx = null;
+            foreach (var by in new By?[] { idSelector, xpathSelector, cssSelector })
+            {
+                if (by == null) continue;
+                try
+                {
+                    element = _wait.Until(ExpectedConditions.ElementExists(by));
+                    if (element != null) return element;
+                }
+                catch (Exception ex)
+                {
+                    lastEx = ex;
+                }
+            }
+            throw new NoSuchElementException($"Element not found by any selector. Last error: {lastEx?.Message}");
         }
 
-        public IWebElement FindElementByKey(string key)
+        public void Click(By? idSelector = null, By? xpathSelector = null, By? cssSelector = null)
         {
-            if (!_locatorRepo.ContainsKey(key))
-                throw new Exception($"Locator key '{key}' not found in repository.");
+            var el = Find(idSelector, xpathSelector, cssSelector);
+            _wait.Until(ExpectedConditions.ElementToBeClickable(el));
+            el.Click();
+        }
 
-            var (primary, alternatives) = _locatorRepo[key];
+        public void Type(string text, By? idSelector = null, By? xpathSelector = null, By? cssSelector = null)
+        {
+            var el = Find(idSelector, xpathSelector, cssSelector);
+            el.Clear();
+            el.SendKeys(text);
+        }
+
+        public bool IsVisible(By? idSelector = null, By? xpathSelector = null, By? cssSelector = null)
+        {
             try
             {
-                return _driver.FindElement(primary);
+                var el = Find(idSelector, xpathSelector, cssSelector);
+                return el.Displayed;
             }
-            catch (NoSuchElementException)
+            catch
             {
-                foreach (var alt in alternatives)
-                {
-                    try
-                    {
-                        var el = _driver.FindElement(alt);
-                        OnHealed?.Invoke(key, primary, alt);
-                        return el;
-                    }
-                    catch { }
-                }
-                throw;
+                return false;
             }
         }
-
-        // IWebDriver implementation (delegated)
-        public string Url { get => _driver.Url; set => _driver.Url = value; }
-        public string Title => _driver.Title;
-        public string PageSource => _driver.PageSource;
-        public string CurrentWindowHandle => _driver.CurrentWindowHandle;
-        public ReadOnlyCollection<string> WindowHandles => _driver.WindowHandles;
-
-        public void Close() => _driver.Close();
-        public void Dispose() => _driver.Dispose();
-        public IWebElement FindElement(By by) => _driver.FindElement(by);
-        public ReadOnlyCollection<IWebElement> FindElements(By by) => _driver.FindElements(by);
-        public IOptions Manage() => _driver.Manage();
-        public INavigation Navigate() => _driver.Navigate();
-        public void Quit() => _driver.Quit();
-        public ITargetLocator SwitchTo() => _driver.SwitchTo();
     }
 }
