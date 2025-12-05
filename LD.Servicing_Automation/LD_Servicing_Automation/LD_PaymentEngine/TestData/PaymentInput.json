@@ -1,0 +1,366 @@
+[
+  {
+    "payment": {
+      "paymentDate": "2023-01-01T06:56:25.112Z",
+      "paymentStatus": 0,
+      "totalDraftAmount": 0.00,
+      "monthlyPaymentAmount": 0.00,
+      "paymentDue": [
+        {
+          "dueDate": "2023-02-01T12:10:34.683Z",
+          "totalMonthlyPayment": 0.00,
+          "principalAndInterest": 0.00,
+          "taxAndInsurance": 0.00
+        }
+      ],
+      "fees": [],
+      "delinquency": {},
+      "paymentProfileId": "528b352b-fa99-4939-9f6f-0a7914a40d8d",
+      "channelId": 1,
+      "userId": "7B39B90943CF13C3680D7BFC039ECD3A",
+      "additionalEscrow": 0,
+      "additionalPrincipal": 0,
+      "userEmail": "rbinginapalli@loandepot.com",
+      "authorizedBy": "Cooper Jamie",
+      "badCheckStopCode": "string",
+      "pifStopCode": "string",
+      "foreclosureStopCode": "string",
+      "processStopCode": "string",
+      "isPaymentInSuspense": false,
+      "recPaymentStartDate": "2023-01-01T15:07:17.551Z",
+      "recPaymentSetUpDate": "2023-01-01T09:07:06.390Z",
+      "paymentFrequency": 0,
+      "sendToMSP": true,
+      "userName": "Ravindra Binginapalli",
+      "sendRecurringReminderEmail": true,
+      "maskedBankAccountNumber": "*******8854",
+      "routingNumber": "122199983",
+      "bankName": "Loan Depot Test",
+      "createdByChannelId": 1,
+      "nameOnBankAccount": "string",
+      "typeOfAccount": 0,
+      "nextPaymentDueDate": "2023-06-07T09:07:06.390Z",
+      "defaultPayment": {
+        "additionalRepaymentPlanAmount": 0,
+        "defaultProgram": 1
+      },
+      "suspenseAmount": 0,
+      "loanType": 0,
+      "existingSuspenseBalance": 0,
+      "addSuspenseBalance": 0,
+      "paymentExceptionType": 1,
+      "fhaPaymentSupplement": 0,
+      "njFireFeeAmount": 0
+    }
+  },
+  {
+    "helocdraw": {
+      "transactionAmount": 1000,
+      "totalCreditLine": 10000,
+      "currentBalance": 4000,
+      "transactionStartDate": "2025-04-16T00:00:00",
+      "transactionEndDate": "2025-04-16T00:00:00",
+      "lastUpdatedBy": "Ravindra Binginapalli",
+      "drawStatusId": 0,
+      "createdBy": "rbabubinginapalli",
+      "fileProcessingStatusId": 0,
+      "kyribaFileName": "string",
+      "kyribaTransactionNumber": "string",
+      "memo": "testmemo",
+      "payeeName": "test_payeename",
+      "paymentProfileId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+      "channelId": 1,
+      "inEligibleReason": "test_reason",
+      "requestorFirstName": "test_firstName",
+      "requestorLastName": "test_lastName",
+      "requestorCustomerId": "12345",
+      "address": "test_address",
+      "addressLine1": "test_addressline1",
+      "addressCity": "test_city",
+      "addressState": "test_state",
+      "addressZip": "12345"
+    }
+  },
+  {
+    "kyribaresponse": {
+      "transactionNumber": "290HELO824170",
+      "fedReference": "FED24170",
+      "company": "test_company",
+      "branch": "test_branch",
+      "reason": "test_reason",
+      "lastAcknowledgement": "test_acknowledgement",
+      "createdBy": "rbabubinginapalli",
+      "transactionDate": "2025-04-18T00:00:00",
+      "createdDate": "2025-04-18T00:00:00"
+    }
+  },
+  {
+    "paymentprofile": {
+      "profileName": "TestAutoProfile1",
+      "profileType": 0,
+      "defaultPaymentProfile": true,
+      "paymentProfileDetails": {
+        "firstName": "TestF",
+        "lastName": "TestL",
+        "businessAccountName": "string",
+        "accountProfile": 0,
+        "accountType": 0,
+        "routingNumber": "122199983",
+        "accountNumber": "61231234321",
+        "bankName": "LoanDepotTest"
+      },
+      "saveAccountInformation": true,
+      "channelId": 1,
+      "userId": "7B39B90943CF13C3680D7BFC039ECD3A",
+      "validateAccountInformation": true,
+      "loanType": 0
+    }
+  },
+  {
+    "sendletter": {
+      "letterID": 0,
+      "borrowerFullName": "string",
+      "coBorrowerFullName": "string",
+      "billingAddress": "string",
+      "billingCity": "string",
+      "billingState": "string",
+      "billingZip": "string",
+      "propertyAddress": "string",
+      "propertyCity": "string",
+      "propertyState": "string",
+      "propertyZip": "string",
+      "defaultStatus": null,
+      "bkRemovalCode": null,
+      "bkCh7DischargeFlag": null,
+      "bkCh11ToCh13DischargeFlag": null,
+      "draftDay": 0,
+      "pmtDate": "2025-04-22T10:26:27.638Z",
+      "pmtAmount": 0,
+      "authorizationMethod": "string",
+      "pmtTrackingNumber": "string",
+      "pmtScheduledAt": "2025-04-22T10:26:27.638Z",
+      "description": "string",
+      "dayBeforeProcessingDate": "2025-04-22T10:26:27.638Z",
+      "status": 0
+    }
+  },
+  {
+    "tran73record": {
+      "transactionDate": "2025-04-22T10:34:44.124Z",
+      "loanNumber": "string",
+      "paymentAmount": 0,
+      "suspenseAmount": 0,
+      "suspenseSweepStatus": 0,
+      "nextPaymentDueDate": "2025-04-22T10:34:44.124Z",
+      "processStopCode": "string"
+    }
+  },
+  {
+    "sendEmail": {
+      "dateSend": "2025-04-22T10:34:13.783Z",
+      "letterID": 0,
+      "paymentFrequency": 0
+    }
+  },
+  {
+    "deletepayment": {
+      "channelId": 0,
+      "userId": "string",
+      "badCheckStopCode": "string",
+      "pifStopCode": "string",
+      "foreclosureStopCode": "string",
+      "processStopCode": "string",
+      "authorizedBy": "string",
+      "deletedReason": "string",
+      "userName": "string",
+      "loanPaymentStatus": 0,
+      "loanNumber": 0,
+      "paymentsId": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+    }
+  },
+  {
+    "deleteprofile": {
+      "userId": "string",
+      "channelId": 1
+    }
+  },
+  {
+    "putpaymentprofile": {
+      "coBorrowerId": "string",
+      "userId": "string",
+      "channelId": 0,
+      "accountType": 0,
+      "routingNumber": "string",
+      "accountNumber": "string"
+    }
+
+  },
+  {
+    "helocautopay": {
+      "totalDraftAmount": 0,
+      "monthlyPaymentAmount": 0,
+      "fees": [
+        {
+          "type": 0,
+          "amount": 0,
+          "code": "string",
+          "description": "string",
+          "breakdown": [
+            "string"
+          ]
+        }
+      ],
+      "sendToMSP": true,
+      "isBillGenerated": true,
+      "paymentId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+      "loanNumber": 0
+    }
+  },
+  {
+    "puthelocdraw": {
+      "transactionEndDate": "2025-03-25T16:27:34.446Z",
+      "lastUpdatedBy": "string",
+      "drawStatusId": 0,
+      "fileProcessingStatusId": 0,
+      "kyribaFileName": "string",
+      "kyribaTransactionNumber": "string"
+    }
+  },
+  {
+    "putupdateloan": {
+      "paymentId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+      "loanNumber": 0,
+      "paymentDate": "2025-03-25T16:33:32.469Z",
+      "paymentStatus": 0,
+      "totalDraftAmount": 0,
+      "channelId": 0,
+      "isDelayed": true
+    }
+  },
+  {
+    "putloanpaymentstatus": {
+      "paymentId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+      "paymentStatus": 0,
+      "isPaymentInSuspense": true,
+      "badCheckStopCode": "string",
+      "pifStopCode": "string",
+      "foreclosureStopCode": "string",
+      "processStopCode": "string"
+    }
+  },
+  {
+    "recurringpendingstatus": {
+      "paymentId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+      "paymentStatus": 0,
+      "isPaymentInSuspense": true,
+      "badCheckStopCode": "string",
+      "pifStopCode": "string",
+      "foreclosureStopCode": "string",
+      "processStopCode": "string"
+    }
+  },
+  {
+    "putupdatepayment": {
+      "paymentDate": "2025-03-25T16:38:20.247Z",
+      "paymentStatus": 0,
+      "totalDraftAmount": 0,
+      "monthlyPaymentAmount": 0,
+      "paymentDue": [
+        {
+          "dueDate": "2025-03-25T16:38:20.247Z",
+          "totalMonthlyPayment": 0,
+          "principalAndInterest": 0,
+          "taxAndInsurance": 0,
+          "isSuspense": true
+        }
+      ],
+      "fees": [
+        {
+          "type": 0,
+          "amount": 0,
+          "code": "string",
+          "description": "string",
+          "breakdown": [
+            "string"
+          ]
+        }
+      ],
+      "delinquency": {
+        "contactCode": "string",
+        "responseCode": "string",
+        "reasonCode": "string",
+        "forbearanceAmount": 0,
+        "remindDate": "2025-03-25T16:38:20.247Z"
+      },
+      "paymentProfileId": "string",
+      "paymentProfileDetails": {
+        "firstName": "string",
+        "lastName": "string",
+        "businessAccountName": "string",
+        "accountProfile": 0,
+        "accountType": 0,
+        "routingNumber": "string",
+        "accountNumber": "string",
+        "bankName": "string"
+      },
+      "channelId": 0,
+      "userId": "string",
+      "additionalEscrow": 0,
+      "additionalPrincipal": 0,
+      "userEmail": "string",
+      "authorizedBy": "string",
+      "badCheckStopCode": "string",
+      "pifStopCode": "string",
+      "foreclosureStopCode": "string",
+      "processStopCode": "string",
+      "isPaymentInSuspense": true,
+      "recPaymentStartDate": "2025-03-25T16:38:20.247Z",
+      "recPaymentSetUpDate": "2025-03-25T16:38:20.247Z",
+      "paymentFrequency": 0,
+      "sendToMSP": true,
+      "userName": "string",
+      "sendRecurringReminderEmail": true,
+      "maskedBankAccountNumber": "string",
+      "routingNumber": "string",
+      "bankName": "string",
+      "createdByChannelId": 0,
+      "nameOnBankAccount": "string",
+      "typeOfAccount": 0,
+      "nextPaymentDueDate": "2025-03-25T16:38:20.247Z",
+      "lastEligibilityCheckDate": "2025-03-25T16:38:20.247Z",
+      "defaultPayment": {
+        "additionalRepaymentPlanAmount": 0,
+        "defaultProgram": 1
+      },
+      "suspenseAmount": 0,
+      "loanType": 0,
+      "existingSuspenseBalance": 0,
+      "addSuspenseBalance": 0,
+      "paymentExceptionType": 1,
+      "fhaPaymentSupplement": 0,
+      "njFireFeeAmount": 0,
+      "isDelayed": true,
+      "isRejected": true,
+      "updatePaymentMethod": true
+    }
+  },
+  {
+    "paymentsetup": {
+      "paymentId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+      "loanNumber": 0,
+      "keyValueList": [
+        {
+          "key": "paymentDate",
+          "value": "2025-06-28"
+        },
+        {
+          "key": "userEmail",
+          "value": "rbabubinginapalli@loandepot.com"
+        }
+      ],
+      "sendToMSP": true
+    }
+  }
+
+
+]

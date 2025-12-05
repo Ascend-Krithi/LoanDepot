@@ -1,0 +1,1281 @@
+﻿<xml>
+	<Query_UpdateBorrowerEmailID>
+		UPDATE [MelloServETL].[dbo].[LoanLevel] SET borrower_email = 'EMAIL_ID'
+		WHERE loan_number = 'LN_NUMBER'
+	</Query_UpdateBorrowerEmailID>
+	<Query_GetPhoneNumberWithPhoneId1>
+		Select phone_number, phone_code, TelelphoneID from [MelloServETL].[dbo].[Telephone] where loan_number = 'LN_NUMBER' AND phone_id = 'PHONE_ID'
+	</Query_GetPhoneNumberWithPhoneId1>
+	<Query_UpdatePhoneNumberWithPhoneId1>
+		Update [MelloServETL].[dbo].[Telephone] set phone_number = 'PHN_NUMBER', phone_code = 'PHN_CODE' where loan_number = 'LN_NUMBER' AND TelelphoneID = 'TELEPHONE_ID'
+	</Query_UpdatePhoneNumberWithPhoneId1>
+	<Query_UpdateBorrowersFirstLastAndFullName>
+		UPDATE [MelloServETL].[dbo].[LoanLevel]
+		SET borrower_first_name  = 'FIRST_NAME' ,
+		borrower_last_name = 'LAST_NAME',
+		borrower_full_name='FULL_NAME'
+		where loan_number = 'LN_NUMBER'
+	</Query_UpdateBorrowersFirstLastAndFullName>
+	<Query_InsertLoanIntoLoanFlagTableForSkipMFA>
+		INSERT into [MelloServ].[MelloServDomain].[LoanFlag] (
+		[LoanNumber]
+		,[FlagId]
+		,[DateInserted]
+		,[InsertedBy]
+		,[DateUpdated]
+		,[UpdatedBy])
+		values
+		('LN_NUMBER','FLAG_ID',DATEADD(SECOND, -2, DATEADD(DAY, -2, GETDATE())),'USER_NAME',DATEADD(DAY, -2, GETDATE()),'USER_NAME')
+	</Query_InsertLoanIntoLoanFlagTableForSkipMFA>
+	<Query_DeleteLoanFromLoanFlagTableForSkipMFA>
+		DELETE [MelloServ].[MelloServDomain].[LoanFlag] WHERE  LoanNumber = 'LN_NUMBER' AND FlagId = 'FLAG_ID'
+	</Query_DeleteLoanFromLoanFlagTableForSkipMFA>
+	<Query_GetUsersRegisteredViaAutomation>
+		SELECT top 100 [Email]
+		FROM [MelloServ].[LDProfileDomain].[UserProfile]
+		Where email like 'cp_testaccount20%'
+	</Query_GetUsersRegisteredViaAutomation>
+	<QueryToUpdateTCPAFlagIsGlobalValue>
+		UPDATE [MelloServ].[MelloServDomain].[Flag]
+		SET IsGlobal = 'TCPA_FLAG_VALUE', IsEnabled = 'TCPA_FLAG_VALUE'
+		WHERE id = '18'
+	</QueryToUpdateTCPAFlagIsGlobalValue>
+	<Query_GetLoanLevelDetailsForFmAutopayInEligibleProcessStopCodeAutopay>
+		SELECT top 100 * FROM [MelloServETL].[dbo].[LoanLevel] WHERE is_active = 1
+		AND next_payment_due_date GREATER_THEN_EQUALTO DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()), 0)
+		AND next_payment_due_date LESS_THEN DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()) + 3, 0)
+		AND process_stop_code IN ('2', '3', 'B', 'D', 'F', 'H', 'L', 'M', 'N', 'R', 'U', 'W', '!', '8')
+		AND pif_stop_code = '0'
+		AND bad_check_stop_code = '0'
+		AND foreclosure_stop_code = '0'
+		AND [consumer_indicator_code] is Null
+		AND [cls_product_code] is not null
+		AND (drafting_indicator is null OR drafting_indicator = 'N')
+		AND LEFT(investor_id, 1) IN ('F', 'H', 'G', 'E', 'R', 'L', 'P') USER_PROFILE_CHECK
+		AND zone = 'ZONECODE'
+		ORDER BY next_payment_due_date DESC
+	</Query_GetLoanLevelDetailsForFmAutopayInEligibleProcessStopCodeAutopay>
+	<Query_GetLoanLevelDetailsForFmAutopayInEligibleANDPifStopCodeAutopay>
+		SELECT top 100 * FROM [MelloServETL].[dbo].[LoanLevel] WHERE is_active = 1
+		AND next_payment_due_date GREATER_THEN_EQUALTO DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()), 0)
+		AND next_payment_due_date LESS_THEN DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()) + 3, 0)
+		AND process_stop_code = '0'
+		AND pif_stop_code IN ('1', '2', '3', '4', '5', '6')
+		AND bad_check_stop_code = '0'
+		AND foreclosure_stop_code = '0'
+		AND [consumer_indicator_code] is Null
+		AND [cls_product_code] is not null
+		AND (drafting_indicator is null OR drafting_indicator = 'N')
+		AND LEFT(investor_id, 1) IN ('F', 'H', 'G', 'E', 'R', 'L', 'P') USER_PROFILE_CHECK
+		AND ZONE = 'ZONECODE'
+		ORDER BY next_payment_due_date DESC
+	</Query_GetLoanLevelDetailsForFmAutopayInEligibleANDPifStopCodeAutopay>
+	<Query_GetLoanLevelDetailsForFmAutopayInEligibleBadCheckStopCodeAutopay>
+		SELECT top 100 * FROM [MelloServETL].[dbo].[LoanLevel] WHERE is_active = 1
+		AND next_payment_due_date GREATER_THEN_EQUALTO DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()), 0)
+		AND next_payment_due_date LESS_THEN DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()) + 3, 0)
+		AND process_stop_code = '0'
+		AND pif_stop_code = '0'
+		AND bad_check_stop_code in ('1','4','6')
+		AND foreclosure_stop_code = '0'
+		AND [consumer_indicator_code] is Null And [cls_product_code] is not null
+		AND (drafting_indicator is null OR drafting_indicator = 'N')
+		AND LEFT(investor_id, 1) IN ('F', 'H', 'G', 'E', 'R', 'L', 'P') USER_PROFILE_CHECK
+		AND zone = 'ZONECODE'
+		ORDER BY next_payment_due_date DESC
+	</Query_GetLoanLevelDetailsForFmAutopayInEligibleBadCheckStopCodeAutopay>
+	<Query_GetLoanLevelDetailsForFmAutopayInEligibleForeclosureStopCodeAutopay>
+		SELECT top 100 * FROM [MelloServETL].[dbo].[LoanLevel] WHERE is_active = 1
+		AND next_payment_due_date GREATER_THEN_EQUALTO DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()), 0)
+		AND next_payment_due_date LESS_THEN DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()) + 3, 0)
+		AND process_stop_code = '0'
+		AND pif_stop_code = '0'
+		AND bad_check_stop_code = '0'
+		AND foreclosure_stop_code IN ('1', '2', '3', '4', '5', '6', '7', '8', '9')
+		AND [consumer_indicator_code] is Null
+		AND [cls_product_code] is not null
+		AND (drafting_indicator is null OR drafting_indicator = 'N')
+		AND LEFT(investor_id, 1) IN ('F', 'H', 'G', 'E', 'R', 'L', 'P') USER_PROFILE_CHECK
+		AND zone = 'ZONECODE'
+		ORDER BY next_payment_due_date DESC
+	</Query_GetLoanLevelDetailsForFmAutopayInEligibleForeclosureStopCodeAutopay>
+	<Query_GetLoanLevelDetailsForFmOTPInEligibleProcessStopCodeOTP>
+		SELECT top 1 * FROM [MelloServETL].[dbo].[LoanLevel] WHERE is_active = 1
+		AND process_stop_code in ('2','3','8','9','A','B','F','H','M','N','P','R','U','W','!')
+		AND pif_stop_code = '0'
+		AND bad_check_stop_code = '0'
+		AND foreclosure_stop_code = '0'
+		AND client_number = 'P2KL'
+		AND IsDeleted=0
+		AND consumer_indicator_code is null USER_PROFILE_CHECK
+		AND zone = 'ZONECODE'
+	</Query_GetLoanLevelDetailsForFmOTPInEligibleProcessStopCodeOTP>
+	<Query_GetLoanLevelDetailsForFmOTPInEligibleANDPifStopCodeOTP>
+		SELECT top 1 * FROM [MelloServETL].[dbo].[LoanLevel] WHERE is_active = 1
+		AND pif_stop_code in ('1','2','3','4','5','6')
+		AND bad_check_stop_code = '0'
+		AND foreclosure_stop_code = '0'
+		AND process_stop_code = '0'
+		AND client_number = 'P2KL'
+		AND IsDeleted=0
+		AND consumer_indicator_code is null USER_PROFILE_CHECK
+		AND zone = 'ZONECODE'
+	</Query_GetLoanLevelDetailsForFmOTPInEligibleANDPifStopCodeOTP>
+	<Query_GetLoanLevelDetailsForFmOTPInEligibleBadCheckStopCodeOTP>
+		SELECT top 1 * FROM [MelloServETL].[dbo].[LoanLevel] WHERE is_active = 1
+		AND bad_check_stop_code in ('1','4','6')
+		AND foreclosure_stop_code = '0'
+		AND pif_stop_code = '0'
+		AND process_stop_code = '0'
+		AND client_number = 'P2KL'
+		AND IsDeleted=0
+		AND consumer_indicator_code is null USER_PROFILE_CHECK
+		AND zone = 'ZONECODE'
+	</Query_GetLoanLevelDetailsForFmOTPInEligibleBadCheckStopCodeOTP>
+	<Query_GetLoanLevelDetailsForFmOTPInEligibleForeclosureStopCodeOTP>
+		SELECT top 1 * FROM [MelloServETL].[dbo].[LoanLevel] WHERE is_active = 1
+		AND foreclosure_stop_code in ('1','2','3','4','5','6','7','8','9')
+		AND bad_check_stop_code = '0'
+		AND pif_stop_code = '0'
+		AND process_stop_code = '0'
+		AND client_number = 'P2KL'
+		AND IsDeleted=0
+		AND consumer_indicator_code is null USER_PROFILE_CHECK
+		AND zone = 'ZONECODE'
+	</Query_GetLoanLevelDetailsForFmOTPInEligibleForeclosureStopCodeOTP>
+	<Query_GetLoanLevelDetailsForPendingPrepaidAutopay>
+		SELECT top 100 * FROM [dbo].[LoanLevel] WHERE next_payment_due_date GREATER_THEN_EQUALTO DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()) + 3, 0)
+		AND process_stop_code = '0'
+		AND drafting_indicator ZDRAFTING_INDICATOR
+		AND pif_stop_code = '0'
+		AND bad_check_stop_code = '0'
+		AND foreclosure_stop_code = '0'
+		AND LEFT(investor_id, 1) IN ('F', 'H', 'G', 'E', 'R', 'L', 'P') USER_PROFILE_CHECK
+		AND zone = 'ZONECODE'
+		ORDER BY next_payment_due_date DESC
+	</Query_GetLoanLevelDetailsForPendingPrepaidAutopay>
+	<Query_GetLoanLevelDetailsForIneligiblePrepaidAutopay>
+		SELECT top 100 * FROM [dbo].[LoanLevel] WHERE next_payment_due_date GREATER_THEN_EQUALTO DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()) + 3, 0)
+		AND process_stop_code = '0'
+		AND drafting_indicator ZDRAFTING_INDICATOR
+		AND pif_stop_code = '0'
+		AND bad_check_stop_code = '0'
+		AND foreclosure_stop_code = '0'
+		AND LEFT(investor_id, 1) IN ('F', 'H', 'G', 'E', 'R', 'L', 'P') USER_PROFILE_CHECK
+		AND zone = 'ZONECODE'
+		ORDER BY next_payment_due_date DESC
+	</Query_GetLoanLevelDetailsForIneligiblePrepaidAutopay>
+	<Query_GetFlagIDForASpecificLoanNumber>
+		Select FlagId from MelloServDomain.LoanFlag where LoanNumber = 'LN_NUMBER'
+	</Query_GetFlagIDForASpecificLoanNumber>
+	<Query_GetLoanLevelDetailsForEligibleAutoPayPastDue>
+		SELECT top 100 * FROM [MelloServETL].[dbo].[LoanLevel] WHERE is_active = 1
+		AND next_payment_due_date GREATER_THEN_EQUALTO 'FORMATTED_START_DATE'
+		AND next_payment_due_date LESS_THEN 'FORMATTED_END_DATE'
+		AND process_stop_code = '0'
+		AND pif_stop_code = '0'
+		AND bad_check_stop_code = '0'
+		AND foreclosure_stop_code = '0'
+		AND opt_out_stop_code is null
+		AND [consumer_indicator_code] is Null
+		AND [cls_product_code] is not null
+		AND (drafting_indicator is null OR drafting_indicator = 'N')
+		AND first_principal_balance > 5000
+		AND LEFT(investor_id, 1) IN ('F', 'H', 'G', 'E', 'R', 'L', 'P') USER_PROFILE_CHECK
+		AND zone = 'ZONECODE'
+		ORDER BY next_payment_due_date DESC
+
+	</Query_GetLoanLevelDetailsForEligibleAutoPayPastDue>
+	<Query_GetLoanLevelDetailsForEligibleAutoPayOntime>
+		SELECT top 100 * FROM [MelloServETL].[dbo].[LoanLevel] WHERE is_active = 1
+		AND next_payment_due_date GREATER_THEN_EQUALTO 'FORMATTED_START_DATE'
+		AND next_payment_due_date LESS_THEN 'FORMATTED_END_DATE'
+		AND process_stop_code = '0'
+		AND pif_stop_code = '0' AND bad_check_stop_code = '0'
+		AND foreclosure_stop_code = '0'
+		AND opt_out_stop_code is null
+		AND [consumer_indicator_code] is Null
+		AND [cls_product_code] is not null
+		AND (drafting_indicator is null OR drafting_indicator = 'N')
+		AND first_principal_balance > 5000
+		AND LEFT(investor_id, 1) IN ('F', 'H', 'G', 'E', 'R', 'L', 'P') USER_PROFILE_CHECK
+		AND zone = 'ZONECODE'
+		ORDER BY next_payment_due_date DESC
+	</Query_GetLoanLevelDetailsForEligibleAutoPayOntime>
+	<Query_GetLoanLevelDetailsForEligibleAutoPayOntimeW01>
+		SELECT top 100 * FROM [MelloServETL].[dbo].[LoanLevel] WHERE is_active = 1
+		AND next_payment_due_date GREATER_THEN_EQUALTO DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()) + 1, 0)
+		AND next_payment_due_date LESS_THEN DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()) + 2, 0)
+		AND process_stop_code = '0'
+		AND pif_stop_code = '0' AND bad_check_stop_code = '0'
+		AND foreclosure_stop_code = '0'
+		AND [consumer_indicator_code] is Null
+		AND [cls_product_code] is not null
+		AND (drafting_indicator is null OR drafting_indicator = 'N')
+		AND investor_id='W01' USER_PROFILE_CHECK
+		AND zone = 'ZONECODE'
+		ORDER BY next_payment_due_date DESC
+	</Query_GetLoanLevelDetailsForEligibleAutoPayOntimeW01>
+	<Query_GetLoanLevelDetailsForEligibleAutoPayPrepaid>
+		SELECT top 100 * FROM [MelloServETL].[dbo].[LoanLevel] WHERE is_active = 1
+		AND next_payment_due_date GREATER_THEN_EQUALTO 'FORMATTED_START_DATE'
+		AND next_payment_due_date LESS_THEN 'FORMATTED_END_DATE'
+		AND process_stop_code = '0'
+		AND pif_stop_code = '0'
+		AND bad_check_stop_code = '0'
+		AND foreclosure_stop_code = '0'
+		AND opt_out_stop_code is null
+		AND [consumer_indicator_code] is Null
+		AND [cls_product_code] is not null
+		AND (drafting_indicator is null OR drafting_indicator = 'N')
+		AND first_principal_balance > 5000
+		AND LEFT(investor_id, 1) IN ('F', 'H', 'G', 'E', 'R', 'L', 'P') USER_PROFILE_CHECK
+		AND zone = 'ZONECODE'
+		ORDER BY next_payment_due_date DESC
+	</Query_GetLoanLevelDetailsForEligibleAutoPayPrepaid>
+	<Query_GetSettingDetailsForBankHolidays>
+		select SettingValue from MelloServ.MelloServDomain.Settings where SettingKey='Bank_Holidays'
+	</Query_GetSettingDetailsForBankHolidays>
+	<Query_GetLoanLevelDetailsForBiWeeklyAutoPayOntime>
+		Select top 100 * from [MelloServETL].[dbo].[LoanLevel] WHERE is_active = 1
+		AND next_payment_due_date GREATER_THEN_EQUALTO DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()) + 1, 0)
+		AND next_payment_due_date LESS_THEN DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()) + 2, 0)
+		AND foreclosure_stop_code ='0'
+		AND process_stop_code ='0'
+		AND bad_check_stop_code ='0'
+		AND pif_stop_code='0'
+		AND opt_out_stop_code is null
+		AND investor_id ! = 'W01'
+		AND consumer_indicator_code is Null
+		AND [cls_product_code] is not null
+		AND (drafting_indicator = 'N' or drafting_indicator is null)
+		AND delinquent_payment_count = 0
+		AND zone = 'ZONECODE' USER_PROFILE_CHECK
+		ORDER BY next_payment_due_date DESC
+	</Query_GetLoanLevelDetailsForBiWeeklyAutoPayOntime>
+	<Query_GetLoanLevelDetailsForBiWeeklyAutoPayOneMonthPrepaid>
+		Select top 100 * from [MelloServETL].[dbo].[LoanLevel] WHERE is_active = 1
+		AND next_payment_due_date GREATER_THEN_EQUALTO DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()) + 2, 0)
+		AND next_payment_due_date LESS_THEN DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()) + 3, 0)
+		AND foreclosure_stop_code ='0' and process_stop_code ='0'
+		AND bad_check_stop_code ='0'
+		AND pif_stop_code='0'
+		AND opt_out_stop_code is null
+		AND consumer_indicator_code is Null
+		AND [cls_product_code] is not null
+		AND (drafting_indicator = 'N' or drafting_indicator is null)
+		AND delinquent_payment_count = 0
+		AND investor_id ! = 'W01'
+		AND zone = 'ZONECODE' USER_PROFILE_CHECK
+		ORDER BY next_payment_due_date DESC
+	</Query_GetLoanLevelDetailsForBiWeeklyAutoPayOneMonthPrepaid>
+	<Query_GetLoanLevelDetailsForBiWeeklyAutoPayTwoMonthPrepaid>
+		Select top 100 * from [MelloServETL].[dbo].[LoanLevel] WHERE is_active = 1
+		AND next_payment_due_date GREATER_THEN_EQUALTO DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()) + 3, 0)
+		AND next_payment_due_date LESS_THEN DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()) + 4, 0)
+		AND foreclosure_stop_code ='0'
+		AND process_stop_code ='0'
+		AND bad_check_stop_code ='0'
+		AND pif_stop_code='0'
+		AND opt_out_stop_code is null
+		AND consumer_indicator_code is Null
+		AND investor_id ! = 'W01'
+		AND [cls_product_code] is not null
+		AND (drafting_indicator = 'N' or drafting_indicator is null)
+		AND delinquent_payment_count = 0
+		AND zone = 'ZONECODE' USER_PROFILE_CHECK
+		ORDER BY next_payment_due_date DESC
+	</Query_GetLoanLevelDetailsForBiWeeklyAutoPayTwoMonthPrepaid>
+	<Query_GetLoanLevelDetailsForDeleteAutoPay>
+		SELECT top 100 l.* FROM [MelloServETL].[dbo].[LoanLevel] l inner join PaymentSetup p on l.loan_number=p.LoanNumber
+		WHERE is_active = 1
+		AND next_payment_due_date GREATER_THEN_EQUALTO DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE())+1, 0)
+		AND next_payment_due_date LESS_THEN DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()) + 3, 0)
+		AND process_stop_code = '0'
+		AND pif_stop_code = '0'
+		AND bad_check_stop_code = '0'
+		AND foreclosure_stop_code = '0'
+		AND [consumer_indicator_code] is Null
+		AND [cls_product_code] is not null
+		AND drafting_indicator = 'Y'
+		AND LEFT(investor_id, 1) IN ('F', 'H', 'G', 'E', 'R', 'L', 'P')
+		AND zone = 'ZONECODE'
+		AND paymentstatus='Processing'
+		AND LoanPaymentTypeFrequency='SETUP_TYPE'
+		AND RecPaymentSetUpDate LESS_THEN DATEADD(day,-1,GETDATE())
+		AND PaymentDate GREATER_THEN_EQUALTO DATEADD(day,2,GETDATE()) USER_PROFILE_CHECK_WITH_P
+		ORDER BY next_payment_due_date DESC
+	</Query_GetLoanLevelDetailsForDeleteAutoPay>
+	<Query_GetLoanLevelDetailsForDeleteAutoPayForPastDue>
+		SELECT top 100 l.* FROM [MelloServETL].[dbo].[LoanLevel] l inner join PaymentSetup p on l.loan_number=p.LoanNumber
+		WHERE is_active = 1
+		AND next_payment_due_date GREATER_THEN_EQUALTO DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()), 0)
+		AND next_payment_due_date LESS_THEN DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()) + 1, 0)
+		AND process_stop_code = '0'
+		AND pif_stop_code = '0'
+		AND bad_check_stop_code = '0'
+		AND foreclosure_stop_code = '0'
+		AND [consumer_indicator_code] is Null
+		AND [cls_product_code] is not null
+		AND drafting_indicator = 'Y'
+		AND LEFT(investor_id, 1) IN ('F', 'H', 'G', 'E', 'R', 'L', 'P')
+		AND zone = 'ZONECODE'
+		AND paymentstatus='Processing'
+		AND LoanPaymentTypeFrequency='SETUP_TYPE'
+		AND RecPaymentSetUpDate LESS_THEN DATEADD(day,-1,GETDATE())
+		AND PaymentDate GREATER_THEN_EQUALTO DATEADD(day,2,GETDATE()) USER_PROFILE_CHECK_WITH_P
+		ORDER BY next_payment_due_date DESC
+	</Query_GetLoanLevelDetailsForDeleteAutoPayForPastDue>
+	<Query_GetLoanLevelDetailsForDeleteAutoPayForOntime>
+		SELECT top 100 l.* FROM [MelloServETL].[dbo].[LoanLevel] l inner join PaymentSetup p on l.loan_number=p.LoanNumber
+		WHERE is_active = 1
+		AND next_payment_due_date GREATER_THEN_EQUALTO DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()) + 1, 0)
+		AND next_payment_due_date LESS_THEN DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()) + 2, 0)
+		AND process_stop_code = '0'
+		AND pif_stop_code = '0'
+		AND bad_check_stop_code = '0'
+		AND foreclosure_stop_code = '0'
+		AND [consumer_indicator_code] is Null
+		AND [cls_product_code] is not null
+		AND drafting_indicator = 'Y'
+		AND LEFT(investor_id, 1) IN ('F', 'H', 'G', 'E', 'R', 'L', 'P')
+		AND zone = 'ZONECODE'
+		AND paymentstatus='Processing'
+		AND LoanPaymentTypeFrequency='SETUP_TYPE'
+		AND RecPaymentSetUpDate LESS_THEN DATEADD(day,-1,GETDATE())
+		AND PaymentDate GREATER_THEN_EQUALTO DATEADD(day,2,GETDATE()) USER_PROFILE_CHECK_WITH_P
+		ORDER BY next_payment_due_date DESC
+	</Query_GetLoanLevelDetailsForDeleteAutoPayForOntime>
+	<Query_GetLoanLevelDetailsForDeleteAutoPayForPrepaidOneMonth>
+		SELECT top 100 l.* FROM [MelloServETL].[dbo].[LoanLevel] l inner join PaymentSetup p on l.loan_number=p.LoanNumber
+		WHERE is_active = 1
+		AND next_payment_due_date GREATER_THEN_EQUALTO DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()) + 2, 0)
+		AND next_payment_due_date LESS_THEN DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()) + 3, 0)
+		AND process_stop_code = '0'
+		AND pif_stop_code = '0'
+		AND bad_check_stop_code = '0'
+		AND foreclosure_stop_code = '0'
+		AND [consumer_indicator_code] is Null
+		AND [cls_product_code] is not null
+		AND drafting_indicator = 'Y'
+		AND LEFT(investor_id, 1) IN ('F', 'H', 'G', 'E', 'R', 'L', 'P')
+		AND zone = 'ZONECODE'
+		AND paymentstatus='Processing'
+		AND LoanPaymentTypeFrequency='SETUP_TYPE'
+		AND RecPaymentSetUpDate LESS_THEN DATEADD(day,-1,GETDATE())
+		AND PaymentDate GREATER_THEN_EQUALTO DATEADD(day,2,GETDATE()) USER_PROFILE_CHECK_WITH_P
+		ORDER BY next_payment_due_date DESC
+	</Query_GetLoanLevelDetailsForDeleteAutoPayForPrepaidOneMonth>
+	<Query_GetLoanLevelDetailsForDeleteBiWeeklyAutoPay>
+		SELECT top 100 l.* FROM [MelloServETL].[dbo].[LoanLevel] l inner join PaymentSetup p on l.loan_number=p.LoanNumber
+		WHERE is_active = 1
+		AND next_payment_due_date GREATER_THEN_EQUALTO DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE())+2, 0)
+		AND next_payment_due_date LESS_THEN DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()) + 3, 0)
+		AND process_stop_code = '0'
+		AND pif_stop_code = '0'
+		AND bad_check_stop_code = '0'
+		AND foreclosure_stop_code = '0'
+		AND [consumer_indicator_code] is Null
+		AND [cls_product_code] is not null
+		AND drafting_indicator = 'Y'
+		AND LEFT(investor_id, 1) IN ('F', 'H', 'G', 'E', 'R', 'L', 'P')
+		AND zone = 'ZONECODE'
+		AND paymentstatus='Processing'
+		AND LoanPaymentTypeFrequency='SETUP_TYPE'
+		AND RecPaymentSetUpDate LESS_THEN DATEADD(day,-1,GETDATE())
+		AND PaymentDate GREATER_THEN_EQUALTO DATEADD(day,2,GETDATE()) USER_PROFILE_CHECK_WITH_P
+		ORDER BY next_payment_due_date DESC
+	</Query_GetLoanLevelDetailsForDeleteBiWeeklyAutoPay>
+	<Query_GetLoanLevelDetailsForBiWeeklyAutoPay>
+		Select top 100 * from [MelloServETL].[dbo].[LoanLevel] WHERE is_active = 1
+		AND next_payment_due_date GREATER_THEN_EQUALTO DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()) + 2, 0)
+		AND next_payment_due_date LESS_THEN DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()) + 3, 0)
+		AND foreclosure_stop_code ='0'
+		AND process_stop_code ='0'
+		AND bad_check_stop_code ='0'
+		AND investor_id ! = 'W01'
+		AND pif_stop_code='0'
+		AND opt_out_stop_code is null
+		AND consumer_indicator_code is Null
+		AND [cls_product_code] is not null
+		AND (drafting_indicator = 'N' or drafting_indicator is null)
+		AND delinquent_payment_count = 0
+		AND zone = 'ZONECODE' USER_PROFILE_CHECK
+		ORDER BY next_payment_due_date DESC
+	</Query_GetLoanLevelDetailsForBiWeeklyAutoPay>
+	<Query_GetLoanLevelDetailsForActiveForbearance>
+		SELECT top 100 * FROM MelloServETL.dbo.LoanLevel ll, MelloServETL.dbo.LoanTransaction lt
+		WHERE ll.loan_number = lt.loan_number and is_active = '1'
+		AND zone = 'ZONECODE'
+		AND repay_plan_type in ('30','33','35','38','42','90','00','08','09','21','22','27','28')
+		AND repay_plan_status_code in ('A')
+		AND LoanTransactionID=(select top(1) MAX(LoanTransactionID)
+		FROM MelloServETL.dbo.LoanTransaction
+		WHERE loan_number=ll.loan_number)
+		AND consumer_indicator_code is null USER_PROFILE_CHECK_WITH_LT
+		ORDER BY lt.LoanTransactionID desc, NEWID()
+	</Query_GetLoanLevelDetailsForActiveForbearance>
+	<Query_GetLoanLevelDetailsForActiveRepayment>
+		SELECT top 100 ll.*,ptr.due_amount FROM MelloServETL.dbo.LoanLevel ll
+		join promise_to_repay ptr on ptr.loan_number= ll.loan_number
+		join LoanTransaction lt on ll.loan_number=lt.loan_number
+		WHERE repay_plan_type in ('41','43','20','26','29','23')
+		AND repay_plan_status_code in ('A')
+		and zone='ZONECODE'
+		and first_principal_balance GREATER_THEN 0
+		and ISNULL(drafting_indicator,'N')='N'
+		and LoanTransactionID=(select top(1) MAX(LoanTransactionID) USER_PROFILE_CHECK
+		from MelloServETL.dbo.LoanTransaction lt where lt.loan_number=ll.loan_number)
+		and consumer_indicator_code is null and ll.loan_number=lt.loan_number
+		ORDER BY lt.LoanTransactionID desc, NEWID()
+	</Query_GetLoanLevelDetailsForActiveRepayment>
+	<Query_GetLoanLevelDetailsForActiveModificationTrial>
+		select distinct top 100 * from [dbo].[LoanLevel] ll
+		inner join [dbo].[ref_ld_valid_values] rf on  rf.code = ll.repay_plan_type
+		where ll.process_stop_code = '9'
+		and ll.repay_plan_status_code = 'A'
+		and ll.man_code = 'L'
+		and rf.code_group = 'Modification Trial'
+		and ll.repay_plan_status_code is not null
+		and ll.process_stop_code='9'
+		and ll.mod_trial_system_changes='0'
+		and ll.bad_check_stop_code='0'
+		and ll.foreclosure_stop_code='0'
+		and ll. pif_stop_code='0'
+		and ISNULL(ll.drafting_indicator,'N')='N'
+		and zone='ZONECODE' USER_PROFILE_CHECK
+	</Query_GetLoanLevelDetailsForActiveModificationTrial>
+	<Query_GetLoanLevelDetailsForBrokenOrDeletedModificationTrial>
+		select top 100 *
+		from [dbo].[LoanLevel] ll  join [dbo].[ref_ld_valid_values] rf on  rf.code = ll.repay_plan_type
+		where ll.process_stop_code = 'D'
+		and ll.repay_plan_status_code in ('B','D')
+		and ll.man_code = 'L'
+		and rf.code_group in ('Modification Trial')
+		and ll.next_payment_due_date LESS_THEN getdate()
+		and ISNULL(ll.drafting_indicator,'N')='N'
+		and zone='ZONECODE' USER_PROFILE_CHECK
+	</Query_GetLoanLevelDetailsForBrokenOrDeletedModificationTrial>
+
+	<Query_GetLoanLevelDetailsForEligibleOTPPrepaid>
+		SELECT top 100 * FROM LoanLevel
+		WHERE days_past_due_status = 'On-time'
+		AND last_modified_date LESS_THEN_EQUALTO DATEADD(DAY, -2, CAST(GETDATE() AS DATE))
+		AND is_active = 1
+		AND process_stop_code = '0'
+		AND bad_check_stop_code = '0'
+		AND foreclosure_stop_code = '0'
+		AND pif_stop_code = '0'
+		AND delinquent_payment_count LESS_THEN '3'
+		AND next_payment_due_date GREATER_THEN_EQUALTO DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()) + 2, 0)
+		AND next_payment_due_date LESS_THEN DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()) + 3, 0)
+		AND (drafting_indicator is null OR drafting_indicator = 'N')
+		AND first_principal_balance > 5000
+		AND client_number = 'P2KL'
+		AND IsDeleted=0
+		AND consumer_indicator_code IS NULL USER_PROFILE_CHECK
+		AND ZONE = 'ZONECODE'
+		ORDER BY next_payment_due_date DESC
+	</Query_GetLoanLevelDetailsForEligibleOTPPrepaid>
+
+	<Query_GetLoanLevelDetailsForEligibleOTPPrepaidOptOut>
+		SELECT top 100 * FROM LoanLevel
+		WHERE days_past_due_status = 'On-time'
+		AND last_modified_date LESS_THEN_EQUALTO DATEADD(DAY, -2, CAST(GETDATE() AS DATE))
+		AND is_active = 1
+		AND process_stop_code = '0'
+		AND bad_check_stop_code = '0'
+		AND foreclosure_stop_code = '0'
+		AND pif_stop_code = '0'
+		AND delinquent_payment_count LESS_THEN '3'
+		AND next_payment_due_date GREATER_THEN_EQUALTO DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()) + 2, 0)
+		AND next_payment_due_date LESS_THEN DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()) + 3, 0)
+		AND (drafting_indicator is null OR drafting_indicator = 'N')
+		AND first_principal_balance > 5000
+		AND client_number = 'P2KL'
+		AND IsDeleted=0
+		AND consumer_indicator_code IS NULL
+		AND opt_out_stop_code = 'J' USER_PROFILE_CHECK
+		AND ZONE = 'ZONECODE'
+		ORDER BY next_payment_due_date DESC
+	</Query_GetLoanLevelDetailsForEligibleOTPPrepaidOptOut>
+
+	<Query_GetLoanLevelDetailsForEligibleOTPOntime>
+		SELECT top 100 * FROM LoanLevel
+		WHERE days_past_due_status = 'On-time'
+		AND last_modified_date LESS_THEN_EQUALTO DATEADD(DAY, -2, CAST(GETDATE() AS DATE))
+		AND is_active = 1
+		AND process_stop_code = '0'
+		AND bad_check_stop_code = '0'
+		AND foreclosure_stop_code = '0'
+		AND pif_stop_code = '0'
+		AND delinquent_payment_count LESS_THEN '3'
+		AND next_payment_due_date GREATER_THEN_EQUALTO DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()) + 1, 0)
+		AND next_payment_due_date LESS_THEN DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()) + 2, 0)
+		AND (drafting_indicator is null OR drafting_indicator = 'N')
+		AND first_principal_balance > 5000
+		AND client_number = 'P2KL'
+		AND IsDeleted=0
+		AND consumer_indicator_code IS NULL USER_PROFILE_CHECK
+		AND ZONE = 'ZONECODE'
+		ORDER BY next_payment_due_date DESC
+	</Query_GetLoanLevelDetailsForEligibleOTPOntime>
+
+	<Query_GetLoanLevelDetailsForEligibleOTPOntimeOptOut>
+		SELECT top 100 * FROM LoanLevel
+		WHERE days_past_due_status = 'On-time'
+		AND last_modified_date LESS_THEN_EQUALTO DATEADD(DAY, -2, CAST(GETDATE() AS DATE))
+		AND is_active = 1
+		AND process_stop_code = '0'
+		AND bad_check_stop_code = '0'
+		AND foreclosure_stop_code = '0'
+		AND pif_stop_code = '0'
+		AND delinquent_payment_count LESS_THEN '3'
+		AND next_payment_due_date GREATER_THEN_EQUALTO DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()) + 1, 0)
+		AND next_payment_due_date LESS_THEN DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()) + 2, 0)
+		AND (drafting_indicator is null OR drafting_indicator = 'N')
+		AND first_principal_balance > 5000
+		AND client_number = 'P2KL'
+		AND IsDeleted=0
+		AND consumer_indicator_code IS NULL
+		AND opt_out_stop_code = 'J' USER_PROFILE_CHECK
+		AND ZONE = 'ZONECODE'
+		ORDER BY next_payment_due_date DESC
+	</Query_GetLoanLevelDetailsForEligibleOTPOntimeOptOut>
+
+	<Query_GetLoanLevelDetailsForEligibleOTPPastDue>
+		SELECT top 100 * FROM LoanLevel WHERE is_active = 1
+		AND process_stop_code = '0'
+		AND bad_check_stop_code = '0'
+		AND foreclosure_stop_code='0'
+		AND pif_stop_code='0'
+		AND delinquent_payment_count = '1'
+		AND days_past_due_status = 'Past Due'
+		AND first_principal_balance > 5000
+		AND (drafting_indicator is null OR drafting_indicator = 'N')
+		AND client_number = 'P2KL'
+		AND IsDeleted=0
+		AND consumer_indicator_code is null
+		AND zone = 'ZONECODE' USER_PROFILE_CHECK
+		ORDER BY next_payment_due_date DESC
+	</Query_GetLoanLevelDetailsForEligibleOTPPastDue>
+
+	<Query_GetLoanLevelDetailsForEligibleOTPPastDueOptOut>
+		SELECT top 100 * FROM LoanLevel WHERE is_active = 1
+		AND process_stop_code = '0'
+		AND bad_check_stop_code = '0'
+		AND foreclosure_stop_code='0'
+		AND pif_stop_code='0'
+		AND delinquent_payment_count = '1'
+		AND days_past_due_status = 'Past Due'
+		AND first_principal_balance > 5000
+		AND (drafting_indicator is null OR drafting_indicator = 'N')
+		AND client_number = 'P2KL'
+		AND IsDeleted=0
+		AND consumer_indicator_code is null
+		AND zone = 'ZONECODE'
+		AND opt_out_stop_code = 'J' USER_PROFILE_CHECK
+		ORDER BY next_payment_due_date DESC
+	</Query_GetLoanLevelDetailsForEligibleOTPPastDueOptOut>
+
+	<Query_GetLoanLevelDetailsForEligibleOTPDelinquent>
+		SELECT top 100 * FROM LoanLevel WHERE is_active = 1
+		and process_stop_code = '0'
+		and bad_check_stop_code = '0'
+		and foreclosure_stop_code='0'
+		and pif_stop_code='0'
+		and delinquent_payment_count = 2
+		and days_past_due_status = 'Delinquent'
+		and escrow_balance != 0
+		and first_principal_balance > 5000
+		and client_number = 'P2KL'
+		and IsDeleted=0
+		and (repay_plan_status_code not in ('B','D') or repay_plan_status_code is null)
+		and consumer_indicator_code is null
+		and zone = 'ZONECODE'
+		USER_PROFILE_CHECK
+		ORDER BY next_payment_due_date DESC
+	</Query_GetLoanLevelDetailsForEligibleOTPDelinquent>
+
+	<Query_GetLoanLevelDetailsForEligibleOTPDelinquentOptOut>
+		SELECT top 100 * FROM LoanLevel WHERE is_active = 1
+		and process_stop_code = '0'
+		and bad_check_stop_code = '0'
+		and foreclosure_stop_code='0'
+		and pif_stop_code='0'
+		and delinquent_payment_count = 2
+		and days_past_due_status = 'Delinquent'
+		and escrow_balance != 0
+		and first_principal_balance > 5000
+		and client_number = 'P2KL'
+		and IsDeleted=0
+		and consumer_indicator_code is null
+		and zone = 'ZONECODE'
+		AND opt_out_stop_code = 'J' USER_PROFILE_CHECK
+		ORDER BY next_payment_due_date DESC
+	</Query_GetLoanLevelDetailsForEligibleOTPDelinquentOptOut>
+
+	<Query_GetLoanLevelDetailsForEligibleHelocAutopayDelinquent>
+		SELECT top 100 * FROM [MelloServETL].[dbo].[LoanLevel] WHERE is_active = 1
+		and delinquent_payment_count = 2
+		and days_past_due_status = 'Delinquent'
+		AND ISNULL(consumer_indicator_code,'') != ''
+		AND process_stop_code = '0'
+		AND pif_stop_code = '0'
+		AND bad_check_stop_code = '0'
+		AND foreclosure_stop_code = '0'
+		AND opt_out_stop_code is null
+		AND first_principal_balance > 5000
+		AND (drafting_indicator is null OR drafting_indicator = 'N')
+		and zone = 'ZONECODE' USER_PROFILE_CHECK
+		ORDER BY next_payment_due_date DESC
+	</Query_GetLoanLevelDetailsForEligibleHelocAutopayDelinquent>
+	<Query_GetLoanLevelDetailsForEligibleHelocAutopayPastDue>
+		SELECT top 100 * FROM [MelloServETL].[dbo].[LoanLevel] WHERE is_active = 1
+		AND next_payment_due_date GREATER_THEN_EQUALTO DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()), 0)
+		AND next_payment_due_date LESS_THEN DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()) + 1, 0)
+		AND ISNULL(consumer_indicator_code,'') != ''
+		AND process_stop_code = '0'
+		AND pif_stop_code = '0'
+		AND bad_check_stop_code = '0'
+		AND foreclosure_stop_code = '0'
+		AND opt_out_stop_code is null
+		AND first_principal_balance > 5000
+		AND (drafting_indicator is null OR drafting_indicator = 'N')
+		and zone = 'ZONECODE' USER_PROFILE_CHECK
+		ORDER BY next_payment_due_date DESC
+	</Query_GetLoanLevelDetailsForEligibleHelocAutopayPastDue>
+	<Query_GetLoanLevelDetailsForEligibleHelocAutopayPastDueWithoutFee>
+		SELECT top 100 * FROM [MelloServETL].[dbo].[LoanLevel] WHERE is_active = 1
+		AND next_payment_due_date GREATER_THEN_EQUALTO DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()), 0)
+		AND next_payment_due_date LESS_THEN DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()) + 1, 0)
+		AND ISNULL(consumer_indicator_code,'') != ''
+		AND process_stop_code = '0'
+		AND pif_stop_code = '0'
+		AND bad_check_stop_code = '0'
+		AND foreclosure_stop_code = '0'
+		AND opt_out_stop_code is null
+		AND accrued_late_charge_amount = 0
+		AND first_principal_balance > 5000
+		AND (drafting_indicator is null OR drafting_indicator = 'N')
+		and zone = 'ZONECODE' USER_PROFILE_CHECK
+		ORDER BY next_payment_due_date DESC
+	</Query_GetLoanLevelDetailsForEligibleHelocAutopayPastDueWithoutFee>
+	<Query_GetLoanLevelDetailsForEligibleHelocAutopayOntime>
+		SELECT top 100 * FROM [MelloServETL].[dbo].[LoanLevel] WHERE is_active = 1
+		AND next_payment_due_date GREATER_THEN_EQUALTO DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()) + 1, 0)
+		AND next_payment_due_date LESS_THEN DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()) + 2, 0)
+		AND ISNULL(consumer_indicator_code,'') != ''
+		AND process_stop_code in ('0', '1', '7', 'C', 'E', 'G', 'I', 'Q', 'S', 'T', 'Y')
+		AND (investor_id in  ('L10', 'W10') OR investor_id like 'C%%')
+		AND pif_stop_code = '0'
+		AND bad_check_stop_code = '0'
+		AND foreclosure_stop_code = '0'
+		AND opt_out_stop_code is null
+		AND first_principal_balance > 5000
+		AND (drafting_indicator is null OR drafting_indicator = 'N')
+		and zone = 'ZONECODE' USER_PROFILE_CHECK
+		ORDER BY next_payment_due_date DESC
+	</Query_GetLoanLevelDetailsForEligibleHelocAutopayOntime>
+
+	<Query_GetLoanLevelDetailsForEligibleHelocAutopayPrepaidOneMonth>
+		SELECT top 100 * FROM [MelloServETL].[dbo].[LoanLevel] WHERE is_active = 1
+		AND next_payment_due_date GREATER_THEN_EQUALTO DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()) + 2, 0)
+		AND next_payment_due_date LESS_THEN DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()) + 3, 0)
+		AND ISNULL(consumer_indicator_code,'') != ''
+		AND process_stop_code = '0'
+		AND pif_stop_code = '0'
+		AND bad_check_stop_code = '0'
+		AND foreclosure_stop_code = '0'
+		AND opt_out_stop_code is null
+		AND first_principal_balance > '0'
+		AND (drafting_indicator is null OR drafting_indicator = 'N')
+		and zone = 'ZONECODE' USER_PROFILE_CHECK
+		ORDER BY next_payment_due_date DESC
+	</Query_GetLoanLevelDetailsForEligibleHelocAutopayPrepaidOneMonth>
+	<Query_GetLoanLevelDetailsForEligibleHelocAutopayDeleteScenarioPastDue>
+		SELECT top 100 l.* FROM [MelloServETL].[dbo].[LoanLevel] l inner join PaymentSetup p on l.loan_number=p.LoanNumber
+		WHERE is_active = 1
+		AND next_payment_due_date GREATER_THEN_EQUALTO DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()), 0)
+		AND next_payment_due_date LESS_THEN DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()) + 1, 0)
+		AND process_stop_code = '0'
+		AND pif_stop_code = '0'
+		AND bad_check_stop_code = '0'
+		AND foreclosure_stop_code = '0'
+		AND ISNULL(consumer_indicator_code,'') != ''
+		AND [cls_product_code] is not null
+		AND drafting_indicator = 'Y'
+		AND zone = 'ZONECODE'
+		AND paymentstatus='Processing'
+		AND LoanPaymentTypeFrequency='Monthly'
+		AND RecPaymentSetUpDate LESS_THEN DATEADD(day,-1,GETDATE())
+		AND PaymentDate GREATER_THEN_EQUALTO DATEADD(day,2,GETDATE())
+		ORDER BY next_payment_due_date DESC
+	</Query_GetLoanLevelDetailsForEligibleHelocAutopayDeleteScenarioPastDue>
+	<Query_GetLoanLevelDetailsForEligibleHelocAutopayDeleteScenarioOntime>
+		SELECT top 100 l.* FROM [MelloServETL].[dbo].[LoanLevel] l inner join PaymentSetup p on l.loan_number=p.LoanNumber
+		WHERE is_active = 1
+		AND next_payment_due_date GREATER_THEN_EQUALTO DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()) + 1, 0)
+		AND next_payment_due_date LESS_THEN DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()) + 2, 0)
+		AND process_stop_code = '0'
+		AND pif_stop_code = '0'
+		AND bad_check_stop_code = '0'
+		AND foreclosure_stop_code = '0'
+		AND ISNULL(consumer_indicator_code,'') != ''
+		AND [cls_product_code] is not null
+		AND drafting_indicator = 'Y'
+		AND zone = 'ZONECODE'
+		AND paymentstatus='Processing'
+		AND LoanPaymentTypeFrequency='Monthly'
+		AND RecPaymentSetUpDate LESS_THEN DATEADD(day,-1,GETDATE())
+		AND PaymentDate GREATER_THEN_EQUALTO DATEADD(day,2,GETDATE())
+		ORDER BY next_payment_due_date DESC
+	</Query_GetLoanLevelDetailsForEligibleHelocAutopayDeleteScenarioOntime>
+	<Query_GetLoanLevelDetailsForEligibleHelocAutopayDeleteScenarioPrepaid>
+		SELECT top 100 l.* FROM [MelloServETL].[dbo].[LoanLevel] l inner join PaymentSetup p on l.loan_number=p.LoanNumber
+		WHERE is_active = 1
+		AND next_payment_due_date GREATER_THEN_EQUALTO DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()) + 2, 0)
+		AND next_payment_due_date LESS_THEN DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()) + 3, 0)
+		AND process_stop_code = '0'
+		AND pif_stop_code = '0'
+		AND bad_check_stop_code = '0'
+		AND foreclosure_stop_code = '0'
+		AND ISNULL(consumer_indicator_code,'') != ''
+		AND [cls_product_code] is not null
+		AND drafting_indicator = 'Y'
+		AND zone = 'ZONECODE'
+		AND paymentstatus='Processing'
+		AND LoanPaymentTypeFrequency='Monthly'
+		AND RecPaymentSetUpDate LESS_THEN DATEADD(day,-1,GETDATE())
+		AND PaymentDate GREATER_THEN_EQUALTO DATEADD(day,2,GETDATE())
+		ORDER BY next_payment_due_date DESC
+	</Query_GetLoanLevelDetailsForEligibleHelocAutopayDeleteScenarioPrepaid>
+	<Query_GetActiveLoanForNonPayments>
+		SELECT top 100 l.* FROM [MelloServETL].[dbo].[LoanLevel] l
+		WHERE is_active = 1
+		AND ZONE = 'ZONECODE'
+	</Query_GetActiveLoanForNonPayments>
+	<Query_GetLoanLevelDetailsForPaperless>
+		select * from LoanLevel ll
+		INNER JOIN MelloServ.MelloServDomain.LoanInformation li on li.LoanNumber=ll.loan_number
+		where is_active=1
+		and is_paid_in_full =0
+		AND ZONE = 'ZONECODE'
+		AND li.InhousePaperlessUpdateDate is null
+		and (investor_id like 'F%'
+		or investor_id like 'H%'
+		or investor_id like 'G%'
+		or investor_id like 'R%'
+		or investor_id like 'L%'
+		or investor_id like 'C%'
+		or investor_id like 'W%')
+	</Query_GetLoanLevelDetailsForPaperless>
+	<Query_GetHelocLoanLevelDetailsforPaperless>
+		select * from LoanLevel ll
+		INNER JOIN MelloServ.MelloServDomain.LoanInformation li on li.LoanNumber=ll.loan_number
+		where is_active=1
+		and is_paid_in_full =0
+		AND ZONE = 'ZONECODE'
+		AND li.InhousePaperlessUpdateDate is null
+		and [consumer_indicator_code] is not null
+		and [cls_product_code] is not null
+		and is_paid_in_full =0
+		and (investor_id like 'F%'
+		or investor_id like 'H%'
+		or investor_id like 'G%'
+		or investor_id like 'R%'
+		or investor_id like 'L%'
+		or investor_id like 'C%'
+		or investor_id like 'W%')
+	</Query_GetHelocLoanLevelDetailsforPaperless>
+	<Query_GetLoansLevelDetailsForPayoffQuote>
+		SELECT * FROM [MelloServETL].[dbo].[LoanLevel] WHERE
+		is_active = 1 
+		AND ZONE = 'ZONECODE'
+		AND product_type not in ('FHA','USDA/RHS') 
+		AND (foreclosure_status_code IS NULL OR foreclosure_status_code NOT IN ('A', 'S')) 
+		AND days_past_due_status not in ('delinquent') 
+		AND (prepay_penalty_header_id is null and prepay_penalty_indicator = 'N')
+	</Query_GetLoansLevelDetailsForPayoffQuote>
+	<Query_GetLoansLevelDetailsForSMCVerification>
+		SELECT top 100 * FROM LoanLevel
+		WHERE days_past_due_status = 'On-time'
+		AND last_modified_date LESS_THEN_EQUALTO DATEADD(DAY, -2, CAST(GETDATE() AS DATE))
+		AND is_active = 1
+		AND process_stop_code = '0'
+		AND bad_check_stop_code = '0'
+		AND foreclosure_stop_code = '0'
+		AND pif_stop_code = '0'
+		AND delinquent_payment_count LESS_THEN '3'
+		AND next_payment_due_date GREATER_THEN_EQUALTO DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()), 0)
+		AND next_payment_due_date LESS_THEN DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()) + 4, 0)
+		AND (drafting_indicator is null OR drafting_indicator = 'N')
+		AND client_number = 'P2KL'
+		AND IsDeleted=0
+		AND consumer_indicator_code IS NULL USER_PROFILE_CHECK
+		AND ZONE = 'ZONECODE'
+		ORDER BY next_payment_due_date DESC
+	</Query_GetLoansLevelDetailsForSMCVerification>
+	<Query_ExistingOTPSetupForTimeSensitiveCheck>
+		SELECT top 100 * from [MelloServETL].[dbo].LoanLevel ll
+		join [MelloServETL].[dbo].[PaymentSetup] ps on ll.loan_number=ps.LoanNumber
+		where CONVERT(DATE,ps.PaymentDate) =  CONVERT(DATE,cast(GETDATE() AT TIME ZONE 'UTC' AT TIME ZONE 'Central Standard Time' as DATETIME2))
+		and ps.PaymentStatus = 'Processing'
+		and ps.Channel in ('Servicing Portal','IVR')
+		and ps.LoanPaymentTypeFrequency='OneTime'
+		AND ZONE = 'ZONECODE'
+	</Query_ExistingOTPSetupForTimeSensitiveCheck>
+	<Query_IneligiblePayoffRequestDPALoans>
+		SELECT top 100 * from [MelloServETL].[dbo].LoanLevel WHERE
+		is_active = 1
+		AND product_type not in ('FHA','USDA/RHS')
+		AND (foreclosure_status_code IS NULL OR foreclosure_status_code NOT IN ('A', 'S'))
+		AND days_past_due_status not in ('delinquent')
+		AND  prepay_penalty_header_id ='DPA'
+		and prepay_penalty_indicator ='Y'
+		and consumer_indicator_code is Null
+		and [cls_product_code] is not null
+		AND ZONE = 'ZONECODE'
+	</Query_IneligiblePayoffRequestDPALoans>
+	<Query_IneligiblePayoffRequestInactiveLoans>
+		SELECT top 100 * from [MelloServETL].[dbo].LoanLevel WHERE
+		is_active != 1
+		AND product_type not in ('FHA','USDA/RHS')
+		AND (foreclosure_status_code IS NULL OR foreclosure_status_code NOT IN ('A', 'S'))
+		AND days_past_due_status not in ('delinquent')
+		AND prepay_penalty_indicator not in ('Y')
+		and consumer_indicator_code is Null
+		and [cls_product_code] is not null
+		AND  (prepay_penalty_header_id not in ('DPA') OR prepay_penalty_header_id is null)
+		AND ZONE = 'ZONECODE'
+	</Query_IneligiblePayoffRequestInactiveLoans>
+	<Query_IneligiblePayoffRequestFHA_RHSLoans>
+		SELECT top 100 * from [MelloServETL].[dbo].LoanLevel WHERE
+		is_active = 1
+		and product_type  in ('FHA','USDA/RHS')
+		AND foreclosure_status_code NOT IN ('A', 'S')
+		AND days_past_due_status not in ('delinquent')
+		AND prepay_penalty_indicator not in ('Y')
+		AND  (prepay_penalty_header_id not in ('DPA') OR prepay_penalty_header_id is null)
+		and consumer_indicator_code is Null
+		and [cls_product_code] is not null
+		AND ZONE = 'ZONECODE'
+	</Query_IneligiblePayoffRequestFHA_RHSLoans>
+	<Query_IneligiblePayoffRequestForeclosureASLoans>
+		SELECT top 100 * from [MelloServETL].[dbo].LoanLevel WHERE
+		is_active = 1
+		and product_type not in ('FHA','USDA/RHS')
+		AND foreclosure_status_code  IN ('A', 'S')
+		AND days_past_due_status not in ('delinquent')
+		AND prepay_penalty_indicator not in ('Y')
+		AND  (prepay_penalty_header_id not in ('DPA') OR prepay_penalty_header_id is null)
+		and consumer_indicator_code is Null
+		and [cls_product_code] is not null
+		AND ZONE = 'ZONECODE'
+	</Query_IneligiblePayoffRequestForeclosureASLoans>
+	<Query_IneligiblePayoffRequestDelinquentLoans>
+		SELECT top 100 * from [MelloServETL].[dbo].LoanLevel WHERE
+		is_active = 1
+		AND product_type not in ('FHA','USDA/RHS')
+		AND (foreclosure_status_code IS NULL OR foreclosure_status_code NOT IN ('A', 'S'))
+		AND days_past_due_status in ('delinquent')
+		AND prepay_penalty_indicator not in ('Y')
+		AND  (prepay_penalty_header_id not in ('DPA') OR prepay_penalty_header_id is null)
+		and consumer_indicator_code is Null
+		and [cls_product_code] is not null
+		AND ZONE = 'ZONECODE'
+	</Query_IneligiblePayoffRequestDelinquentLoans>
+	<Query_IneligiblePayoffRequestVALoans>
+		SELECT top 100 * from [MelloServETL].[dbo].LoanLevel WHERE
+		is_active = 1
+		AND product_type not in ('FHA','USDA/RHS')
+		AND (foreclosure_status_code IS NULL OR foreclosure_status_code NOT IN ('A', 'S'))
+		AND days_past_due_status not in ('delinquent')
+		AND loss_mitigation_indicator ='P'
+		AND product_type = 'VA'
+		AND prepay_penalty_indicator not in ('Y')
+		AND  (prepay_penalty_header_id not in ('DPA') OR prepay_penalty_header_id is null)
+		and consumer_indicator_code is Null
+		and [cls_product_code] is not null
+		AND ZONE = 'ZONECODE'
+	</Query_IneligiblePayoffRequestVALoans>
+	<Query_IneligiblePayoffRequestPIFLoans>
+		SELECT top 100 * from [MelloServETL].[dbo].LoanLevel where
+		is_active = 1
+		AND product_type not in ('FHA','USDA/RHS')
+		AND (foreclosure_status_code IS NULL OR foreclosure_status_code NOT IN ('A', 'S'))
+		AND days_past_due_status not in ('delinquent')
+		and loss_mitigation_indicator not in ('P' )
+		and product_type not in('VA')
+		AND prepay_penalty_indicator not in ('Y')
+		AND  (prepay_penalty_header_id not in ('DPA') OR prepay_penalty_header_id is null)
+		and pif_stop_code = '1'
+		and consumer_indicator_code is Null
+		and [cls_product_code] is not null
+		AND ZONE = 'ZONECODE'
+	</Query_IneligiblePayoffRequestPIFLoans>
+	<Query_IneligiblePayoffRequestTransferredLoans>
+		SELECT top 100 * from [MelloServETL].[dbo].LoanLevel WHERE
+		(pif_stop_code = 3 or is_transferred_to_third_party = 1)
+		and consumer_indicator_code is Null
+		and [cls_product_code] is not null
+		AND ZONE = 'ZONECODE'
+	</Query_IneligiblePayoffRequestTransferredLoans>
+	<Query_OTPEligibleHELOCLoans>
+		SELECT TOP 100 *
+		FROM [MelloServETL].[dbo].[LoanLevel] where
+		[consumer_indicator_code] is not null
+		and [cls_product_code] is not null
+		and delinquent_payment_count LESS_THEN 3
+		and is_active=1
+		and foreclosure_stop_code not in  ('1','2','3','4','5','6')
+		and bad_check_stop_code not in  ('1','4','6')
+		and pif_stop_code not in ('1','2', '3','4', '5', '6')
+		and process_stop_code not in  ('2', '3', '5', '8', '9', 'B', 'F', 'H', 'L', 'M', 'N', 'P', 'R', 'U', 'W', '!')
+		and first_principal_balance>0
+		and days_past_due_status ='On-Time'
+		and drafting_indicator ='N'
+		and zone = 'ZONECODE'
+	</Query_OTPEligibleHELOCLoans>
+	<Query_ExistingHelocOTPSetupForTimeSensitiveCheck>
+		SELECT TOP 100 *
+		FROM [MelloServETL].[dbo].[LoanLevel] ll
+		join [MelloServETL].[dbo].[PaymentSetup] ps on ll.loan_number=ps.LoanNumber
+		where CONVERT(DATE,ps.PaymentDate) =  CONVERT(DATE,cast(GETDATE() AT TIME ZONE 'UTC' AT TIME ZONE 'Central Standard Time' as DATETIME2))
+		and ps.PaymentStatus = 'Processing'
+		and ps.Channel in ('Servicing Portal','IVR')
+		and ps.LoanPaymentTypeFrequency='OneTime'
+		and [consumer_indicator_code] is not null
+		and [cls_product_code] is not null
+		and is_active=1
+		and zone = 'ZONECODE'
+	</Query_ExistingHelocOTPSetupForTimeSensitiveCheck>
+	<Query_OntimeToPastdue>
+		Select loan_number,delinquent_payment_count,next_payment_due_date,days_past_due_status,
+		total_monthly_payment,principal_interest_amount, tax_and_insurance_amount,escrow_balance,
+		accrued_late_charge_amount,  nsf_fee_balance,other_fees,process_stop_code, foreclosure_status_code,bad_check_stop_code,pif_stop_code,zone,borrower_email,property_zip,borrower_ssn
+		FROM
+		[MelloServETL].[dbo].[LoanLevel]
+		where
+		is_active =1
+		and foreclosure_stop_code ='0'
+		and process_stop_code ='0'
+		and bad_check_stop_code ='0'
+		and pif_stop_code='0'
+		and consumer_indicator_code is Null
+		and [cls_product_code] is not null
+		and (repay_plan_status_code not in ('B','D') or repay_plan_status_code is null)
+		and next_payment_due_date = CONVERT(DATE,cast(DATEADD(month,datediff(month,0,getdate()),1) AT TIME ZONE 'UTC' AT TIME ZONE 'Central Standard Time' as DATETIME2))
+		and zone = 'ZONECODE'
+	</Query_OntimeToPastdue>
+	<Query_OntimeToPastdueHeloc>
+		SELECT TOP 100 *
+		FROM [MelloServETL].[dbo].[LoanLevel] where
+		[consumer_indicator_code] is not null
+		AND [cls_product_code] is not null
+		AND delinquent_payment_count LESS_THEN 3
+		AND is_active=1
+		AND foreclosure_stop_code not in  ('1','2','3','4','5','6')
+		AND bad_check_stop_code not in  ('1','4','6')
+		AND pif_stop_code not in ('1','2', '3','4', '5', '6')
+		AND process_stop_code not in  ('2', '3', '5', '8', '9', 'B', 'F', 'H', 'L', 'M', 'N', 'P', 'R', 'U', 'W', '!')
+		AND first_principal_balance>0
+		and (repay_plan_status_code not in ('B','D') or repay_plan_status_code is null)
+		AND next_payment_due_date = CONVERT(DATE,cast(DATEADD(month,datediff(month,0,getdate()),1) AT TIME ZONE 'UTC' AT TIME ZONE 'Central Standard Time' as DATETIME2))
+		AND zone = 'ZONECODE'
+	</Query_OntimeToPastdueHeloc>
+	<Query_MortgageAutopayPrompt>
+		SELECT next_payment_due_date npdd, drafting_indicator, zone, borrower_ssn,property_zip, * FROM [MelloServETL].[dbo].[LoanLevel] WHERE is_active = 1
+		AND next_payment_due_date GREATER_THEN_EQUALTO DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()) + 1, 0)
+		AND next_payment_due_date LESS_THEN DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()) + 3, 0)
+		AND process_stop_code = '0'
+		AND pif_stop_code = '0'
+		AND bad_check_stop_code = '0'
+		AND foreclosure_stop_code = '0'
+		AND opt_out_stop_code is null
+		AND [consumer_indicator_code] is Null
+		AND [cls_product_code] is not null
+		AND (drafting_indicator is null OR drafting_indicator = 'N')
+		AND LEFT(investor_id, 1) IN ('F', 'H', 'G', 'E', 'R', 'L', 'P')
+		AND zone = 'ZONECODE'
+		and isnull(drafting_indicator,'N')='N'
+		ORDER BY next_payment_due_date DESC
+	</Query_MortgageAutopayPrompt>
+	<Query_MortgageOTPOntimeWithSubsidy>
+		SELECT TOP 100 * FROM LoanLevel where
+		is_active = 1
+		AND process_stop_code = '0'
+		AND bad_check_stop_code = '0'
+		AND foreclosure_stop_code = '0'
+		AND pif_stop_code = '0'
+		AND replacement_reserve_balance  GREATER_THEN 0.00
+		AND replacement_reserve_amount LESS_THEN 0.00
+		AND next_payment_due_date LESS_THEN DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()) , 0)
+		AND (drafting_indicator is null OR drafting_indicator = 'N')
+		AND consumer_indicator_code IS NULL
+		and repay_plan_status_code is null
+		AND next_payment_due_date=subsidy_first_due_date
+		AND ZONE = 'ZONECODE'
+		ORDER BY next_payment_due_date DESC
+	</Query_MortgageOTPOntimeWithSubsidy>
+	<Query_ServisBotEligibleLoans>
+		SELECT TOP 10 *
+		FROM [MelloServETL].[dbo].[LoanLevel] where is_active=1
+		and pif_stop_code in (1,0,null)
+		and process_stop_code in ( '0', 'P', 'T')
+		and days_past_due_status in ('Past Due' ,'On-Time')
+		AND ZONE = 'ZONECODE'
+	</Query_ServisBotEligibleLoans>
+
+	<Query_ActiveHelocDrawsLoans>
+		SELECT TOP 100 LL.*
+		FROM [MelloServETL].[dbo].[LoanLevel] LL
+		WHERE LL.is_active = 1
+		AND LL.foreclosure_stop_code = '0'
+		AND LL.process_stop_code = '0'
+		AND LL.bad_check_stop_code = '0'
+		AND LL.pif_stop_code = '0'
+		AND LL.is_paid_in_full = '0'
+		AND LL.is_transferred_to_third_party = '0'
+		AND LL.disbursement_stop_code = '0'
+		AND DATEDIFF(DAY, GETDATE(), LL.origination_date) LESS_THEN 90
+		AND LL.delinquent_payment_count = 0
+		AND LL.consumer_indicator_code IS NOT NULL
+		AND LL.cls_product_code IS NOT NULL
+		AND LL.first_principal_balance LESS_THEN LL.original_mortgage_amount
+		AND LL.days_past_due_status IN ('Past Due', 'On-Time')
+		AND LL.zone = 'ZONECODE'
+		AND NOT EXISTS (
+		SELECT *
+		FROM [MelloServ].[MelloServHeloc].[DrawRecords] DR
+		WHERE DR.LoanNumber = LL.loan_number
+		)
+		ORDER BY LL.next_payment_due_date DESC;
+	</Query_ActiveHelocDrawsLoans>
+	<Query_HelocLoansWithIneligibleForeclosureStopCodes>
+		SELECT TOP 100 * FROM [MelloServETL].[dbo].[LoanLevel]
+		WHERE is_active = 1
+		AND next_payment_due_date GREATER_THEN_EQUALTO DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()) + 1, 0)
+		and next_payment_due_date LESS_THEN_EQUALTO DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()) + 2, 0)
+		AND [consumer_indicator_code] is not null
+		and [cls_product_code] is not null
+		AND foreclosure_stop_code in ('1','2','3','4','5','6','7','8','9')
+		AND pif_stop_code = '0' AND bad_check_stop_code = '0' AND process_stop_code = '0'
+		AND (drafting_indicator is null OR drafting_indicator = 'N')
+		and first_principal_balance>0 AND ZONE = 'ZONECODE'
+		ORDER BY next_payment_due_date DESC
+	</Query_HelocLoansWithIneligibleForeclosureStopCodes>
+	<Query_HelocLoansWithIneligibleProcessStopCodes>
+		SELECT TOP 100 * FROM [MelloServETL].[dbo].[LoanLevel]
+		WHERE is_active = 1
+		AND next_payment_due_date GREATER_THEN_EQUALTO DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()) + 1, 0)
+		and next_payment_due_date LESS_THEN_EQUALTO DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()) + 2, 0)
+		AND [consumer_indicator_code] is not null
+		and [cls_product_code] is not null
+		AND foreclosure_stop_code = '0'
+		AND pif_stop_code = '0' AND bad_check_stop_code = '0'
+		AND process_stop_code in('2','3','5','8','9','A','B','D','F','H','L','M','N','P','R','U','W','!')
+		AND (drafting_indicator is null OR drafting_indicator = 'N')
+		and first_principal_balance>0 AND ZONE = 'ZONECODE'
+		ORDER BY next_payment_due_date DESC
+	</Query_HelocLoansWithIneligibleProcessStopCodes>
+	<Query_HelocLoansWithIneligibleBadCheckStopCodes>
+		SELECT TOP 100 * FROM [MelloServETL].[dbo].[LoanLevel]
+		WHERE is_active = 1
+		AND next_payment_due_date GREATER_THEN_EQUALTO DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()) + 1, 0)
+		and next_payment_due_date LESS_THEN_EQUALTO DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()) + 2, 0)
+		AND [consumer_indicator_code] is not null
+		and [cls_product_code] is not null
+		AND foreclosure_stop_code = '0'
+		AND pif_stop_code = '0' AND bad_check_stop_code in  ('1','4','6')
+		AND process_stop_code = '0'
+		AND (drafting_indicator is null OR drafting_indicator = 'N')
+		and first_principal_balance>0 AND ZONE = 'ZONECODE'
+		ORDER BY next_payment_due_date DESC
+	</Query_HelocLoansWithIneligibleBadCheckStopCodes>
+	<Query_HelocLoansWithIneligiblePIFStopCodes>
+		SELECT TOP 100 * FROM [MelloServETL].[dbo].[LoanLevel]
+		WHERE is_active = 1
+		AND next_payment_due_date GREATER_THEN_EQUALTO DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()) + 1, 0)
+		and next_payment_due_date LESS_THEN_EQUALTO DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()) + 2, 0)
+		AND [consumer_indicator_code] is not null
+		and [cls_product_code] is not null
+		AND foreclosure_stop_code = '0'
+		AND pif_stop_code in ('1','2','3','4','5','6') AND bad_check_stop_code = '0'
+		AND process_stop_code = '0'
+		AND (drafting_indicator is null OR drafting_indicator = 'N')
+		and first_principal_balance>0 
+		AND ZONE = 'ZONECODE'
+		ORDER BY next_payment_due_date DESC
+	</Query_HelocLoansWithIneligiblePIFStopCodes>
+	<Query_HelocLoansWithIneligibleInvCodes>
+		SELECT TOP 100 * FROM [MelloServETL].[dbo].[LoanLevel]
+		WHERE is_active = 1
+		AND next_payment_due_date GREATER_THEN_EQUALTO DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()) + 1, 0)
+		and next_payment_due_date LESS_THEN_EQUALTO DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()) + 2, 0)
+		AND [consumer_indicator_code] is not null
+		and [cls_product_code] is not null
+		AND foreclosure_stop_code = '0'
+		AND (investor_id not in ('L10','W10') and investor_id not like 'C%')
+		AND process_stop_code = '0'
+		AND (drafting_indicator is null OR drafting_indicator = 'N')
+		and first_principal_balance>0
+		AND ZONE = 'ZONECODE'
+		ORDER BY next_payment_due_date DESC
+	</Query_HelocLoansWithIneligibleInvCodes>
+	<Query_HelocLoansWithPrepay2Months>
+		SELECT top 100 * FROM [MelloServETL].[dbo].[LoanLevel] WHERE is_active = 1
+		AND next_payment_due_date GREATER_THEN DATEADD(MONTH,2, GETDATE())
+		AND ISNULL(consumer_indicator_code,'') != ''
+		AND process_stop_code in ('0', '1', '7', 'C', 'E', 'G', 'I', 'Q', 'S', 'T', 'Y')
+		AND (investor_id in  ('L10', 'W10') OR investor_id like 'C%')
+		AND pif_stop_code = '0'
+		AND bad_check_stop_code = '0'
+		AND foreclosure_stop_code = '0'
+		AND opt_out_stop_code is null
+		AND first_principal_balance > 5000
+		AND (drafting_indicator is null OR drafting_indicator = 'N')
+		AND ZONE = 'ZONECODE'
+		ORDER BY next_payment_due_date DESC
+	</Query_HelocLoansWithPrepay2Months>
+	<Query_HelocLoansWithDelinquentCountMorethanTwo>
+		SELECT top 100 * FROM [MelloServETL].[dbo].[LoanLevel] WHERE is_active = 1
+		AND delinquent_payment_count >= 2
+		AND ISNULL(consumer_indicator_code,'') != ''
+		AND process_stop_code in ('0', '1', '7', 'C', 'E', 'G', 'I', 'Q', 'S', 'T', 'Y')
+		AND (investor_id in  ('L10', 'W10') OR investor_id like 'C%')
+		AND pif_stop_code = '0'
+		AND bad_check_stop_code = '0'
+		AND foreclosure_stop_code = '0'
+		AND opt_out_stop_code is null
+		AND first_principal_balance > 5000
+		AND (drafting_indicator is null OR drafting_indicator = 'N')
+		AND ZONE = 'ZONECODE'
+		ORDER BY next_payment_due_date DESC
+	</Query_HelocLoansWithDelinquentCountMorethanTwo>
+	<Query_FMExistingAutopaySetup>
+		SELECT ll.*,ps.* FROM [MelloServETL].[dbo].[LoanLevel] ll
+		join [MelloServETL].[dbo].[PaymentSetup] ps on ll.loan_number=ps.LoanNumber
+		where is_active=1
+		AND next_payment_due_date GREATER_THEN_EQUALTO DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()) + 0, 0)
+		AND next_payment_due_date LESS_THEN DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()) + 2, 0)
+		and ps.PaymentDate >= GETDATE()
+		AND process_stop_code = '0'
+		AND pif_stop_code = '0' AND bad_check_stop_code = '0'
+		AND foreclosure_stop_code = '0'
+		AND opt_out_stop_code is null
+		AND [consumer_indicator_code] is Null
+		AND [cls_product_code] is not null
+		AND ll.drafting_indicator = 'Y'
+		AND LEFT(investor_id, 1) IN ('F', 'H', 'G', 'E', 'R', 'L', 'P')
+		AND ps.paymentStatus in ('Processing','Pending')
+		AND ps.LoanPaymentTypeFrequency in ('Monthly','BiWeekly')
+		AND DATEPART(dw, PaymentDate) not IN (1, 7)
+		and ZONE = 'ZONECODE'
+		ORDER BY ps.paymentDate
+	</Query_FMExistingAutopaySetup>
+	<Query_FMExistingOTPSetup>
+		SELECT ll.*,ps.* from [MelloServETL].[dbo].LoanLevel ll
+		join [MelloServETL].[dbo].[PaymentSetup] ps on ll.loan_number=ps.LoanNumber
+		where CONVERT(DATE,ps.PaymentDate) GREATER_THEN_EQUALTO CONVERT(DATE,DATEADD(day,2, GETDATE()))
+		and CONVERT(DATE,ps.PaymentDate) GREATER_THEN_EQUALTO CONVERT(DATE,ll.next_payment_due_date)
+		and FORMAT(ps.PaymentDate,'yyyy-MM') = FORMAT(ll.next_payment_due_date,'yyyy-MM')
+		and DAY(ps.PaymentDate) LESS_THEN_EQUALTO 15
+		AND LEFT(investor_id, 1) IN ('F', 'H', 'G', 'E', 'R', 'L', 'P')
+		and ps.PaymentStatus in ('Processing','Scheduled')
+		and ll.drafting_indicator != 'Y'
+		and ps.LoanPaymentTypeFrequency='OneTime'
+		AND ZONE = 'ZONECODE'
+	</Query_FMExistingOTPSetup>
+	<Query_HelocExistingAutopaySetup>
+		SELECT ll.*,ps.* FROM [MelloServETL].[dbo].[LoanLevel] ll
+		join [MelloServETL].[dbo].[PaymentSetup] ps on ll.loan_number=ps.LoanNumber
+		where is_active=1
+		AND next_payment_due_date GREATER_THEN_EQUALTO DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()) + 0, 0)
+		AND next_payment_due_date LESS_THEN DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()) + 2, 0)
+		and ps.PaymentDate >= GETDATE()
+		AND process_stop_code = '0'
+		AND pif_stop_code = '0' AND bad_check_stop_code = '0'
+		AND foreclosure_stop_code = '0'
+		AND opt_out_stop_code is null
+		AND [consumer_indicator_code] is not Null
+		AND [cls_product_code] is not null
+		AND ll.drafting_indicator = 'Y'
+		AND [consumer_indicator_code] is not null
+		AND [cls_product_code] is not null
+		AND ps.paymentStatus in ('Processing','Pending')
+		AND ps.LoanPaymentTypeFrequency in ('Monthly','BiWeekly')
+		AND DATEPART(dw, PaymentDate) not IN (1, 7)
+		AND ZONE = 'ZONECODE'
+		ORDER BY ps.paymentDate
+	</Query_HelocExistingAutopaySetup>
+	<Query_HelocExistingOTPSetup>
+		SELECT ll.*,ps.* from [MelloServETL].[dbo].LoanLevel ll
+		join [MelloServETL].[dbo].[PaymentSetup] ps on ll.loan_number=ps.LoanNumber
+		where CONVERT(DATE,ps.PaymentDate) GREATER_THEN_EQUALTO CONVERT(DATE,DATEADD(day,2, GETDATE()))
+		and CONVERT(DATE,ps.PaymentDate) GREATER_THEN_EQUALTO CONVERT(DATE,ll.next_payment_due_date)
+		and FORMAT(ps.PaymentDate,'yyyy-MM') = FORMAT(ll.next_payment_due_date,'yyyy-MM')
+		and DAY(ps.PaymentDate) LESS_THEN_EQUALTO 15
+		AND [consumer_indicator_code] is not Null
+		AND [cls_product_code] is not null
+		and ps.PaymentStatus in ('Processing','Scheduled')
+		and ps.LoanPaymentTypeFrequency='OneTime'
+		and ll.drafting_indicator != 'Y'
+		AND ll.investor_id != 'W10'
+		and ZONE = 'ZONECODE'
+	</Query_HelocExistingOTPSetup>
+	<Query_HElocExistingOTPForBankValidation>
+		SELECT ll.*,ps.* from [MelloServETL].[dbo].LoanLevel ll join [MelloServETL].[dbo].[PaymentSetup] ps
+		on ll.loan_number=ps.LoanNumber where CONVERT(DATE,ps.PaymentDate) GREATER_THEN_EQUALTO CONVERT(DATE,GETDATE())
+		AND [consumer_indicator_code] is not Null AND [cls_product_code] is not null
+		AND ps.PaymentStatus in ('Processing','Scheduled')
+		AND ps.LoanPaymentTypeFrequency='OneTime'
+		and ZONE = 'ZONECODE'
+	</Query_HElocExistingOTPForBankValidation>
+	<Query_FMExistingOTPForBankValidation>
+		SELECT ll.*,ps.* from [MelloServETL].[dbo].LoanLevel ll join [MelloServETL].[dbo].[PaymentSetup] ps
+		on ll.loan_number=ps.LoanNumber where CONVERT(DATE,ps.PaymentDate) GREATER_THEN_EQUALTO CONVERT(DATE,GETDATE())
+		AND [consumer_indicator_code] is Null AND [cls_product_code] is not null
+		AND ps.PaymentStatus in ('Processing','Scheduled')
+		AND ps.LoanPaymentTypeFrequency='OneTime'
+		and ZONE = 'ZONECODE'
+	</Query_FMExistingOTPForBankValidation>
+	<Query_FMExistingAutopayOnToday>
+		SELECT ps.PaymentDate,ps.Channel, ll.*,ps.* FROM [MelloServETL].[dbo].[LoanLevel] ll
+		join [MelloServETL].[dbo].[PaymentSetup] ps on ll.loan_number=ps.LoanNumber
+		where is_active=1
+		AND cast(ps.PaymentDate as date) = CONVERT(DATE,cast(GETDATE() AT TIME ZONE 'UTC' AT TIME ZONE 'Central Standard Time' as DATETIME2))
+		AND process_stop_code = '0'
+		AND pif_stop_code = '0' AND bad_check_stop_code = '0'
+		AND foreclosure_stop_code = '0'
+		AND opt_out_stop_code is null
+		AND ll.drafting_indicator = 'Y'
+		and consumer_indicator_code is Null
+		and [cls_product_code] is not null
+		AND ps.paymentStatus in ('Processing','Pending')
+		AND ps.LoanPaymentTypeFrequency in ('Monthly','BiWeekly')
+		AND ps.Channel != 'Agent Portal'
+		AND ZONE = 'ZONECODE'
+		ORDER BY ps.paymentDate
+	</Query_FMExistingAutopayOnToday>
+	<Query_HelocExistingAutopayOnToday>
+		SELECT ps.PaymentDate,ps.Channel, ll.*,ps.* FROM [MelloServETL].[dbo].[LoanLevel] ll
+		join [MelloServETL].[dbo].[PaymentSetup] ps on ll.loan_number=ps.LoanNumber
+		where is_active=1
+		AND cast(ps.PaymentDate as date) = CONVERT(DATE,cast(GETDATE() AT TIME ZONE 'UTC' AT TIME ZONE 'Central Standard Time' as DATETIME2))
+		AND process_stop_code = '0'
+		AND pif_stop_code = '0' AND bad_check_stop_code = '0'
+		AND foreclosure_stop_code = '0'
+		AND opt_out_stop_code is null
+		AND [cls_product_code] is not null
+		AND ll.drafting_indicator = 'Y'
+		AND [consumer_indicator_code] is not null
+		AND [cls_product_code] is not null
+		AND ps.paymentStatus in ('Processing','Pending')
+		AND ps.LoanPaymentTypeFrequency in ('Monthly','BiWeekly')
+		AND ps.Channel != 'Agent Portal'
+		AND ZONE = 'ZONECODE'
+		ORDER BY ps.paymentDate
+	</Query_HelocExistingAutopayOnToday>
+
+</xml>

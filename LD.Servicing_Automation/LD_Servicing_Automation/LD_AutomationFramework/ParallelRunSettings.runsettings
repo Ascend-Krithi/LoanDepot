@@ -1,0 +1,28 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<RunSettings>
+	<RunConfiguration>
+		<MaxCpuCount>5</MaxCpuCount>
+		<ResultsDirectory>.\TestResults</ResultsDirectory>
+		<TargetPlatform>x64</TargetPlatform>
+		<TargetFrameworkVersion>Framework45</TargetFrameworkVersion>
+	</RunConfiguration>
+	<TestRunParameters>
+		<Parameter name ="DisableParallelization" value ="false" />
+		<Parameter name ="webAppUrl" value ="http://localhost" />
+		<Parameter name ="webAppUserName" value ="Admin" />
+		<Parameter name ="webAppPassword" value ="Password" />
+	</TestRunParameters>
+	<MSTest>
+		<MapInconclusiveToFailed>True</MapInconclusiveToFailed>
+		<CaptureTraceOutput>false</CaptureTraceOutput>
+		<DeleteDeploymentDirectoryAfterTestRunIsComplete>False</DeleteDeploymentDirectoryAfterTestRunIsComplete>
+		<DeploymentEnabled>false</DeploymentEnabled>
+		<AssemblyResolution>
+			<Directory path ="$(SolutionDir)\LD_Servicing_Automation\LD_AgentPortal\bin\Debug" includeSubDirectories="false"/>
+		</AssemblyResolution>
+		<Parallelize>
+			<Workers>1</Workers>
+			<Scope>MethodLevel</Scope>
+		</Parallelize>
+	</MSTest>
+</RunSettings>

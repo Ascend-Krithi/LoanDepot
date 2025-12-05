@@ -1,0 +1,25 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Portal>
+	<RunSettings>
+		<Browser>Edge</Browser>
+        <Environment>QA</Environment>
+		<AppUrl>https://loansphereportal.uat.bkfstest.com/portal/Portalchrome.aspx</AppUrl>
+		<ConfigSelectionRequired>false</ConfigSelectionRequired>
+		<PaymentsDataDeletionRequired>true</PaymentsDataDeletionRequired>
+		<TestReportFolder>TestReports</TestReportFolder>
+		<CurrentReportFolder></CurrentReportFolder>
+		<ScreenshotFolder>Screenshots</ScreenshotFolder>
+		<LogFolderName>Logs</LogFolderName>
+		<SingleReport>True</SingleReport>
+		<UserProfileCheck>false</UserProfileCheck>
+		<smallWaitTime>5</smallWaitTime>
+		<waitTime>20</waitTime>
+		<mediumWait>40</mediumWait>
+		<longWait>60</longWait>
+		<loginWait>45</loginWait>
+		<numberOfLoanTestDataRequired>10</numberOfLoanTestDataRequired>
+		<JiraUrl>https://jira.loandepot.com/rest/</JiraUrl>
+		<JiraUsername>jira_xray_svc</JiraUsername>
+		<JiraPassword>NWg1JXlrUjNWZlZYdS1rdSE=</JiraPassword>
+	</RunSettings>
+</Portal>

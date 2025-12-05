@@ -1,0 +1,28 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Portal>
+	<RunSettings>
+		<Browser>Chrome</Browser>
+        <Environment>QA</Environment>
+		<QAAppUrl>https://stservicingagentqa1gx3by.z5.web.core.windows.net/agent-dashboard/loansearch</QAAppUrl>
+		<SGAppUrl>https://stservicingagentsg1c4366.z5.web.core.windows.net/agent-dashboard/loansearch</SGAppUrl>
+		<PRODAppUrl>https://stservicingagentsg1c4366.z5.web.core.windows.net/agent/loan/loan-summary-details/</PRODAppUrl>
+		<ConfigSelectionRequired>false</ConfigSelectionRequired>
+		<PaymentsDataDeletionRequired>true</PaymentsDataDeletionRequired>
+		<TestReportFolder>TestReports</TestReportFolder>
+		<CurrentReportFolder></CurrentReportFolder>
+		<ScreenshotFolder>Screenshots</ScreenshotFolder>
+		<LogFolderName>Logs</LogFolderName>
+		<SingleReport>True</SingleReport>
+		<UserProfileCheck>false</UserProfileCheck>
+		<smallWaitTime>5</smallWaitTime>
+		<waitTime>20</waitTime>
+		<mediumWait>40</mediumWait>
+		<longWait>60</longWait>
+		<loginWait>45</loginWait>
+		<numberOfLoanTestDataRequired>10</numberOfLoanTestDataRequired>
+		<JiraUrl>https://jira.loandepot.com/rest/</JiraUrl>
+		<JiraUsername>jira_xray_svc</JiraUsername>
+		<JiraPassword>NWg1JXlrUjNWZlZYdS1rdSE=</JiraPassword>
+	
+	</RunSettings>
+</Portal>

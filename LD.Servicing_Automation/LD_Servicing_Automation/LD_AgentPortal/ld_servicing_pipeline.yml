@@ -1,0 +1,774 @@
+schedules:
+- cron: 0 9 * * 0-5
+  branches:
+    include:
+    - develop
+
+- cron: 30 7 2 * *
+  branches:
+    include:
+    - develop
+
+  always: true
+  
+trigger: none
+
+resources:
+  pipelines:
+    - pipeline: AP_Pipeline
+      source: \ServicingAgentPortalWeb
+      trigger:
+        branches:
+        - main
+        - release/12-04-2025
+      
+
+    - pipeline: CP_Pipeline
+      source: \LD.MelloServ.ServicingPortalWeb
+      trigger:
+        branches:
+        - main
+        - release/12-04-2025
+
+parameters:
+- name: Browser
+  displayName: Browser Name
+  type: string
+  default: Chrome
+  values:
+  - Chrome
+  - Edge
+
+- name: Environment
+  displayName: Environment Name
+  type: string
+  default: QA
+  values:
+  - SG
+  - QA
+
+- name: AvailableEnvironments
+  displayName: Environment Name
+  type: object
+  default: 
+  - QA
+  - SG
+
+- name: TestType
+  displayName: TestType Name
+  type: string
+  default: Regression
+  values:
+  - Regression
+  - Sanity
+  - CutoffTime
+
+pool:
+  name: 'Windows'
+
+variables:
+  system.debug: 'true'
+  EnableSendEmail: true
+  Environment: ${{ parameters.Environment }}
+  Browser: ${{ parameters.Browser }}
+  DisableParallelization: false
+  Workers: '1'
+  Scope: 'MethodLevel'
+  ConfigSelectionRequired: false
+  numberOfLoanTestDataRequired: 10
+  IsLocalRun: false
+  buildConfiguration: 'Release'
+  pipelineStartTime: $[format('{0:HH}', pipeline.startTime)]
+  pipelineStartDay: $[format('{0:dd}', pipeline.startTime)]
+  triggerPipelineName: '$(Resources.TriggeringAlias)'
+  
+stages:
+- stage: pipelineTriggerMode
+  displayName: Pipeline Trigger Mode
+  jobs:
+  - job: pipelineTriggerModeJob
+    steps:
+      - bash: |
+         echo "##vso[task.setvariable variable=triggerValue;isoutput=true]$(triggerPipelineName)"
+        name: pipelineTriggerModeVariable
+
+- stage: agentportal 
+  displayName: Deploy to agentportal 
+  dependsOn: pipelineTriggerMode
+  variables:
+    triggerValue: $[dependencies.pipelineTriggerMode.outputs['pipelineTriggerModeJob.pipelineTriggerModeVariable.triggerValue']]
+  condition: in(variables.triggerValue, '', 'AP_Pipeline')
+  
+  jobs:
+  - job: DownloadEnvironmentDataFromDevPipelineArtifact
+    condition: eq(variables.triggerValue, 'AP_Pipeline')
+    steps:
+    - task: DownloadBuildArtifacts@0
+      displayName: 'Download variables'
+      inputs:
+       buildType: 'specific'
+       project: 'Enterprise'
+       pipeline: 'ServicingAgentPortalWeb'
+       buildVersionToDownload: 'latest'
+       downloadType: 'specific'
+       downloadPath: '$(System.ArtifactsDirectory)'
+       cleanDestinationFolder: true
+
+    - script: echo Pipeline trigger:$(triggerPipelineName)
+      displayName: 'echo environment variables'
+    - powershell: |
+                  $envvalue = ''
+                  $file1 = '$(System.ArtifactsDirectory)/variables/pipeline_qa.env'
+                  $file2 = '$(System.ArtifactsDirectory)/variables/pipeline_sg.env'
+                  
+                  $filePaths = @(
+                      $file1,
+                  $file2
+                  )
+                  $allExist = (Test-Path -Path $filePaths -PathType Leaf) -notcontains $false
+                  if ($allExist) 
+                  {
+                    $envvalue = 'QA_SG' 
+                  } 
+                  elseif (Test-Path -Path $file1 -PathType Leaf)
+                  {
+                    $envvalue = Get-Content $file1
+                  }
+                  elseif (Test-Path -Path $file2 -PathType Leaf)
+                  {
+                    $envvalue = Get-Content $file2
+                  }
+                  Write-Host "##vso[task.setvariable variable=exampleVar;isOutput=true]$envvalue"
+      name: SetOutputVariable
+
+    - script: echo Value1:$(SetOutputVariable.exampleVar)
+
+  - job: AgentPortalScriptExecution_SingleEnvironment
+    dependsOn: DownloadEnvironmentDataFromDevPipelineArtifact
+    variables:
+     EnvironmentFromPipeline: $[dependencies.DownloadEnvironmentDataFromDevPipelineArtifact.outputs['SetOutputVariable.exampleVar']]
+    condition: ne(variables.EnvironmentFromPipeline, 'QA_SG')
+    timeoutInMinutes: 600
+    steps:
+    - script: echo Value3:$(EnvironmentFromPipeline)
+
+    - task: UseDotNet@2
+      condition: always()
+      inputs:
+        packageType: 'sdk'
+        version: '6.x' # Adjust to your .NET SDK version
+
+    - task: NuGetCommand@2
+      condition: always()
+      inputs:
+        command: 'restore'
+        restoreSolution: '**/*.sln'
+        feedsToUse: 'select'
+
+    - task: PowerShell@2
+      condition: always()
+      displayName: APConfigFileUpdatePowershellScript
+      inputs:   
+        targetType: 'inline'
+        script: |
+          $fileLocation = [Environment]::CurrentDirectory + '\LD_Servicing_Automation\LD_AgentPortal\Config\APConfig.xml'
+          $xmldata = [xml] (Get-Content $fileLocation)
+          $val = '$(triggerPipelineName)'
+          if ([string]::IsNullOrEmpty($val)) {
+          $xmldata.Portal.RunSettings.Environment = '$(Environment)'
+          }
+          if ($val -eq 'AP_Pipeline') {
+          $xmldata.Portal.RunSettings.Environment = '$(EnvironmentFromPipeline)'
+          }
+          $xmldata.Portal.RunSettings.Browser = '$(Browser)'
+          $xmldata.Save((Resolve-Path $fileLocation).Path)
+
+    - task: PowerShell@2
+      condition: always()
+      displayName: RunSettingsUpdatePowershellScript
+      inputs:   
+        targetType: 'inline'
+        script: |
+          $fileLocation = [Environment]::CurrentDirectory + '\LD_Servicing_Automation\LD_AutomationFramework\ParallelRunSettings.runsettings'
+          $xmldata = [xml] (Get-Content $fileLocation)
+          $xmldata.RunSettings.TestRunParameters.Parameter[0].value = '$(DisableParallelization)'
+          $xmldata.RunSettings.MSTest.Parallelize.Workers = '$(Workers)'
+          $xmldata.RunSettings.MSTest.Parallelize.Scope = '$(Scope)'
+          $xmldata.Save((Resolve-Path $fileLocation).Path)
+
+    - task: DotNetCoreCLI@2
+      condition: always()
+      displayName: AP_Build_Solution
+      inputs:
+          command: build
+          projects: '**/*.sln'
+
+    - task: DotNetCoreCLI@2
+      condition: eq(variables.triggerPipelineName, '')
+      displayName: AP_Run_TestScripts
+      timeoutInMinutes: 600
+      inputs:
+          command: test
+          projects: '**/LD_AgentPortal.dll'
+          arguments: --filter "TestCategory=AP_${{ parameters.TestType }}" -s LD_Servicing_Automation/LD_AutomationFramework/ParallelRunSettings.runsettings
+          verbosityRestore: Detailed
+          verbosityPack: Detailed
+      
+    - task: DotNetCoreCLI@2
+      condition: eq(variables.triggerPipelineName, 'AP_Pipeline')
+      displayName: AP_Run_SanityScripts
+      timeoutInMinutes: 300
+      inputs:
+          command: test
+          projects: '**/LD_AgentPortal.dll'
+          arguments: --filter "TestCategory=AP_Sanity" -s LD_Servicing_Automation/LD_AutomationFramework/ParallelRunSettings.runsettings
+          verbosityRestore: Detailed
+          verbosityPack: Detailed  
+          
+    - task: DotNetCoreCLI@2
+      condition: eq(variables.pipelineStartDay, '01')
+      displayName: AP_Run_FirstDayOfMonthScripts
+      timeoutInMinutes: 300
+      inputs:
+          command: test
+          projects: '**/LD_AgentPortal.dll'
+          arguments: --filter "TestCategory=AP_CutOffTimeScripts" -s LD_Servicing_Automation/LD_AutomationFramework/ParallelRunSettings.runsettings
+          verbosityRestore: Detailed
+          verbosityPack: Detailed
+
+    - task: PublishBuildArtifacts@1
+      displayName: 'AP_Publish_Artifacts'
+      condition: always()
+      inputs:
+          PathtoPublish: LD_Servicing_Automation/LD_AgentPortal/TestReports
+          ArtifactName: ap_regression_report
+          TargetPath: '$(BUILD.ARTIFACTSTAGINGDIRECTORY)'
+          Parallel: true
+
+    - task: PowerShell@2
+      displayName: Email_AP_ExecutionReport
+      condition: always()
+      inputs:   
+        targetType: 'inline'
+        script: |
+          $User = "servicing_support@loandepot.com"
+          $Password = ""
+          $EmailTo = "agopal@loandepot.com,mpenumatsa@loandepot.com,sthaduri@loandepot.com"
+          $EmailFrom = "servicing_support@loandepot.com"
+          $Subject = "Agent Portal Script Execution Report - New Framework"
+          $testSummaryfileLocation = [Environment]::CurrentDirectory + '\LD_Servicing_Automation\LD_AgentPortal\TestExecutionStatus.xml'
+          $testSummaryXmlData = [xml] (Get-Content $testSummaryfileLocation)
+          $Body = $testSummaryXmlData.Portal
+          $SMTPServer = “smtp-ha.ld.corp.local"
+          $fileLocation = [Environment]::CurrentDirectory + '\LD_Servicing_Automation\LD_AgentPortal\TestReports'
+          $ExecutionReportName = Get-ChildItem -Path $fileLocation -File -Recurse
+          $ExecutionReportDirectory = $ExecutionReportName.Directory.Name
+          $filenameAndPath = $fileLocation + "\" + $ExecutionReportDirectory + "\" + $ExecutionReportName
+          $SMTPMessage = New-Object System.Net.Mail.MailMessage($EmailFrom,$EmailTo,$Subject,$Body)
+          $SMTPMessage.IsBodyHtml = $true
+          $attachment = New-Object System.Net.Mail.Attachment($filenameAndPath)
+          $SMTPMessage.Attachments.Add($attachment)
+          $SMTPClient = New-Object Net.Mail.SmtpClient($SMTPServer, 25)
+          $SMTPClient.EnableSsl = $true
+          $SMTPClient.UseDefaultCredentials = $false
+          $SMTPClient.Credentials = New-Object System.Net.NetworkCredential($User, $Password);
+          [System.Net.ServicePointManager]::ServerCertificateValidationCallback = { return $true }
+          $SMTPClient.Send($SMTPMessage)
+
+  - job: AgentPortalScriptExecution_MultipleEnvironments
+    dependsOn: DownloadEnvironmentDataFromDevPipelineArtifact
+    variables:
+     EnvironmentFromPipeline: $[dependencies.DownloadEnvironmentDataFromDevPipelineArtifact.outputs['SetOutputVariable.exampleVar']]
+     previousJobResult: $[dependencies.DownloadEnvironmentDataFromDevPipelineArtifact.result]
+    condition: and(eq(variables.previousJobResult, 'Succeeded'), eq(variables.EnvironmentFromPipeline, 'QA_SG'))
+
+    timeoutInMinutes: 600
+    steps:
+    - script: echo Value4:$(EnvironmentFromPipeline)
+    - ${{ each envvar in parameters.AvailableEnvironments }}:
+      - task: UseDotNet@2
+        condition: always()
+        inputs:
+         packageType: 'sdk'
+         version: '6.x' # Adjust to your .NET SDK version
+
+      - task: NuGetCommand@2
+        condition: always()
+        inputs:
+         command: 'restore'
+         restoreSolution: '**/*.sln'
+         feedsToUse: 'select'
+
+      - task: PowerShell@2
+        condition: always()
+        displayName: APConfigFileUpdatePowershellScript
+        inputs:   
+         targetType: 'inline'
+         script: |
+          $fileLocation = [Environment]::CurrentDirectory + '\LD_Servicing_Automation\LD_AgentPortal\Config\APConfig.xml'
+          $xmldata = [xml] (Get-Content $fileLocation)
+          $val = '$(triggerPipelineName)'
+          $xmldata.Portal.RunSettings.Environment = '${{ envvar }}'
+          $xmldata.Portal.RunSettings.Browser = '$(Browser)'
+          $xmldata.Save((Resolve-Path $fileLocation).Path)
+
+      - task: PowerShell@2
+        condition: always()
+        displayName: RunSettingsUpdatePowershellScript
+        inputs:   
+         targetType: 'inline'
+         script: |
+          $fileLocation = [Environment]::CurrentDirectory + '\LD_Servicing_Automation\LD_AutomationFramework\ParallelRunSettings.runsettings'
+          $xmldata = [xml] (Get-Content $fileLocation)
+          $xmldata.RunSettings.TestRunParameters.Parameter[0].value = '$(DisableParallelization)'
+          $xmldata.RunSettings.MSTest.Parallelize.Workers = '$(Workers)'
+          $xmldata.RunSettings.MSTest.Parallelize.Scope = '$(Scope)'
+          $xmldata.Save((Resolve-Path $fileLocation).Path)
+      
+      - task: DotNetCoreCLI@2
+        condition: always()
+        displayName: AP_Build_Solution
+        inputs:
+          command: build
+          projects: '**/*.sln'
+
+      - task: DotNetCoreCLI@2
+        condition: eq(variables.triggerPipelineName, 'AP_Pipeline')
+        displayName: AP_Run_SanityScripts
+        timeoutInMinutes: 300
+        inputs:
+          command: test
+          projects: '**/LD_AgentPortal.dll'
+          arguments: --filter "TestCategory=AP_Sanity" -s LD_Servicing_Automation/LD_AutomationFramework/ParallelRunSettings.runsettings
+          verbosityRestore: Detailed
+          verbosityPack: Detailed
+
+      - task: PublishBuildArtifacts@1
+        displayName: 'AP_Publish_Artifacts'
+        condition: always()
+        inputs:
+          PathtoPublish: LD_Servicing_Automation/LD_AgentPortal/TestReports
+          ArtifactName: ap_regression_report
+          TargetPath: '$(BUILD.ARTIFACTSTAGINGDIRECTORY)'
+          Parallel: true
+
+      - task: PowerShell@2
+        displayName: Email_AP_ExecutionReport
+        condition: always()
+        inputs:   
+          targetType: 'inline'
+          script: |
+            $User = "servicing_support@loandepot.com"
+            $Password = ""
+            $EmailTo = "agopal@loandepot.com,mpenumatsa@loandepot.com,sthaduri@loandepot.com"
+            $EmailFrom = "servicing_support@loandepot.com"
+            $Subject = "Agent Portal Script Execution Report - New Framework"
+            $testSummaryfileLocation = [Environment]::CurrentDirectory + '\LD_Servicing_Automation\LD_AgentPortal\TestExecutionStatus.xml'
+            $testSummaryXmlData = [xml] (Get-Content $testSummaryfileLocation)
+            $Body = $testSummaryXmlData.Portal
+            $SMTPServer = “smtp-ha.ld.corp.local"
+            $fileLocation = [Environment]::CurrentDirectory + '\LD_Servicing_Automation\LD_AgentPortal\TestReports'
+            $ExecutionReportName = Get-ChildItem -Path $fileLocation -File -Recurse
+            $ExecutionReportDirectory = $ExecutionReportName.Directory.Name
+            $filenameAndPath = $fileLocation + "\" + $ExecutionReportDirectory + "\" + $ExecutionReportName
+            $SMTPMessage = New-Object System.Net.Mail.MailMessage($EmailFrom,$EmailTo,$Subject,$Body)
+            $SMTPMessage.IsBodyHtml = $true
+            $attachment = New-Object System.Net.Mail.Attachment($filenameAndPath)
+            $SMTPMessage.Attachments.Add($attachment)
+            $SMTPClient = New-Object Net.Mail.SmtpClient($SMTPServer, 25)
+            $SMTPClient.EnableSsl = $true
+            $SMTPClient.UseDefaultCredentials = $false
+            $SMTPClient.Credentials = New-Object System.Net.NetworkCredential($User, $Password);
+            [System.Net.ServicePointManager]::ServerCertificateValidationCallback = { return $true }
+            $SMTPClient.Send($SMTPMessage)
+
+- stage: customerportal
+  displayName: Deploy to customerportal
+  dependsOn: pipelineTriggerMode
+  variables:
+    triggerValue: $[dependencies.pipelineTriggerMode.outputs['pipelineTriggerModeJob.pipelineTriggerModeVariable.triggerValue']]
+  condition: in(variables.triggerValue, '', 'CP_Pipeline')
+
+  jobs:
+  - job: DownloadEnvironmentDataFromCPDevPipelineArtifact
+    condition: eq(variables.triggerValue, 'CP_Pipeline')
+    steps:
+    - task: DownloadBuildArtifacts@0
+      displayName: 'Download variables'
+      inputs:
+       buildType: 'specific'
+       project: 'Enterprise'
+       pipeline: 'LD.MelloServ.ServicingPortalWeb'
+       buildVersionToDownload: 'latest'
+       downloadType: 'specific'
+       downloadPath: '$(System.ArtifactsDirectory)'
+       cleanDestinationFolder: true
+
+    - script: echo Pipeline trigger:$(triggerPipelineName)
+      displayName: 'echo environment variables'
+    - powershell: |
+                  $envvalue = ''
+                  $file1 = '$(System.ArtifactsDirectory)/variables/pipeline_qa.env'
+                  $file2 = '$(System.ArtifactsDirectory)/variables/pipeline_sg.env'
+                  
+                  $filePaths = @(
+                      $file1,
+                  $file2
+                  )
+                  $allExist = (Test-Path -Path $filePaths -PathType Leaf) -notcontains $false
+                  if ($allExist) 
+                  {
+                    $envvalue = 'QA_SG' 
+                  } 
+                  elseif (Test-Path -Path $file1 -PathType Leaf)
+                  {
+                  $envvalue = Get-Content $file1
+                  }
+                  elseif (Test-Path -Path $file2 -PathType Leaf)
+                  {
+                    $envvalue = Get-Content $file2
+                  }
+                  Write-Host "##vso[task.setvariable variable=exampleVar;isOutput=true]$envvalue"
+      name: SetOutputVariable
+
+    - script: echo Value1:$(SetOutputVariable.exampleVar)  
+    - script: echo Value2:$(exampleVar)
+
+  - job: CustomerPortalScriptExecution_SingleEnvironment
+    dependsOn: DownloadEnvironmentDataFromCPDevPipelineArtifact
+    variables:
+     EnvironmentFromPipeline: $[dependencies.DownloadEnvironmentDataFromCPDevPipelineArtifact.outputs['SetOutputVariable.exampleVar']]
+    condition: ne(variables.EnvironmentFromPipeline, 'QA_SG')
+
+    timeoutInMinutes: 600
+    steps:
+    - script: echo Value3:$(EnvironmentFromPipeline)
+
+    - task: UseDotNet@2
+      inputs:
+        packageType: 'sdk'
+        version: '6.x' # Adjust to your .NET SDK version
+
+    - task: NuGetCommand@2
+      inputs:
+        command: 'restore'
+        restoreSolution: '**/*.sln'
+        feedsToUse: 'select'
+
+    - task: PowerShell@2
+      displayName: CPConfigFileUpdatePowershellScript
+      condition: always()
+      inputs:   
+        targetType: 'inline'
+        script: |
+          $fileLocation = [Environment]::CurrentDirectory + '\LD_Servicing_Automation\LD_CustomerPortal\Config\CPConfig.xml'
+          $xmldata = [xml] (Get-Content $fileLocation)
+          $val = '$(triggerPipelineName)'
+          if ([string]::IsNullOrEmpty($val)) {
+          $xmldata.Portal.RunSettings.Environment = '$(Environment)'
+          }
+          if ($val -eq 'CP_Pipeline') {
+          $xmldata.Portal.RunSettings.Environment = '$(EnvironmentFromPipeline)'
+          }
+          $xmldata.Portal.RunSettings.Browser = '$(Browser)'
+          $xmldata.Save((Resolve-Path $fileLocation).Path)
+
+    - task: PowerShell@2
+      displayName: RunSettingsUpdatePowershellScript
+      inputs:   
+        targetType: 'inline'
+        script: |
+          $fileLocation = [Environment]::CurrentDirectory + '\LD_Servicing_Automation\LD_AutomationFramework\ParallelRunSettings.runsettings'
+          $xmldata = [xml] (Get-Content $fileLocation)
+          $xmldata.RunSettings.TestRunParameters.Parameter[0].value = '$(DisableParallelization)'
+          $xmldata.RunSettings.MSTest.Parallelize.Workers = '$(Workers)'
+          $xmldata.RunSettings.MSTest.Parallelize.Scope = '$(Scope)'
+          $xmldata.Save((Resolve-Path $fileLocation).Path)
+
+    - task: DotNetCoreCLI@2
+      displayName: CP_Build_Solution
+      inputs:
+          command: build
+          projects: '**/*.sln'
+
+    - task: DotNetCoreCLI@2
+      condition: eq(variables.triggerPipelineName, '')
+      displayName: CP_Run_TestScripts
+      timeoutInMinutes: 600
+      inputs:
+          command: test
+          projects: '**/LD_CustomerPortal.dll'
+          arguments: --filter "TestCategory=CP_${{ parameters.TestType }}" -s LD_Servicing_Automation/LD_AutomationFramework/ParallelRunSettings.runsettings
+          verbosityRestore: Detailed
+          verbosityPack: Detailed
+      
+    - task: DotNetCoreCLI@2
+      condition: eq(variables.triggerPipelineName, 'CP_Pipeline')
+      displayName: CP_Run_SanityScripts
+      timeoutInMinutes: 300
+      inputs:
+          command: test
+          projects: '**/LD_CustomerPortal.dll'
+          arguments: --filter "TestCategory=CP_Sanity" -s LD_Servicing_Automation/LD_AutomationFramework/ParallelRunSettings.runsettings
+          verbosityRestore: Detailed
+          verbosityPack: Detailed  
+          
+    - task: DotNetCoreCLI@2
+      condition: eq(variables.pipelineStartDay, '02')
+      displayName: CP_Run_CutOffTimeScripts
+      timeoutInMinutes: 300
+      inputs:
+          command: test
+          projects: '**/LD_CustomerPortal.dll'
+          arguments: --filter "TestCategory=CP_CutoffTime" -s LD_Servicing_Automation/LD_AutomationFramework/ParallelRunSettings.runsettings
+          verbosityRestore: Detailed
+          verbosityPack: Detailed
+
+    - task: PublishBuildArtifacts@1
+      displayName: 'CP_Publish_Artifacts'
+      condition: always()
+      inputs:
+          PathtoPublish: LD_Servicing_Automation/LD_CustomerPortal/TestReports
+          ArtifactName: cp_regression_report
+          TargetPath: '$(BUILD.ARTIFACTSTAGINGDIRECTORY)'
+          Parallel: true
+
+    - task: PowerShell@2
+      displayName: Email_CP_ExecutionReport
+      condition: always()
+      inputs:   
+        targetType: 'inline'
+        script: |
+          $User = "servicing_support@loandepot.com"
+          $Password = ""
+          $EmailTo = "agopal@loandepot.com,sbajad@loandepot.com,sthaduri@loandepot.com,psultan@loandepot.com,bmandal@loandepot.com"
+          $EmailFrom = "servicing_support@loandepot.com"
+          $Subject = "Customer Portal Script Execution Report - New Framework"
+          $testSummaryfileLocation = [Environment]::CurrentDirectory + '\LD_Servicing_Automation\LD_CustomerPortal\TestExecutionStatus.xml'
+          $testSummaryXmlData = [xml] (Get-Content $testSummaryfileLocation)
+          $Body = $testSummaryXmlData.Portal
+          $SMTPServer = “smtp-ha.ld.corp.local"
+          $fileLocation = [Environment]::CurrentDirectory + '\LD_Servicing_Automation\LD_CustomerPortal\TestReports'
+          $ExecutionReportName = Get-ChildItem -Path $fileLocation -File -Recurse
+          $ExecutionReportDirectory = $ExecutionReportName.Directory.Name
+          $filenameAndPath = $fileLocation + "\" + $ExecutionReportDirectory + "\" + $ExecutionReportName
+          $SMTPMessage = New-Object System.Net.Mail.MailMessage($EmailFrom,$EmailTo,$Subject,$Body)
+          $SMTPMessage.IsBodyHtml = $true
+          $attachment = New-Object System.Net.Mail.Attachment($filenameAndPath)
+          $SMTPMessage.Attachments.Add($attachment)
+          $SMTPClient = New-Object Net.Mail.SmtpClient($SMTPServer, 25)
+          $SMTPClient.EnableSsl = $true
+          $SMTPClient.UseDefaultCredentials = $false
+          $SMTPClient.Credentials = New-Object System.Net.NetworkCredential($User, $Password);
+          [System.Net.ServicePointManager]::ServerCertificateValidationCallback = { return $true }
+          $SMTPClient.Send($SMTPMessage)
+
+  - job: CustomerPortalScriptExecution_MultipleEnvironments
+    dependsOn: DownloadEnvironmentDataFromCPDevPipelineArtifact
+    variables:
+     EnvironmentFromPipeline: $[dependencies.DownloadEnvironmentDataFromCPDevPipelineArtifact.outputs['SetOutputVariable.exampleVar']]
+     previousJobResult: $[dependencies.DownloadEnvironmentDataFromCPDevPipelineArtifact.result]
+    condition: and(eq(variables.previousJobResult, 'Succeeded'), eq(variables.EnvironmentFromPipeline, 'QA_SG'))
+
+    timeoutInMinutes: 600
+    steps:
+
+    - script: echo Value4:$(EnvironmentFromPipeline)
+    - ${{ each envvar in parameters.AvailableEnvironments }}:
+      - task: UseDotNet@2
+        inputs:
+          packageType: 'sdk'
+          version: '6.x' # Adjust to your .NET SDK version
+
+      - task: NuGetCommand@2
+        inputs:
+         command: 'restore'
+         restoreSolution: '**/*.sln'
+         feedsToUse: 'select'
+
+      - task: PowerShell@2
+        displayName: CPConfigFileUpdatePowershellScript
+        condition: always()
+        inputs:   
+         targetType: 'inline'
+         script: |
+           $fileLocation = [Environment]::CurrentDirectory + '\LD_Servicing_Automation\LD_CustomerPortal\Config\CPConfig.xml'
+           $xmldata = [xml] (Get-Content $fileLocation)
+           $val = '$(triggerPipelineName)'
+           $xmldata.Portal.RunSettings.Environment = '${{ envvar }}'
+           $xmldata.Portal.RunSettings.Browser = '$(Browser)'
+           $xmldata.Save((Resolve-Path $fileLocation).Path)
+
+      - task: PowerShell@2
+        displayName: RunSettingsUpdatePowershellScript
+        inputs:
+         targetType: 'inline'
+         script: |
+           $fileLocation = [Environment]::CurrentDirectory + '\LD_Servicing_Automation\LD_AutomationFramework\ParallelRunSettings.runsettings'
+           $xmldata = [xml] (Get-Content $fileLocation)
+           $xmldata.RunSettings.TestRunParameters.Parameter[0].value = '$(DisableParallelization)'
+           $xmldata.RunSettings.MSTest.Parallelize.Workers = '$(Workers)'
+           $xmldata.RunSettings.MSTest.Parallelize.Scope = '$(Scope)'
+           $xmldata.Save((Resolve-Path $fileLocation).Path)
+
+      - task: DotNetCoreCLI@2
+        displayName: CP_Build_Solution
+        inputs:
+           command: build
+           projects: '**/*.sln'
+
+      - task: DotNetCoreCLI@2
+        condition: eq(variables.triggerPipelineName, 'CP_Pipeline')
+        displayName: CP_Run_SanityScripts
+        timeoutInMinutes: 300
+        inputs:
+           command: test
+           projects: '**/LD_CustomerPortal.dll'
+           arguments: --filter "TestCategory=CP_Sanity" -s LD_Servicing_Automation/LD_AutomationFramework/ParallelRunSettings.runsettings
+           verbosityRestore: Detailed
+           verbosityPack: Detailed
+
+      - task: PublishBuildArtifacts@1
+        displayName: 'CP_Publish_Artifacts'
+        condition: always()
+        inputs:
+           PathtoPublish: LD_Servicing_Automation/LD_CustomerPortal/TestReports
+           ArtifactName: cp_regression_report
+           TargetPath: '$(BUILD.ARTIFACTSTAGINGDIRECTORY)'
+           Parallel: true
+
+      - task: PowerShell@2
+        displayName: Email_CP_ExecutionReport
+        condition: always()
+        inputs:   
+          targetType: 'inline'
+          script: |
+            $User = "servicing_support@loandepot.com"
+            $Password = ""
+            $EmailTo = "agopal@loandepot.com,sbajad@loandepot.com,sthaduri@loandepot.com,psultan@loandepot.com,bmandal@loandepot.com"
+            $EmailFrom = "servicing_support@loandepot.com"
+            $Subject = "Customer Portal Script Execution Report - New Framework"
+            $testSummaryfileLocation = [Environment]::CurrentDirectory + '\LD_Servicing_Automation\LD_CustomerPortal\TestExecutionStatus.xml'
+            $testSummaryXmlData = [xml] (Get-Content $testSummaryfileLocation)
+            $Body = $testSummaryXmlData.Portal
+            $SMTPServer = “smtp-ha.ld.corp.local"
+            $fileLocation = [Environment]::CurrentDirectory + '\LD_Servicing_Automation\LD_CustomerPortal\TestReports'
+            $ExecutionReportName = Get-ChildItem -Path $fileLocation -File -Recurse
+            $ExecutionReportDirectory = $ExecutionReportName.Directory.Name
+            $filenameAndPath = $fileLocation + "\" + $ExecutionReportDirectory + "\" + $ExecutionReportName
+            $SMTPMessage = New-Object System.Net.Mail.MailMessage($EmailFrom,$EmailTo,$Subject,$Body)
+            $SMTPMessage.IsBodyHtml = $true
+            $attachment = New-Object System.Net.Mail.Attachment($filenameAndPath)
+            $SMTPMessage.Attachments.Add($attachment)
+            $SMTPClient = New-Object Net.Mail.SmtpClient($SMTPServer, 25)
+            $SMTPClient.EnableSsl = $true
+            $SMTPClient.UseDefaultCredentials = $false
+            $SMTPClient.Credentials = New-Object System.Net.NetworkCredential($User, $Password);
+            [System.Net.ServicePointManager]::ServerCertificateValidationCallback = { return $true }
+            $SMTPClient.Send($SMTPMessage)
+
+- stage: paymentengine 
+  displayName: Deploy to payment engine 
+  dependsOn: pipelineTriggerMode
+  variables:
+    triggerValue: $[dependencies.pipelineTriggerMode.outputs['pipelineTriggerModeJob.pipelineTriggerModeVariable.triggerValue']]
+  condition: in(variables.triggerValue, '')
+  
+  jobs: 
+  - job: PaymentEngineScriptExecution
+    timeoutInMinutes: 600
+    steps:
+    - task: UseDotNet@2
+      condition: always()
+      inputs:
+        packageType: 'sdk'
+        version: '6.x' # Adjust to your .NET SDK version
+
+    - task: NuGetCommand@2
+      condition: always()
+      inputs:
+        command: 'restore'
+        restoreSolution: '**/*.sln'
+        feedsToUse: 'select'
+
+    - task: PowerShell@2
+      condition: always()
+      displayName: PEConfigFileUpdatePowershellScript
+      inputs:   
+        targetType: 'inline'
+        script: |
+          $fileLocation = [Environment]::CurrentDirectory + '\LD_Servicing_Automation\LD_PaymentEngine\Config\PEConfig.xml'
+          $xmldata = [xml] (Get-Content $fileLocation)
+          $xmldata.Portal.RunSettings.Environment = '$(Environment)'
+          $xmldata.Portal.RunSettings.Browser = '$(Browser)'
+          $xmldata.Save((Resolve-Path $fileLocation).Path)
+
+    - task: PowerShell@2
+      condition: always()
+      displayName: RunSettingsUpdatePowershellScript
+      inputs:   
+        targetType: 'inline'
+        script: |
+          $fileLocation = [Environment]::CurrentDirectory + '\LD_Servicing_Automation\LD_AutomationFramework\ParallelRunSettings.runsettings'
+          $xmldata = [xml] (Get-Content $fileLocation)
+          $xmldata.RunSettings.TestRunParameters.Parameter[0].value = '$(DisableParallelization)'
+          $xmldata.RunSettings.MSTest.Parallelize.Workers = '$(Workers)'
+          $xmldata.RunSettings.MSTest.Parallelize.Scope = '$(Scope)'
+          $xmldata.Save((Resolve-Path $fileLocation).Path)
+
+    - task: DotNetCoreCLI@2
+      condition: always()
+      displayName: PE_API_Build_Solution
+      inputs:
+          command: build
+          projects: '**/*.sln'
+
+    - task: DotNetCoreCLI@2
+      condition: eq(variables.triggerPipelineName, '')
+      displayName: PE_API_Run_TestScripts
+      timeoutInMinutes: 600
+      inputs:
+          command: test
+          projects: '**/LD_PaymentEngine.dll'
+          arguments: --filter "TestCategory=PE_API_${{ parameters.TestType }}" -s LD_Servicing_Automation/LD_AutomationFramework/ParallelRunSettings.runsettings
+          verbosityRestore: Detailed
+          verbosityPack: Detailed
+
+    - task: PublishBuildArtifacts@1
+      displayName: 'PE_Publish_Artifacts'
+      condition: always()
+      inputs:
+          PathtoPublish: LD_Servicing_Automation/LD_PaymentEngine/TestReports
+          ArtifactName: pe_api_regression_report
+          TargetPath: '$(BUILD.ARTIFACTSTAGINGDIRECTORY)'
+          Parallel: true
+
+    - task: PowerShell@2
+      displayName: Email_PE_API_ExecutionReport
+      condition: always()
+      inputs:   
+        targetType: 'inline'
+        script: |
+          $User = "servicing_support@loandepot.com"
+          $Password = ""
+          $EmailTo = "agopal@loandepot.com,rbabubinginapalli@loandepot.com,sthaduri@loandepot.com"
+          $EmailFrom = "servicing_support@loandepot.com"
+          $Subject = "Payment Engine API Script Execution Report - New Framework"
+          $testSummaryfileLocation = [Environment]::CurrentDirectory + '\LD_Servicing_Automation\LD_PaymentEngine\TestExecutionStatus.xml'
+          $testSummaryXmlData = [xml] (Get-Content $testSummaryfileLocation)
+          $Body = $testSummaryXmlData.Portal
+          $SMTPServer = “smtp-ha.ld.corp.local"
+          $fileLocation = [Environment]::CurrentDirectory + '\LD_Servicing_Automation\LD_PaymentEngine\TestReports'
+          $ExecutionReportName = Get-ChildItem -Path $fileLocation -File -Recurse
+          $ExecutionReportDirectory = $ExecutionReportName.Directory.Name
+          $filenameAndPath = $fileLocation + "\" + $ExecutionReportDirectory + "\" + $ExecutionReportName
+          $SMTPMessage = New-Object System.Net.Mail.MailMessage($EmailFrom,$EmailTo,$Subject,$Body)
+          $SMTPMessage.IsBodyHtml = $true
+          $attachment = New-Object System.Net.Mail.Attachment($filenameAndPath)
+          $SMTPMessage.Attachments.Add($attachment)
+          $SMTPClient = New-Object Net.Mail.SmtpClient($SMTPServer, 25)
+          $SMTPClient.EnableSsl = $true
+          $SMTPClient.UseDefaultCredentials = $false
+          $SMTPClient.Credentials = New-Object System.Net.NetworkCredential($User, $Password);
+          [System.Net.ServicePointManager]::ServerCertificateValidationCallback = { return $true }
+          $SMTPClient.Send($SMTPMessage)

@@ -1,0 +1,16 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+/.vs
+/LD_Servicing_Automation/LD_AgentPortal/TestReports
+/LD_Servicing_Automation/LD_CustomerPortal/TestReports
+/LD_Servicing_Automation/MSP/TestReports/10_04_2024
+/LD_Servicing_Automation/LD_CustomerPortal/TestExecutionStatus.xml
+/LD_Servicing_Automation/LD_AgentPortal/TestExecutionStatus.xml
+/LD_Servicing_Automation/LD_CustomerPortal/TestExecutionStatus.xml
+/LD_Servicing_Automation/LD_PaymentEngine/TestReports
+/LD_Servicing_Automation/LD_PaymentEngine/TestExecutionStatus.xml
+
+/LD_Servicing_Automation/MSP/TestReports/04_17_2025
+/LD_Servicing_Automation/MSP/TestReports

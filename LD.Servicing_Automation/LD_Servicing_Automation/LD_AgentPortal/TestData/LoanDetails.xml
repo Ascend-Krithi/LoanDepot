@@ -1,0 +1,499 @@
+﻿<xml>
+	<Query_GetLoanLevelDetailsForAutoPay>
+		SELECT top 100 * FROM [MelloServETL].[dbo].[LoanLevel] WHERE is_active = 1 And
+		next_payment_due_date GREATER_THEN_EQUALTO DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()), 0) AND
+		next_payment_due_date LESS_THEN DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()) + 3, 0) AND process_stop_code = '0' AND
+		pif_stop_code = '0' AND bad_check_stop_code = '0' AND foreclosure_stop_code = '0' And
+		[consumer_indicator_code] is Null And [cls_product_code] is not null And drafting_indicator = 'N' and escrowed_indicator = 'Y' and
+		nsf_fee_balance = '0.00' and recoverable_corp_adv_balance = '0.00'and other_fees = '0.00' and accrued_late_charge_amount = '0.00' and
+		LEFT(investor_id, 1) IN ('F', 'H', 'G', 'E', 'R', 'L', 'P') And zone = 'ZONECODE' ORDER BY next_payment_due_date DESC
+	</Query_GetLoanLevelDetailsForAutoPay>
+	<Query_GetLoanLevelDetailsForEscrowedAutoPayPastDueWithoutLateFees>
+		SELECT top 100 * FROM [MelloServETL].[dbo].[LoanLevel] WHERE is_active = 1 And
+		next_payment_due_date LESS_THEN_EQUALTO DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()), 0) AND
+		next_payment_due_date GREATER_THEN DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()) - 1, 0) AND process_stop_code = '0' AND
+		pif_stop_code = '0' AND bad_check_stop_code = '0' AND foreclosure_stop_code = '0' And
+		[consumer_indicator_code] is Null And [cls_product_code] is not null And drafting_indicator = 'N' and escrowed_indicator = 'Y' and
+		nsf_fee_balance = '0.00' and recoverable_corp_adv_balance = '0.00'and other_fees = '0.00' and accrued_late_charge_amount = '0.00' and
+		LEFT(investor_id, 1) IN ('F', 'H', 'G', 'E', 'R', 'L', 'P') And zone = 'ZONECODE' ORDER BY next_payment_due_date DESC
+	</Query_GetLoanLevelDetailsForEscrowedAutoPayPastDueWithoutLateFees>
+	<Query_GetLoanLevelDetailsForEscrowedAutopayWhenDueDateIsNextMonthOrTwoMonthsFromCurrentMonth>
+		SELECT next_payment_due_date, * FROM [MelloServETL].[dbo].[LoanLevel] WHERE is_active = 1 And
+		MONTH(next_payment_due_date) LESS_THEN_EQUALTO MONTH(GETDATE())+ 2 and
+		MONTH(next_payment_due_date) GREATER_THEN MONTH(GETDATE()) and process_stop_code = '0' AND
+		pif_stop_code = '0' AND bad_check_stop_code = '0' AND foreclosure_stop_code = '0' And
+		[consumer_indicator_code] is Null And [cls_product_code] is not null And drafting_indicator = 'N'
+		and escrowed_indicator = 'Y' and accrued_late_charge_amount = '0.00' and
+		nsf_fee_balance = '0.00' and recoverable_corp_adv_balance = '0.00'and other_fees = '0.00' and
+		LEFT(investor_id, 1) IN ('F', 'H', 'G', 'E', 'R', 'L', 'P') And zone = 'ZONECODE'
+	</Query_GetLoanLevelDetailsForEscrowedAutopayWhenDueDateIsNextMonthOrTwoMonthsFromCurrentMonth>
+	<Query_GetLoanLevelDetailsWithActiveAutoPay>
+		SELECT top 100 * FROM [MelloServETL].[dbo].[LoanLevel] WHERE is_active = 1 And
+		next_payment_due_date GREATER_THEN_EQUALTO DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()), 0) AND
+		next_payment_due_date LESS_THEN DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()) + 3, 0) AND process_stop_code = '0' AND
+		pif_stop_code = '0' AND bad_check_stop_code = '0' AND foreclosure_stop_code = '0' And
+		[consumer_indicator_code] is Null And [cls_product_code] is not null And drafting_indicator = 'Y' AND
+		LEFT(investor_id, 1) IN ('F', 'H', 'G', 'E', 'R', 'L', 'P') And zone = 'ZONECODE' ORDER BY next_payment_due_date DESC
+	</Query_GetLoanLevelDetailsWithActiveAutoPay>
+	<Query_GetNonEscrowedLoanLevelDetailsForAutoPay>
+		SELECT top 100 * FROM [MelloServETL].[dbo].[LoanLevel] WHERE is_active = 1 and escrowed_indicator = 'N' and
+		next_payment_due_date GREATER_THEN_EQUALTO DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()), 0) AND
+		next_payment_due_date LESS_THEN DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()) + 3, 0) AND process_stop_code = '0' AND
+		pif_stop_code = '0' AND bad_check_stop_code = '0' AND foreclosure_stop_code = '0' And
+		[consumer_indicator_code] is Null And [cls_product_code] is not null And drafting_indicator = 'N' AND
+		LEFT(investor_id, 1) IN ('F', 'H', 'G', 'E', 'R', 'L', 'P') And zone = 'ZONECODE' ORDER BY next_payment_due_date DESC
+	</Query_GetNonEscrowedLoanLevelDetailsForAutoPay>
+	<Query_GetEscrowedLoanLevelDetailsForAutoPay>
+		SELECT top 100 * FROM [MelloServETL].[dbo].[LoanLevel] WHERE is_active = 1 and escrowed_indicator = 'Y' and
+		next_payment_due_date GREATER_THEN_EQUALTO DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()), 0) AND
+		next_payment_due_date LESS_THEN DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()) + 3, 0) AND process_stop_code = '0' AND
+		pif_stop_code = '0' AND bad_check_stop_code = '0' AND foreclosure_stop_code = '0' And
+		[consumer_indicator_code] is Null And [cls_product_code] is not null And drafting_indicator = 'N' AND
+		LEFT(investor_id, 1) IN ('F', 'H', 'G', 'E', 'R', 'L', 'P') And zone = 'ZONECODE' ORDER BY next_payment_due_date DESC
+	</Query_GetEscrowedLoanLevelDetailsForAutoPay>
+	<Query_GetTop100LoanLevelData>
+		SELECT top 100 * FROM MelloServETL.dbo.LoanLevel ll, MelloServETL.dbo.LoanTransaction lt
+		WHERE LoanTransactionID=(select top(1) MAX(LoanTransactionID) from MelloServETL.dbo.LoanTransaction where loan_number=ll.loan_number)
+		and drafting_indicator ='N' and process_stop_code = '0' and bad_check_stop_code = '0' and foreclosure_stop_code='0'
+		and pif_stop_code='0' and consumer_indicator_code is null and is_active = '1' and zone = 'ZONECODE'
+		ORDER BY lt.LoanTransactionID desc, NEWID()
+	</Query_GetTop100LoanLevelData>
+	<Query_GetLoanDataFor0CDTesting>
+		select lll.loan_number, lll.borrower_first_name, lll.borrower_last_name from
+		(select l.loan_number, sq.LoanNumber, sq.cnt, l.borrower_first_name, l.borrower_last_name, l.property_zip  from MelloServETL.dbo.LoanLevel l left join (
+		select loannumber, count(*) as cnt from MelloServETL.dbo.PaymentSetup where PaymentStatus in ('Pending','Processing', 'Processed') group by LoanNumber having count(*) GREATER_THEN 2) sq
+		on l.loan_number = sq.LoanNumber where l.is_active = 1 and l.zone='ZONECODE') lll where lll.cnt is null order by lll.loan_number
+	</Query_GetLoanDataFor0CDTesting>
+	<Query_GetLoanLevelDetailsForDifferentLoanTypes>
+		SELECT top 100 * FROM MelloServETL.dbo.LoanLevel ll, MelloServETL.dbo.LoanTransaction lt
+		WHERE LoanTransactionID=(select top(1) MAX(LoanTransactionID) from MelloServETL.dbo.LoanTransaction where loan_number=ll.loan_number)
+		and drafting_indicator ='N' and process_stop_code = '0' and bad_check_stop_code = '0' and foreclosure_stop_code='0'
+		and pif_stop_code='0' and consumer_indicator_code is null and is_active = '1' and zone = 'ZONECODE'
+		and delinquent_payment_count DELINQUENTCOUNT CONDITION ORDER BY lt.LoanTransactionID desc, NEWID()
+	</Query_GetLoanLevelDetailsForDifferentLoanTypes>
+	<Query_CutOffTime_PaymentsSubmittedByServiceAccount>
+		select * FROM [MelloServETL].[dbo].[PaymentSetup] where _CreatedBy like 'test_usercsserv%' and CreatedDate > GETDATE()-1 and CONVERT(VARCHAR(8), CreatedDate, 108) > '16:00:00' order by CreatedDate desc
+	</Query_CutOffTime_PaymentsSubmittedByServiceAccount>
+	<Query_GetLoanLevelDetailsForActiveForbearance>
+		SELECT TOP 100 * FROM MelloServETL.dbo.LoanLevel ll, MelloServETL.dbo.LoanTransaction lt
+		WHERE ll.loan_number = lt.loan_number AND is_active = '1' AND zone = 'ZONECODE'
+		AND repay_plan_type IN ('30','33','35','38','42','90','00','08','09','21','22','27','28') AND repay_plan_status_code IN ('A')
+		AND LoanTransactionID = (SELECT TOP 1 MAX(LoanTransactionID) FROM MelloServETL.dbo.LoanTransaction WHERE loan_number = ll.loan_number)
+		AND (SELECT MONTH(due_date) FROM (SELECT TOP 1 promise_number, due_date FROM MelloServETL.dbo.promise_to_repay ptr
+		WHERE ptr.loan_number = ll.loan_number AND ptr.promise_number = (SELECT MAX(promise_number) FROM MelloServETL.dbo.promise_to_repay
+		WHERE loan_number = ll.loan_number) ORDER BY due_date DESC) Temp) >= MONTH(GETDATE())
+		AND consumer_indicator_code IS NULL ORDER BY lt.LoanTransactionID DESC, NEWID();
+	</Query_GetLoanLevelDetailsForActiveForbearance>
+	<Query_GetLoanLevelDetailsForDeletedForbearance>
+		SELECT top 100 * FROM MelloServETL.dbo.LoanLevel ll, MelloServETL.dbo.LoanTransaction lt
+		WHERE ll.loan_number = lt.loan_number and is_active = '1'  and LoanTransactionID=(select top(1) MAX(LoanTransactionID) from MelloServETL.dbo.LoanTransaction where loan_number=ll.loan_number and effective_date Is not null) and zone = 'ZONECODE' and repay_plan_type in ('30','33','35','38','42','90','00','08','09','21','22','27','28')
+		and repay_plan_status_code in ('D') and consumer_indicator_code is null and (drafting_indicator is null OR drafting_indicator ='N')  and CAST(next_payment_due_date as date) LESS_THEN CAST(GETDATE() as date) ORDER BY lt.LoanTransactionID desc, NEWID()
+	</Query_GetLoanLevelDetailsForDeletedForbearance>
+	<Query_GetLoanLevelDetailsForCurrentMonthDeletedForbearance>
+		SELECT top 100 * FROM MelloServETL.dbo.LoanLevel ll, MelloServETL.dbo.LoanTransaction lt
+		WHERE ll.loan_number = lt.loan_number and is_active = '1' and LoanTransactionID=(select top(1) MAX(LoanTransactionID) from MelloServETL.dbo.LoanTransaction where loan_number=ll.loan_number and effective_date Is not null ) and zone = 'ZONECODE' and repay_plan_type in ('30','33','35','38','42','90','00','08','09','21','22','27','28')
+		and repay_plan_status_code in ('D') and consumer_indicator_code is null and (drafting_indicator is null OR drafting_indicator ='N') and MONTH(CAST(next_payment_due_date as date)) = MONTH(CAST(GETDATE() as date)) ORDER BY lt.LoanTransactionID desc, NEWID()
+	</Query_GetLoanLevelDetailsForCurrentMonthDeletedForbearance>
+	<Query_GetLoanLevelDetailsForActiveModificationTrial>
+		select * From [MelloServETL].[dbo].[LoanLevel] where loan_number in (select distinct ll.loan_number From [MelloServETL].[dbo].[LoanLevel] ll (nolock) inner join [MelloServETL].[dbo].loss_mitigation_step lm (nolock) on lm.loan_number = ll.loan_number inner join [MelloServETL].[dbo].LoanTransaction lt (nolock) on lt.loan_number = ll.loan_number where ll.repay_plan_status_code='A'
+		and ll.man_code ='L' and ll.repay_plan_type not in ('30','33','35','38','42','90','00','08','09','21','22','27','28', '41','43','20','26','29','23')
+		and ll.repay_plan_status_code is not null and ll.process_stop_code='9' and ll.mod_trial_system_changes='0'
+		and ll.bad_check_stop_code='0' and ll.foreclosure_stop_code='0' and ll. pif_stop_code='0' and zone='ZONECODE' )
+	</Query_GetLoanLevelDetailsForActiveModificationTrial>
+	<Query_GetLoanLevelDetailsForModificationTrialSystemChangesInProgress>
+		select distinct top 100 * From [MelloServETL].[dbo].[LoanLevel] ll (nolock)
+		inner join [MelloServETL].[dbo].loss_mitigation_step lm (nolock) on lm.loan_number = ll.loan_number
+		inner join [MelloServETL].[dbo].LoanTransaction lt (nolock) on lt.loan_number = ll.loan_number
+		where ll.repay_plan_status_code='K' and ll.man_code ='L'
+		and ll.repay_plan_type not in ('30','33','35','38','42','90','00','08','09','21','22','27','28', '41','43','20','26','29','23')
+		and ll.repay_plan_status_code is not null
+		and ll.process_stop_code='L' and ll.mod_trial_system_changes='0' and ll.bad_check_stop_code='0' and ll.foreclosure_stop_code='0'
+		and ll. pif_stop_code='0' and lm.step_code='G07' and lm.actual_completion_date is not null and zone='ZONECODE'
+	</Query_GetLoanLevelDetailsForModificationTrialSystemChangesInProgress>
+	<Query_GetLoanLevelDetailsForBrokenOrDeletedModificationTrial>
+		select * from LoanLevel where repay_plan_status_code in ('B','D') and nsf_fee_balance = '0.00' and recoverable_corp_adv_balance = '0.00'and other_fees = '0.00' and
+		repay_plan_type not in ('30','33','35','38','42','90','00','08','09','21','22','27','28', '41','43','20','26','29','23')
+		and delinquent_status != 'Current' and zone='ZONECODE'
+	</Query_GetLoanLevelDetailsForBrokenOrDeletedModificationTrial>
+	<Query_GetLoanLevelDetailsForActiveRepayment>
+		SELECT top 100 * FROM MelloServETL.dbo.LoanLevel ll, MelloServETL.dbo.LoanTransaction lt WHERE repay_plan_type in ('41','43','20','26','29','23')
+		AND repay_plan_status_code in ('A') and zone='ZONECODE' and first_principal_balance GREATER_THEN 0 and LoanTransactionID=(select top(1) MAX(LoanTransactionID) from MelloServETL.dbo.LoanTransaction where loan_number=ll.loan_number) and consumer_indicator_code is null and ll.loan_number=lt.loan_number ORDER BY lt.LoanTransactionID desc, NEWID()
+	</Query_GetLoanLevelDetailsForActiveRepayment>
+	<Query_GetLoanLevelDetailsForBrokenRepayment>
+		SELECT top 100 * FROM MelloServETL.dbo.LoanLevel ll, MelloServETL.dbo.LoanTransaction lt WHERE repay_plan_type in ('41','43','20','26','29','23')
+		AND repay_plan_status_code in ('B')  and zone='ZONECODE' and process_stop_code!='L' and LoanTransactionID=(select top(1) MAX(LoanTransactionID) from MelloServETL.dbo.LoanTransaction where loan_number=ll.loan_number) and CAST(next_payment_due_date as date) LESS_THEN CAST(GETDATE() as date) and consumer_indicator_code
+		is null and ll.loan_number=lt.loan_number  ORDER BY lt.LoanTransactionID desc, NEWID()
+	</Query_GetLoanLevelDetailsForBrokenRepayment>
+	<Query_GetLoanLevelDetailsForDeletedRepayment>
+		SELECT top 100 * FROM MelloServETL.dbo.LoanLevel ll, MelloServETL.dbo.LoanTransaction lt WHERE repay_plan_type in ('41','43','20','26','29','23')
+		AND repay_plan_status_code in ('D') and zone='ZONECODE' and process_stop_code!='L' and delinquent_payment_count>1 and LoanTransactionID=(select top(1) MAX(LoanTransactionID) from MelloServETL.dbo.LoanTransaction where loan_number=ll.loan_number) and CAST(next_payment_due_date as date) LESS_THEN= CAST(GETDATE() as date) and consumer_indicator_code
+		is null ORDER BY lt.LoanTransactionID desc, NEWID()
+	</Query_GetLoanLevelDetailsForDeletedRepayment>
+	<Query_GetSettingDetailsForBankHolidays>
+		select SettingValue from MelloServ.MelloServDomain.Settings where SettingKey='Bank_Holidays'
+	</Query_GetSettingDetailsForBankHolidays>
+	<Query_GetSettingDetailsBySettingKeyValue>
+		select SettingValue from MelloServ.MelloServDomain.Settings where (''='SETTINGKEYVALUE' OR SettingKey='SETTINGKEYVALUE')
+	</Query_GetSettingDetailsBySettingKeyValue>
+	<Query_GetActiveRepaymentPlanPromiseDetails>
+		select top(1) promise_number,case when due_date LESS_THEN GETDATE()
+		then '1' else 'ALL' end as alldates_enabledstatus,
+		(select top(1) promise_number from MelloServETL.dbo.promise_to_repay where loan_number='#' order by promise_number  desc)[total_promisenumber] from MelloServETL.dbo.promise_to_repay where loan_number='#'
+		and (status_code is null or status_code='') order by promise_number
+	</Query_GetActiveRepaymentPlanPromiseDetails>
+	<Query_GetLoanLevelDetailsForCompletedActiveRepayment>
+		SELECT top 100 * FROM MelloServETL.dbo.LoanLevel ll, MelloServETL.dbo.LoanTransaction lt WHERE repay_plan_type in ('41','43','20','26','29','23')
+		AND repay_plan_status_code in ('K') and drafting_indicator in (null, 'N') and LoanTransactionID=(select top(1) MAX(LoanTransactionID) from MelloServETL.dbo.LoanTransaction where loan_number=ll.loan_number)
+		and (select COUNT(*) from  MelloServETL.dbo.PaymentSetup where PaymentStatus='Processed'and LoanNumber=ll.loan_number)=0
+		and consumer_indicator_code is null  and zone='ZONECODE' and delinquent_payment_count in (0,1,2) ORDER BY lt.LoanTransactionID desc, NEWID()
+	</Query_GetLoanLevelDetailsForCompletedActiveRepayment>
+	<Query_GetLoanLevelDetailsByNextOrAfterMonthActiveRepayment>
+		SELECT top 100 * FROM MelloServETL.dbo.LoanLevel ll, MelloServETL.dbo.LoanTransaction lt
+		WHERE repay_plan_type in ('41','43','20','26','29','23') and zone='ZONECODE' and repay_plan_status_code in ('A')
+		and LoanTransactionID=(select top(1) MAX(LoanTransactionID) from MelloServETL.dbo.LoanTransaction where loan_number=ll.loan_number)
+		and  (MONTH(CAST(next_payment_due_date as date)) GREATER_THEN  MONTH(CAST(GETDATE() as date))
+		and YEAR(CAST(next_payment_due_date as date)) GREATER_THEN_EQUALTO  YEAR(CAST(GETDATE() as date)))
+		and consumer_indicator_code is null ORDER BY lt.LoanTransactionID desc, NEWID()
+	</Query_GetLoanLevelDetailsByNextOrAfterMonthActiveRepayment>
+	<Query_GetLoanLevelDetailsByCurrentMonthAfterCutOffTimeActiveRepayment>
+		SELECT top 100 * FROM MelloServETL.dbo.LoanLevel ll, MelloServETL.dbo.LoanTransaction lt
+		WHERE repay_plan_type in ('41','43','20','26','29','23') and zone='ZONECODE' and repay_plan_status_code in ('A')
+		and LoanTransactionID=(select top(1) MAX(LoanTransactionID) from MelloServETL.dbo.LoanTransaction where loan_number=ll.loan_number)
+		and  (MONTH(CAST(next_payment_due_date as date)) =  MONTH(CAST(GETDATE() as date))
+		and YEAR(CAST(next_payment_due_date as date)) =  YEAR(CAST(GETDATE() as date)))
+		and consumer_indicator_code is null ORDER BY lt.LoanTransactionID desc, NEWID()
+	</Query_GetLoanLevelDetailsByCurrentMonthAfterCutOffTimeActiveRepayment>
+	<Query_GetLoanLevelDetailsForOTPSuspenseWithProcessStopCode>
+		SELECT top 100 * FROM MelloServETL.dbo.LoanLevel ll, MelloServETL.dbo.LoanTransaction lt
+		WHERE LoanTransactionID=(select top(1) MAX(LoanTransactionID) from MelloServETL.dbo.LoanTransaction where loan_number=ll.loan_number)
+		and ISNULL(consumer_indicator_code,'') = '' and (('PROCESSSTOPCODE' = '9' and repay_plan_status_code = 'A') OR (repay_plan_status_code IS NULL)) and process_stop_code='PROCESSSTOPCODE' and zone='ZONECODE' ORDER BY lt.LoanTransactionID desc, NEWID()
+	</Query_GetLoanLevelDetailsForOTPSuspenseWithProcessStopCode>
+	<Query_GetLoanLevelDetailsForOTPSuspenseWithProcessStopCodeNot>
+		SELECT top 100 * FROM MelloServETL.dbo.LoanLevel ll, MelloServETL.dbo.LoanTransaction lt
+		WHERE LoanTransactionID=(select top(1) MAX(LoanTransactionID) from MelloServETL.dbo.LoanTransaction where loan_number=ll.loan_number)
+		and ISNULL(consumer_indicator_code,'') = '' and process_stop_code!='PROCESSSTOPCODE' and zone='ZONECODE' ORDER BY lt.LoanTransactionID desc, NEWID()
+	</Query_GetLoanLevelDetailsForOTPSuspenseWithProcessStopCodeNot>
+	<Query_GetLoanLevelDetailsForOTPSuspenseWithProcessStopCode1B9>
+		SELECT top 100 * FROM MelloServETL.dbo.LoanLevel ll, MelloServETL.dbo.LoanTransaction lt
+		WHERE LoanTransactionID=(select top(1) MAX(LoanTransactionID) from MelloServETL.dbo.LoanTransaction where loan_number=ll.loan_number)
+		and ISNULL(consumer_indicator_code,'') = '' and process_stop_code in ('1', 'B', '9') and is_active = '1' and zone = 'ZONECODE'
+		and delinquent_payment_count DELINQUENTCOUNT CONDITION ORDER BY lt.LoanTransactionID desc, NEWID()
+	</Query_GetLoanLevelDetailsForOTPSuspenseWithProcessStopCode1B9>
+	<Query_GetLoanLevelDetailsForOTPSuspenseWithProcessStopCodeNot1B9>
+		SELECT top 100 * FROM MelloServETL.dbo.LoanLevel ll, MelloServETL.dbo.LoanTransaction lt
+		WHERE LoanTransactionID=(select top(1) MAX(LoanTransactionID) from MelloServETL.dbo.LoanTransaction where loan_number=ll.loan_number)
+		and ISNULL(consumer_indicator_code,'') = '' and process_stop_code not in ('1', 'B', '9') and is_active = '1' and zone = 'ZONECODE'
+		and delinquent_payment_count DELINQUENTCOUNT CONDITION ORDER BY lt.LoanTransactionID desc, NEWID()
+	</Query_GetLoanLevelDetailsForOTPSuspenseWithProcessStopCodeNot1B9>
+	<Query_GetLoanLevelDetailsForOTPSuspenseWithDelinquentPaymentCountAndProcessStopCode>
+		SELECT top 100 * FROM MelloServETL.dbo.LoanLevel ll, MelloServETL.dbo.LoanTransaction lt
+		WHERE LoanTransactionID=(select top(1) MAX(LoanTransactionID) from MelloServETL.dbo.LoanTransaction where loan_number=ll.loan_number)
+		and ISNULL(consumer_indicator_code,'') = '' and is_active = '1' and zone = 'ZONECODE'
+		and suspense_balance GREATER_THEN 0 and (repay_plan_status_code is null OR repay_plan_status_code='B' OR repay_plan_status_code='D' )
+		and delinquent_payment_count = DELINQUENTCOUNT CONDITION
+		and foreclosure_stop_code = '0' and process_stop_code='PROCESSSTOPCODE' ORDER BY lt.LoanTransactionID desc, NEWID()
+	</Query_GetLoanLevelDetailsForOTPSuspenseWithDelinquentPaymentCountAndProcessStopCode>
+	<Query_GetLoanLevelDetailsForOTPSuspenseGreaterThanZero>
+		SELECT top 100 * FROM MelloServETL.dbo.LoanLevel ll, MelloServETL.dbo.LoanTransaction lt
+		WHERE LoanTransactionID=(select top(1) MAX(LoanTransactionID) from MelloServETL.dbo.LoanTransaction where loan_number=ll.loan_number) and suspense_balance GREATER_THEN 0
+		and ISNULL(consumer_indicator_code,'') = '' and process_stop_code='0' and (drafting_indicator is null OR drafting_indicator ='N')
+		and process_stop_code not in ('L') and zone='ZONECODE'
+		and bad_check_stop_code = '0' and pif_stop_code = '0' and foreclosure_stop_code = '0' and total_monthly_payment > suspense_balance
+		and (select COUNT(*) from  MelloServETL.dbo.PaymentSetup where PaymentStatus='Processed'and LoanNumber=ll.loan_number)=0
+		and delinquent_payment_count DELINQUENTCOUNT CONDITION ORDER BY lt.LoanTransactionID desc, NEWID()
+	</Query_GetLoanLevelDetailsForOTPSuspenseGreaterThanZero>
+	<Query_GetLoanLevelDetailsForOTPSuspenseIsZero>
+		SELECT top 100 * FROM MelloServETL.dbo.LoanLevel ll, MelloServETL.dbo.LoanTransaction lt
+		WHERE LoanTransactionID=(select top(1) MAX(LoanTransactionID) from MelloServETL.dbo.LoanTransaction
+		where loan_number=ll.loan_number) and suspense_balance = 0
+		and (select COUNT(*) from  MelloServETL.dbo.PaymentSetup where PaymentStatus='Processed'and LoanNumber=ll.loan_number)=0
+		and delinquent_payment_count DELINQUENTCOUNT CONDITION
+		and process_stop_code not in ('E', 'L', 'N', '1')
+		and ll.first_principal_balance GREATER_THEN 0 and zone='ZONECODE'
+		and bad_check_stop_code = '0' and pif_stop_code = '0' and foreclosure_stop_code = '0'
+		and (repay_plan_status_code is null OR repay_plan_status_code='B' OR repay_plan_status_code='D' OR repay_plan_status_code='K' ) and process_stop_code = '0' and (drafting_indicator is null OR drafting_indicator ='N') and ISNULL(consumer_indicator_code,'') = ''
+		ORDER BY lt.LoanTransactionID desc, NEWID()
+	</Query_GetLoanLevelDetailsForOTPSuspenseIsZero>
+	<Query_GetLoanLevelDetailsForOTPSuspenseIsZeroAndProcessStopCodeELN>
+		SELECT top 100 * FROM MelloServETL.dbo.LoanLevel ll, MelloServETL.dbo.LoanTransaction lt
+		WHERE LoanTransactionID=(select top(1) MAX(LoanTransactionID) from MelloServETL.dbo.LoanTransaction
+		where loan_number=ll.loan_number) and suspense_balance = 0
+		and (select COUNT(*) from  MelloServETL.dbo.PaymentSetup where PaymentStatus='Processed'and LoanNumber=ll.loan_number)=0
+		and delinquent_payment_count DELINQUENTCOUNT CONDITION
+		and process_stop_code in ('N') and zone='ZONECODE'
+		and (repay_plan_status_code is null OR repay_plan_status_code='B' OR repay_plan_status_code='D' OR repay_plan_status_code='K' ) and process_stop_code != '1' and (drafting_indicator is null OR drafting_indicator ='N') and ISNULL(consumer_indicator_code,'') = ''
+		ORDER BY lt.LoanTransactionID desc, NEWID()
+	</Query_GetLoanLevelDetailsForOTPSuspenseIsZeroAndProcessStopCodeELN>
+	<Query_GetLoanLevelDetailsForOTPWithProcessStopCode>
+		SELECT top 100 * FROM MelloServETL.dbo.LoanLevel ll, MelloServETL.dbo.LoanTransaction lt
+		WHERE LoanTransactionID=(select top(1) MAX(LoanTransactionID) from MelloServETL.dbo.LoanTransaction where loan_number=ll.loan_number)
+		and ISNULL(consumer_indicator_code,'') = '' and process_stop_code='PROCESSSTOPCODE' and zone = 'ZONECODE' ORDER BY lt.LoanTransactionID desc, NEWID()
+	</Query_GetLoanLevelDetailsForOTPWithProcessStopCode>
+	<Query_GetLoanLevelDetailsForOTPConditionWithProcessStopCode>
+		SELECT top 100 * FROM MelloServETL.dbo.LoanLevel ll, MelloServETL.dbo.LoanTransaction lt
+		WHERE LoanTransactionID=(select top(1) MAX(LoanTransactionID) from MelloServETL.dbo.LoanTransaction where loan_number=ll.loan_number)
+		and ISNULL(consumer_indicator_code,'') = '' and process_stop_code='PROCESSSTOPCODE' CONDITION and zone = 'ZONECODE'  ORDER BY lt.LoanTransactionID desc, NEWID()
+	</Query_GetLoanLevelDetailsForOTPConditionWithProcessStopCode>
+	<Query_GetLoanLevelDetailsForOTPWithBadCheckStopCode>
+		SELECT top 100 * FROM MelloServETL.dbo.LoanLevel ll, MelloServETL.dbo.LoanTransaction lt
+		WHERE LoanTransactionID=(select top(1) MAX(LoanTransactionID) from MelloServETL.dbo.LoanTransaction where loan_number=ll.loan_number)
+		and ISNULL(consumer_indicator_code,'') = '' and bad_check_stop_code='BADCHECKSTOPCODE' and zone = 'ZONECODE' ORDER BY lt.LoanTransactionID desc, NEWID()
+	</Query_GetLoanLevelDetailsForOTPWithBadCheckStopCode>
+	<Query_GetLoanLevelDetailsForOTPNextPaymentDueDate>
+		SELECT top 100 * FROM MelloServETL.dbo.LoanLevel ll, MelloServETL.dbo.LoanTransaction lt
+		WHERE LoanTransactionID=(select top(1) MAX(LoanTransactionID) from MelloServETL.dbo.LoanTransaction where loan_number=ll.loan_number)
+		AND ll.loan_number = lt.loan_number AND is_active = '1' and zone = 'ZONECODE'
+		AND bad_check_stop_code = '0' AND pif_stop_code = '0'
+		AND foreclosure_stop_code = '0' AND process_stop_code in ('E','Y','G','Q','C','1','7','0','O','S','I','T')
+		and next_payment_due_date = NEXTPAYMENTDUEDATE
+		AND drafting_indicator in ('N') and (ll.repay_plan_status_code Is Null Or ll.repay_plan_status_code='')
+		and first_principal_balance GREATER_THEN 0
+		and consumer_indicator_code is null ORDER BY lt.LoanTransactionID desc, NEWID()
+	</Query_GetLoanLevelDetailsForOTPNextPaymentDueDate>
+	<Query_GetLoanLevelDetailsForOTPMiscellaneousGreaterThanZero>
+		SELECT top 100 * FROM MelloServETL.dbo.LoanLevel ll, MelloServETL.dbo.LoanTransaction lt
+		WHERE LoanTransactionID=(select top(1) MAX(LoanTransactionID) from MelloServETL.dbo.LoanTransaction where loan_number=ll.loan_number)
+		and ll.miscellaneous_amount GREATER_THEN 0
+		and ISNULL(consumer_indicator_code,'') = '' and process_stop_code='0' and drafting_indicator in (null, 'N')
+		and (select COUNT(*) from  MelloServETL.dbo.PaymentSetup where PaymentStatus='Processed'and LoanNumber=ll.loan_number)=0
+		and delinquent_payment_count DELINQUENTCOUNT CONDITION and zone='ZONECODE' ORDER BY lt.LoanTransactionID desc, NEWID()
+	</Query_GetLoanLevelDetailsForOTPMiscellaneousGreaterThanZero>
+	<Query_GetLoanLevelDetailsForOTPTaxAndInsuranceGreaterThanZero>
+		SELECT top 100 * FROM MelloServETL.dbo.LoanLevel ll, MelloServETL.dbo.LoanTransaction lt
+		WHERE LoanTransactionID=(select top(1) MAX(LoanTransactionID) from MelloServETL.dbo.LoanTransaction where loan_number=ll.loan_number)
+		and ll.tax_and_insurance_amount GREATER_THEN 0 and zone='ZONECODE'
+		and ISNULL(consumer_indicator_code,'') = '' and process_stop_code='0' and drafting_indicator in (null, 'N')
+		and bad_check_stop_code = '0' and pif_stop_code = '0' and foreclosure_stop_code = '0'
+		and (select COUNT(*) from  MelloServETL.dbo.PaymentSetup where PaymentStatus='Processed'and LoanNumber=ll.loan_number)=0
+		and delinquent_payment_count DELINQUENTCOUNT CONDITION ORDER BY lt.LoanTransactionID desc, NEWID()
+	</Query_GetLoanLevelDetailsForOTPTaxAndInsuranceGreaterThanZero>
+	<Query_GetLoanLevelDetailsForOTPForPaymentAdded>
+		SELECT top 100 * FROM MelloServETL.dbo.LoanLevel ll, MelloServETL.dbo.LoanTransaction lt
+		WHERE LoanTransactionID=(select top(1) MAX(LoanTransactionID) from MelloServETL.dbo.LoanTransaction
+		where loan_number=ll.loan_number) and drafting_indicator in (null, 'N')
+		and ISNULL(consumer_indicator_code,'') = ''
+		and (select COUNT(*) from  MelloServETL.dbo.PaymentSetup where LoanNumber=ll.loan_number and PaymentStatus in ('Posted','Scheduled','Processing')
+		and CONDITION ))>0
+		and zone='ZONECODE' ORDER BY lt.LoanTransactionID desc, NEWID()
+	</Query_GetLoanLevelDetailsForOTPForPaymentAdded>
+	<Query_GetLoanLevelDetailsForOTPWhenProcessStopCodeIsB>
+		SELECT top 100 * FROM MelloServETL.dbo.LoanLevel ll, MelloServETL.dbo.LoanTransaction lt
+		WHERE LoanTransactionID=(select top(1) MAX(LoanTransactionID) from MelloServETL.dbo.LoanTransaction where loan_number=ll.loan_number)
+		and (repay_plan_status_code is null OR repay_plan_status_code='B' OR repay_plan_status_code='D' OR repay_plan_status_code='K' )
+		and delinquent_payment_count DELINQUENTCOUNT CONDITION
+		and ISNULL(consumer_indicator_code,'') = '' and process_stop_code='B' and zone='ZONECODE' ORDER BY lt.LoanTransactionID desc, NEWID()
+	</Query_GetLoanLevelDetailsForOTPWhenProcessStopCodeIsB>
+	<Query_GetLoanLovelDetailsForOTPWithFees>
+		SELECT top 100 * FROM MelloServETL.dbo.LoanLevel ll, MelloServETL.dbo.LoanTransaction lt
+		WHERE LoanTransactionID=(select top(1) MAX(LoanTransactionID) from MelloServETL.dbo.LoanTransaction
+		where loan_number=ll.loan_number) AND ll.loan_number = lt.loan_number
+		AND is_active = '1' AND bad_check_stop_code = '0' AND pif_stop_code = '0' AND foreclosure_stop_code = '0'
+		AND process_stop_code in ('E','Y','G','Q','C','1','7','0','O','S','I','T') AND (repay_plan_status_code is null OR repay_plan_status_code='B' OR repay_plan_status_code='D' OR repay_plan_status_code='K' ) AND zone='ZONECODE' and (drafting_indicator is null OR drafting_indicator ='N')
+		AND delinquent_payment_count DELINQUENTCOUNT CONDITION
+		AND (('0'='FEE' AND (SELECT ISNULL(SUM(CASE WHEN transaction_type in ('A')  AND ((fee_code NOT IN ('1', '2') AND fee_batch_code is null) OR fee_code NOT IN ('1', '2')) THEN transaction_amount ELSE 0 END), 0) +
+		ISNULL(SUM(CASE WHEN transaction_type not in ('A') AND ((fee_code NOT IN ('1', '2') AND fee_batch_code is null) OR fee_code NOT IN ('1', '2')) THEN transaction_amount ELSE 0 END), 0) AS other_fees
+		FROM MelloServETL.dbo.Fee WHERE loan_number = ll.loan_number)>0) OR
+		('1'='FEE'AND (SELECT ISNULL(SUM(CASE WHEN transaction_type in ('A') AND ((fee_code = '1' AND fee_batch_code is null) OR fee_code = '1') THEN transaction_amount ELSE 0 END), 0) +
+		ISNULL(SUM(CASE WHEN transaction_type not in ('A') AND ((fee_code = '1' AND fee_batch_code is null) OR fee_code = '1') THEN transaction_amount ELSE 0 END), 0) AS accrued_late_charge_amount
+		FROM MelloServETL.dbo.Fee WHERE loan_number = ll.loan_number)>0) OR
+		('2'='FEE' AND (SELECT ISNULL(SUM(CASE WHEN transaction_type in ('A') AND  ((fee_code = '2' AND fee_batch_code is null) OR fee_code = '2') THEN transaction_amount ELSE 0 END), 0) +
+		ISNULL(SUM(CASE WHEN transaction_type not in ('A') AND ((fee_code = '2' AND fee_batch_code is null) OR fee_code = '2') THEN transaction_amount ELSE 0 END), 0) AS nsf_fee_balance
+		FROM MelloServETL.dbo.Fee WHERE loan_number = ll.loan_number)>0))
+		and consumer_indicator_code is null ORDER BY lt.LoanTransactionID desc, NEWID()
+	</Query_GetLoanLovelDetailsForOTPWithFees>
+	<Query_GetFeesWithLoanNumber>
+		SELECT ISNULL(SUM(CASE WHEN transaction_type in ('A') AND ((fee_code = '1' AND fee_batch_code is null) OR fee_code = '1') THEN transaction_amount ELSE 0 END), 0) +
+		ISNULL(SUM(CASE WHEN transaction_type not in ('A') AND ((fee_code = '1' AND fee_batch_code is null) OR fee_code = '1') THEN transaction_amount ELSE 0 END), 0) AS accrued_late_charge_amount,
+		ISNULL(SUM(CASE WHEN transaction_type in ('A') AND ((fee_code = '2' AND fee_batch_code is null) OR fee_code = '2') THEN transaction_amount ELSE 0 END), 0) +
+		ISNULL(SUM(CASE WHEN transaction_type not in ('A') AND ((fee_code = '2' AND fee_batch_code is null) OR fee_code = '2') THEN transaction_amount ELSE 0 END), 0) AS nsf_fee_balance,
+		ISNULL(SUM(CASE WHEN transaction_type in ('A') AND ((fee_code NOT IN ('1', '2') AND fee_batch_code is null) OR fee_code NOT IN ('1', '2')) THEN transaction_amount ELSE 0 END), 0) +
+		ISNULL(SUM(CASE WHEN transaction_type not in ('A') AND ((fee_code NOT IN ('1', '2') AND fee_batch_code is null) OR fee_code NOT IN ('1', '2')) THEN transaction_amount ELSE 0 END), 0) AS other_fees
+		FROM MelloServETL.dbo.Fee
+		WHERE loan_number = 'LOANNUMBER'
+	</Query_GetFeesWithLoanNumber>
+	<Query_GetLoanLevelDetailsForOTPCutOff>
+		SELECT top 100 * FROM MelloServETL.dbo.LoanLevel ll, MelloServETL.dbo.LoanTransaction lt
+		WHERE LoanTransactionID=(select top(1) MAX(LoanTransactionID) from MelloServETL.dbo.LoanTransaction where loan_number=ll.loan_number)
+		AND (repay_plan_status_code is null OR repay_plan_status_code='B' OR repay_plan_status_code='D' OR repay_plan_status_code='K' ) AND delinquent_payment_count DELINQUENTCOUNT CONDITION
+		AND ISNULL(consumer_indicator_code,'') = '' AND bad_check_stop_code = '0' AND pif_stop_code = '0'
+		AND foreclosure_stop_code = '0' AND process_stop_code in ('E','Y','G','Q','C','1','7','0','O','S','I','T')
+		AND (drafting_indicator is null OR drafting_indicator ='N') AND zone='ZONECODE'
+		ORDER BY lt.LoanTransactionID desc, NEWID()
+	</Query_GetLoanLevelDetailsForOTPCutOff>
+	<Query_GetE2EOTPOnTimeSetupEditPayment>
+		SELECT top 100 * FROM MelloServETL.dbo.LoanLevel ll, MelloServETL.dbo.LoanTransaction lt
+		WHERE LoanTransactionID=(select top(1) MAX(LoanTransactionID) from MelloServETL.dbo.LoanTransaction where loan_number=ll.loan_number)
+		AND ll.loan_number = lt.loan_number
+		AND is_active = '1' and zone = 'ZONECODE' AND bad_check_stop_code = '0'
+		AND pif_stop_code = '0' AND foreclosure_stop_code = '0'
+		AND process_stop_code in ('E','Y','G','Q','C','1','7','0','O','S','I','T')
+		AND delinquent_payment_count in ('0')
+		AND drafting_indicator in ('N')
+		and CAST(next_payment_due_date AS DATE) = CAST(DATEADD(MONTH,DATEDIFF(MONTH,0,GETDATE())+1,0) AS DATE)
+		and consumer_indicator_code is null ORDER BY lt.LoanTransactionID desc, NEWID()
+	</Query_GetE2EOTPOnTimeSetupEditPayment>
+	<Query_GetE2EOTPPrepaidSetupEditPayment>
+		SELECT top 100 * FROM MelloServETL.dbo.LoanLevel ll, MelloServETL.dbo.LoanTransaction lt
+		WHERE LoanTransactionID=(select top(1) MAX(LoanTransactionID) from MelloServETL.dbo.LoanTransaction where loan_number=ll.loan_number)
+		AND ll.loan_number = lt.loan_number AND is_active = '1' and zone = 'ZONECODE'
+		AND bad_check_stop_code = '0' AND pif_stop_code = '0'
+		AND foreclosure_stop_code = '0'
+		AND process_stop_code in ('E','Y','G','Q','C','1','7','0','O','S','I','T')
+		AND drafting_indicator in ('N')
+		AND CAST(next_payment_due_date AS DATE) GREATER_THEN_EQUALTO CAST(DATEADD(MONTH,DATEDIFF(MONTH,0,GETDATE())+2,0) AS DATE)
+		AND CAST(next_payment_due_date AS DATE) LESS_THEN_EQUALTO CAST(DATEADD(MONTH,DATEDIFF(MONTH,0,GETDATE())+3,0) AS DATE)
+		AND lt.transaction_code != 175
+		AND consumer_indicator_code is null ORDER BY lt.LoanTransactionID desc, NEWID()
+	</Query_GetE2EOTPPrepaidSetupEditPayment>
+	<Query_GetE2EOTPPrimaryBorrowerIsOptedInForPaperless>
+		SELECT top 100 * FROM MelloServETL.dbo.LoanLevel ll, MelloServETL.dbo.LoanTransaction lt
+		WHERE LoanTransactionID=(select top(1) MAX(LoanTransactionID) from MelloServETL.dbo.LoanTransaction
+		where loan_number=ll.loan_number)
+		AND ll.loan_number = lt.loan_number AND is_active = '1' and zone = 'ZONECODE'
+		AND bad_check_stop_code = '0'
+		AND pif_stop_code = '0'
+		AND foreclosure_stop_code = '0'
+		AND delinquent_payment_count in ('0')
+		AND process_stop_code in ('E','Y','G','Q','C','1','7','0','O','S','I','T')
+		AND opt_out_stop_code not in ('J')
+		and consumer_indicator_code is null ORDER BY lt.LoanTransactionID desc, NEWID()
+	</Query_GetE2EOTPPrimaryBorrowerIsOptedInForPaperless>
+	<Query_GetE2EOTPPrimaryBorrowerOptedOutForPaperless>
+		SELECT top 100 * FROM MelloServETL.dbo.LoanLevel ll, MelloServETL.dbo.LoanTransaction lt
+		WHERE LoanTransactionID=(select top(1) MAX(LoanTransactionID) from MelloServETL.dbo.LoanTransaction
+		where loan_number=ll.loan_number)
+		AND ll.loan_number = lt.loan_number AND is_active = '1' and zone = 'ZONECODE'
+		AND bad_check_stop_code = '0'
+		AND pif_stop_code = '0'
+		AND foreclosure_stop_code = '0'
+		AND drafting_indicator in ('N')
+		AND delinquent_payment_count in ('0')
+		AND process_stop_code in ('E','Y','G','Q','C','1','7','0','O','S','I','T')
+		AND opt_out_stop_code in ('J')
+		and consumer_indicator_code is null ORDER BY lt.LoanTransactionID desc, NEWID()
+	</Query_GetE2EOTPPrimaryBorrowerOptedOutForPaperless>
+	<Query_GetE2EOTPPastdueSetupEditPayment>
+		SELECT top 100 * FROM MelloServETL.dbo.LoanLevel ll, MelloServETL.dbo.LoanTransaction lt
+		WHERE LoanTransactionID=(select top(1) MAX(LoanTransactionID) from MelloServETL.dbo.LoanTransaction where loan_number=ll.loan_number)
+		AND ll.loan_number = lt.loan_number AND is_active = '1' and zone = 'ZONECODE'
+		AND bad_check_stop_code = '0' AND pif_stop_code = '0'
+		AND foreclosure_stop_code = '0' AND process_stop_code in ('E','Y','G','Q','C','1','7','0','O','S','I','T')
+		AND delinquent_payment_count = 1 AND drafting_indicator in ('N')
+		and consumer_indicator_code is null ORDER BY lt.LoanTransactionID desc, NEWID()
+	</Query_GetE2EOTPPastdueSetupEditPayment>
+	<Query_GetE2EOTPDelinquentSetupEditPayment>
+		SELECT top 100 * FROM MelloServETL.dbo.LoanLevel ll, MelloServETL.dbo.LoanTransaction lt
+		WHERE LoanTransactionID=(select top(1) MAX(LoanTransactionID) from MelloServETL.dbo.LoanTransaction where loan_number=ll.loan_number)
+		AND ll.loan_number = lt.loan_number AND is_active = '1' and zone = 'ZONECODE'
+		AND bad_check_stop_code = '0' AND pif_stop_code = '0'
+		AND foreclosure_stop_code = '0' AND process_stop_code in ('E','Y','G','Q','C','1','7','0','O','S','I','T')
+		AND delinquent_payment_count in ('2') AND drafting_indicator in ('N')
+		and first_principal_balance GREATER_THEN 0
+		and consumer_indicator_code is null ORDER BY lt.LoanTransactionID desc, NEWID()
+	</Query_GetE2EOTPDelinquentSetupEditPayment>
+
+	<Query_NoActiveAutopayViaRepayOrInhouse>
+		select * from LoanLevel where (draft_option is null OR draft_option='C') and is_active=1 and drafting_indicator='N' or drafting_indicator is null and zone = 'ZONECODE'
+	</Query_NoActiveAutopayViaRepayOrInhouse>
+
+	<Query_GetLoanLevelDetailsForOnTimeHelocOTP>
+		SELECT top 100 * FROM MelloServETL.dbo.LoanLevel ll, MelloServETL.dbo.LoanTransaction lt
+		WHERE LoanTransactionID=(select top(1) MAX(LoanTransactionID) from MelloServETL.dbo.LoanTransaction where loan_number=ll.loan_number)
+		and ISNULL(consumer_indicator_code,'') != ''
+		and first_principal_balance GREATER_THEN 0 and first_principal_balance GREATER_THEN total_monthly_payment
+		and delinquent_payment_count='0'
+		and process_stop_code = '0' and zone='ZONECODE'
+		and CAST(next_payment_due_date AS DATE) = CAST(DATEADD(MONTH,DATEDIFF(MONTH,0,GETDATE())+1,0) AS DATE)
+		and (drafting_indicator is null OR drafting_indicator ='N')
+		ORDER BY lt.LoanTransactionID desc, NEWID()
+	</Query_GetLoanLevelDetailsForOnTimeHelocOTP>
+	<Query_GetLoanLevelDetailsForPastDueHelocOTP>
+		SELECT top 100 * FROM MelloServETL.dbo.LoanLevel ll, MelloServETL.dbo.LoanTransaction lt
+		WHERE LoanTransactionID=(select top(1) MAX(LoanTransactionID) from MelloServETL.dbo.LoanTransaction where loan_number=ll.loan_number)
+		and ISNULL(consumer_indicator_code,'') != ''
+		and first_principal_balance GREATER_THEN 0
+		and delinquent_payment_count='1' and (drafting_indicator is null OR drafting_indicator ='N')
+		and process_stop_code = '0' and zone='ZONECODE'
+		and (select COUNT(*) from  MelloServETL.dbo.PaymentSetup where PaymentStatus='Processed'and LoanNumber=ll.loan_number)=0
+		and CAST(next_payment_due_date AS DATE) = CAST(DATEADD(MONTH,DATEDIFF(MONTH,0,GETDATE()),0) AS DATE)
+		ORDER BY lt.LoanTransactionID desc, NEWID()
+	</Query_GetLoanLevelDetailsForPastDueHelocOTP>
+	<Query_GetLoanLevelDetailsForPastDueHelocOTPWithSoftProcessStopCode>
+		SELECT top 100 * FROM MelloServETL.dbo.LoanLevel ll, MelloServETL.dbo.LoanTransaction lt
+		WHERE LoanTransactionID=(select top(1) MAX(LoanTransactionID) from MelloServETL.dbo.LoanTransaction where loan_number=ll.loan_number)
+		and ISNULL(consumer_indicator_code,'') != ''
+		and first_principal_balance GREATER_THEN 0
+		and delinquent_payment_count='1' and (drafting_indicator is null OR drafting_indicator ='N')
+		and process_stop_code in ('3', 'H', 'L', 'N')
+		and zone='ZONECODE'
+		and CAST(next_payment_due_date AS DATE) LESS_THEN CAST(DATEADD(MONTH,DATEDIFF(MONTH,0,GETDATE())+1,0) AS DATE)
+		ORDER BY lt.LoanTransactionID desc, NEWID()
+	</Query_GetLoanLevelDetailsForPastDueHelocOTPWithSoftProcessStopCode>
+	<Query_GetLateChargesForHelocOTP>
+		SELECT top(1) transaction_amount FROM MelloServETL.dbo.Fee
+		where loan_number='#'
+		and MONTH(last_modified_date) = (MONTH(DATEADD(MONTH,DATEDIFF(MONTH,0,GETDATE())-(1+(select top(1) delinquent_payment_count
+		from MelloServETL.dbo.LoanLevel ll where ll.loan_number='#')),0)))
+		and YEAR(last_modified_date) = (YEAR(DATEADD(MONTH,DATEDIFF(MONTH,0,GETDATE())-(1+(select top(1) delinquent_payment_count
+		from MelloServETL.dbo.LoanLevel ll where ll.loan_number='#')),0))) order by FeeID desc
+	</Query_GetLateChargesForHelocOTP>
+	<Query_GetLoanLevelDetailsForPastDueOrDelinquentHelocOTP>
+		SELECT top 100 * FROM MelloServETL.dbo.LoanLevel ll, MelloServETL.dbo.LoanTransaction lt
+		WHERE LoanTransactionID=(select top(1) MAX(LoanTransactionID) from MelloServETL.dbo.LoanTransaction where loan_number=ll.loan_number)
+		and ISNULL(consumer_indicator_code,'') != ''
+		and first_principal_balance GREATER_THEN 0 and (drafting_indicator is null OR drafting_indicator ='N')
+		and delinquent_payment_count GREATER_THEN= '1'
+		and process_stop_code = '0' and zone='ZONECODE'
+		and CAST(next_payment_due_date AS DATE) LESS_THEN CAST(DATEADD(MONTH,DATEDIFF(MONTH,0,GETDATE())+1,0) AS DATE)
+		ORDER BY lt.LoanTransactionID desc, NEWID()
+	</Query_GetLoanLevelDetailsForPastDueOrDelinquentHelocOTP>
+	<Query_GetPastAndUpcomingFeesWithLoanNumberForHelocOTP>
+		DECLARE @BANKHOLIDAYSLIST VARCHAR(MAX)=REPLACE(REPLACE(REPLACE((SELECT SettingValue FROM MelloServ.MelloServDomain.Settings
+		WHERE SettingKey='Bank_Holidays'), '"', ''), ']', ''),'[','');
+		DECLARE @WORKINGDAY DATETIME = DATEFROMPARTS(YEAR(GETDATE()), MONTH(GETDATE()) - 1, 15),@Flag bit=0;
+		DECLARE @DATE VARCHAR(11)=(SELECT CONVERT(VARCHAR(11),@WORKINGDAY,101));
+		WHILE @Flag=0
+		BEGIN
+		IF(DATENAME(WEEKDAY,@WORKINGDAY)='SATURDAY' OR DATENAME(WEEKDAY,@WORKINGDAY)='SUNDAY' OR (SELECT COUNT(*) FROM STRING_SPLIT(@BANKHOLIDAYSLIST, ',') WHERE VALUE=@DATE)>0)
+		BEGIN
+		SET @WORKINGDAY=DATEADD(DAY, 1, @WORKINGDAY);SET @DATE =(SELECT CONVERT(VARCHAR(11),@WORKINGDAY,101));
+		END
+		ELSE
+		BEGIN
+		SET @Flag=1;
+		END
+		END
+		DECLARE @PastDate DATETIME = DATEFROMPARTS(YEAR(GETDATE()), MONTH(GETDATE()) - 1, (DAY(@WORKINGDAY)+1)),@UpcomingDate DATETIME = DATEFROMPARTS(YEAR(GETDATE()), MONTH(GETDATE()), DAY(@WORKINGDAY));
+		SELECT ISNULL(SUM(CASE WHEN transaction_type IN ('P', 'A') AND fee_code = '1' AND transaction_date LESS_THEN @PastDate THEN transaction_amount ELSE 0 END), 0)
+		AS past_accrued_late_charge_amount,ISNULL(SUM(CASE WHEN transaction_type IN ('P', 'A') AND fee_code = '1' AND transaction_date >= @PastDate
+		AND transaction_date LESS_THEN @UpcomingDate THEN transaction_amount ELSE 0 END), 0) AS upcoming_accrued_late_charge_amount,ISNULL(SUM(CASE WHEN transaction_type
+		IN ('P', 'A') AND fee_code NOT IN ('1', '2') AND transaction_date LESS_THEN @PastDate THEN transaction_amount ELSE 0 END), 0) AS past_other_fees,
+		ISNULL(SUM(CASE WHEN transaction_type IN ('P', 'A') AND fee_code NOT IN ('1', '2') AND transaction_date >= @PastDate
+		AND transaction_date LESS_THEN @UpcomingDate THEN transaction_amount ELSE 0 END), 0) AS upcoming_other_fees,ISNULL(SUM(CASE WHEN transaction_type IN ('P', 'A')
+		AND fee_code = '2' AND transaction_date LESS_THEN @PastDate THEN transaction_amount ELSE 0 END), 0) AS past_nsf_fee_balance,ISNULL(SUM(CASE WHEN transaction_type IN ('P', 'A')
+		AND fee_code = '2' AND transaction_date >= @PastDate AND transaction_date LESS_THEN @UpcomingDate THEN transaction_amount ELSE 0 END), 0) AS upcoming_nsf_fee_balance
+		FROM MelloServETL.dbo.Fee WHERE loan_number ='#' GROUP BY loan_number;
+	</Query_GetPastAndUpcomingFeesWithLoanNumberForHelocOTP>
+	<Query_GetPendingPaymentDetailsWithLoanNumber>
+		select LoanNumber,ConfirmationNumber from  MelloServETL.dbo.PaymentSetup where PaymentStatus='Processed'and LoanNumber='#';
+	</Query_GetPendingPaymentDetailsWithLoanNumber>
+	<Query_GetLoanLevelDetailsForOnTimeOrPrepaidHelocOTP>
+		SELECT top 100 * FROM MelloServETL.dbo.LoanLevel ll, MelloServETL.dbo.LoanTransaction lt
+		WHERE LoanTransactionID=(select top(1) MAX(LoanTransactionID) from MelloServETL.dbo.LoanTransaction where loan_number=ll.loan_number)
+		and ISNULL(consumer_indicator_code,'') != '' and first_principal_balance GREATER_THEN 0
+		and delinquent_payment_count='0' and process_stop_code = '0' and zone='ZONECODE'
+		and (drafting_indicator is null OR drafting_indicator ='N') and delinquent_payment_count DELINQUENTCOUNT CONDITION
+		ORDER BY lt.LoanTransactionID desc, NEWID()
+	</Query_GetLoanLevelDetailsForOnTimeOrPrepaidHelocOTP>
+	<Query_GetLoanLevelDetailsForOnTimeWithUPBHelocOTP>
+		SELECT top 100 * FROM MelloServETL.dbo.LoanLevel ll, MelloServETL.dbo.LoanTransaction lt
+		WHERE LoanTransactionID=(select top(1) MAX(LoanTransactionID) from MelloServETL.dbo.LoanTransaction where loan_number=ll.loan_number)
+		and ISNULL(consumer_indicator_code,'') != ''
+		and first_principal_balance GREATER_THEN 0 and first_principal_balance LESS_THEN 25000 and first_principal_balance GREATER_THEN total_monthly_payment
+		and delinquent_payment_count='0'
+		and process_stop_code = '0' and zone='ZONECODE'
+		and CAST(next_payment_due_date AS DATE) = CAST(DATEADD(MONTH,DATEDIFF(MONTH,0,GETDATE())+1,0) AS DATE)
+		and (drafting_indicator is null OR drafting_indicator ='N')
+		ORDER BY lt.LoanTransactionID desc, NEWID()
+	</Query_GetLoanLevelDetailsForOnTimeWithUPBHelocOTP>
+</xml>

@@ -1,0 +1,19 @@
+﻿<xml>
+	<Query_GetTop100LoanLevelData>
+		SELECT top 100 * FROM LoanLevel
+		WHERE is_active = 1 and process_stop_code = '0' and bad_check_stop_code = '0' and foreclosure_stop_code='0'
+		and pif_stop_code='0' and delinquent_payment_count = 0 and drafting_indicator = 'N' and client_number = 'P2KL' and IsDeleted=0 and consumer_indicator_code is null and zone = 'ZONECODE'
+	</Query_GetTop100LoanLevelData>
+	<Query_HelocDelinquentPlusLoanData>
+		SELECT delinquent_status, consumer_indicator_code, next_payment_due_date, * FROM [MelloServETL].[dbo].[LoanLevel] ll
+		WHERE zone = 'ZONECODE' and first_principal_balance GREATER_THEN 0 and consumer_indicator_code is not NULL and
+		next_payment_due_date LESS_THEN DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()) - 2, 0) and
+		(select COUNT(*) from MelloServETL.dbo.PaymentSetup where PaymentStatus='Processed'and LoanNumber=ll.loan_number)=0
+	</Query_HelocDelinquentPlusLoanData>
+	<Query_DelinquentPlusLoanData>
+		SELECT * FROM [MelloServETL].[dbo].[LoanLevel] ll WHERE zone = 'ZONECODE' and delinquent_payment_count GREATER_THEN_EQUALTO 3 and repay_plan_status_code is null
+		and process_stop_code = '0' and pif_stop_code = '0' and foreclosure_stop_code = '0' and bad_check_stop_code = '0' and
+		is_active = '1' and suspense_balance = '0' and consumer_indicator_code is null and
+		(select COUNT(*) from MelloServETL.dbo.PaymentSetup where PaymentStatus='Processed'and LoanNumber=ll.loan_number)=0
+	</Query_DelinquentPlusLoanData>
+</xml>

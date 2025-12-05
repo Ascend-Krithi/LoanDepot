@@ -1,0 +1,65 @@
+﻿<xml>
+	<Query_GetLoanHavingPayments>
+		SELECT top 100 * FROM LoanLevel
+		WHERE is_active = 1 and process_stop_code = '0' and bad_check_stop_code = '0' and foreclosure_stop_code='0'
+		and pif_stop_code='0' and delinquent_payment_count = 0 and drafting_indicator = 'N' and client_number = 'P2KL' 
+		and IsDeleted=0 and consumer_indicator_code is null and zone = 'ZONECODE'
+	</Query_GetLoanHavingPayments>
+	<Query_GetHelocAutopayPayments>
+		SELECT DISTINCT TOP 100 * FROM [MelloServETL].[dbo].[LoanLevel] ll (nolock)
+		INNER JOIN [MelloServETL].[dbo].PaymentSetup ps (nolock) on ps.LoanNumber = ll.loan_number
+		WHERE ll.is_active = 1 and ll.process_stop_code = '0' and ll.bad_check_stop_code = '0' and ll.foreclosure_stop_code='0'
+		and ll.pif_stop_code='0' and ll.IsDeleted=0 and ISNULL(consumer_indicator_code,'') != '' and zone = 'ZONECODE'
+		and ps.PaymentStatus = 'Processing'
+	</Query_GetHelocAutopayPayments>
+	<Query_GetHelocLoans>
+		SELECT DISTINCT TOP 100 * FROM [MelloServETL].[dbo].[LoanLevel]  (nolock)
+		WHERE is_active = 1 and process_stop_code = '0' and bad_check_stop_code = '0' and foreclosure_stop_code='0'
+		and pif_stop_code='0' and IsDeleted=0 and ISNULL(consumer_indicator_code,'') != '' and zone = 'ZONECODE'
+	</Query_GetHelocLoans>
+	<Query_GetFMLoans>
+		SELECT DISTINCT TOP 100 * FROM [MelloServETL].[dbo].[LoanLevel] ll (nolock)
+		INNER JOIN [MelloServETL].[dbo].PaymentSetup ps (nolock) on ps.LoanNumber = ll.loan_number
+		WHERE ll.is_active = 1 and ll.process_stop_code = '0' and ll.bad_check_stop_code = '0' and ll.foreclosure_stop_code='0'
+		and ll.pif_stop_code='0' and ll.IsDeleted=0 and ISNULL(consumer_indicator_code,'') = '' and zone = 'ZONECODE'
+		and ps.PaymentStatus = 'Processing'
+	</Query_GetFMLoans>
+	<Query_GetPayments>
+		SELECT DISTINCT TOP 100 * FROM [MelloServETL].[dbo].[LoanLevel] ll (nolock)
+		INNER JOIN [MelloServETL].[dbo].PaymentSetup ps (nolock) on ps.LoanNumber = ll.loan_number
+		WHERE ll.is_active = 1 and ll.process_stop_code = '0' and ll.bad_check_stop_code = '0' and ll.foreclosure_stop_code='0'
+		and ll.pif_stop_code='0' and ll.IsDeleted=0 and zone = 'ZONECODE'
+		and ps.PaymentStatus in ('Processing', 'Processed') ORDER BY ps.PaymentDate DESC
+	</Query_GetPayments>
+	<Query_GetPayments_OTP>
+		SELECT DISTINCT TOP 100 * FROM [MelloServETL].[dbo].[LoanLevel] ll (nolock)
+		INNER JOIN [MelloServETL].[dbo].PaymentSetup ps (nolock) on ps.LoanNumber = ll.loan_number
+		WHERE ll.is_active = 1 and ll.process_stop_code = '0' and ll.bad_check_stop_code = '0' and ll.foreclosure_stop_code='0'
+		and ll.pif_stop_code='0' and ll.IsDeleted=0 and zone = 'ZONECODE' and ps.LoanPaymentTypeFrequency='OneTime'
+		and ps.PaymentStatus in ('Processing', 'Processed') ORDER BY ps.PaymentDate DESC
+	</Query_GetPayments_OTP>
+	<Query_GetSuspenseBalanceLoans>
+		SELECT DISTINCT TOP 100 * FROM [MelloServETL].[dbo].[LoanLevel] ll (nolock)
+		INNER JOIN [MelloServETL].[dbo].PaymentSetup ps (nolock) on ps.LoanNumber = ll.loan_number
+		WHERE ll.is_active = 1 and ll.process_stop_code = '0' and ll.bad_check_stop_code = '0' and ll.foreclosure_stop_code='0'
+		and ll.pif_stop_code='0' and ll.IsDeleted=0 and zone = 'ZONECODE' and ll.suspense_balance > ll.total_monthly_payment
+	</Query_GetSuspenseBalanceLoans>
+	<Query_GetRecurringPayments>
+		SELECT DISTINCT TOP 100 * FROM [MelloServETL].[dbo].[LoanLevel] ll (nolock)
+		INNER JOIN [MelloServETL].[dbo].PaymentSetup ps (nolock) on ps.LoanNumber = ll.loan_number
+		WHERE ll.is_active = 1 and ll.process_stop_code = '0' and ll.bad_check_stop_code = '0' and ll.foreclosure_stop_code='0'
+		and ll.pif_stop_code='0' and ll.IsDeleted=0 and zone = 'ZONECODE' and ps.PaymentStatus = 'Processing'
+	</Query_GetRecurringPayments>
+	<Query_GetInactivePayments>
+		SELECT DISTINCT TOP 100 * FROM [MelloServETL].[dbo].[LoanLevel] ll (nolock)
+		INNER JOIN [MelloServETL].[dbo].PaymentSetup ps (nolock) on ps.LoanNumber = ll.loan_number
+		WHERE ll.is_active = 1 and ll.process_stop_code = '0' and ll.bad_check_stop_code = '0' and ll.foreclosure_stop_code='0'
+		and ll.pif_stop_code='0' and ll.IsDeleted=0 and zone = 'ZONECODE' and ps.PaymentStatus = 'Deleted'
+	</Query_GetInactivePayments>
+	<Query_GetPostedPayments>
+		SELECT DISTINCT TOP 100 * FROM [MelloServETL].[dbo].[LoanLevel] ll (nolock)
+		INNER JOIN [MelloServETL].[dbo].PaymentSetup ps (nolock) on ps.LoanNumber = ll.loan_number
+		WHERE ll.is_active = 1 and ll.process_stop_code = '0' and ll.bad_check_stop_code = '0' and ll.foreclosure_stop_code='0'
+		and ll.pif_stop_code='0' and ll.IsDeleted=0 and zone = 'ZONECODE' and ps.PaymentStatus = 'Posted' ORDER BY ps.PaymentDate DESC
+	</Query_GetPostedPayments>
+</xml>
