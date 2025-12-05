@@ -1,1 +1,3 @@
-PHANDOM_PLACEHOLDER_FOR_PAYMENT_DATA/
+Row,Amount,Currency,Method,Notes
+1,100.00,USD,ACH,Regular monthly payment
+2,250.50,USD,Card,Additional principal

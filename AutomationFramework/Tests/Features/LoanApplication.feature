@@ -1,1 +1,45 @@
-Feature: Loan Application and Servicing Navigation\n  As a servicing user\n  I want to login and navigate the dashboard and loans\n  So that I can create loans, make payments, and view escrow details\n\n  Background:\n    Given I navigate to the login page\n    And I enter username \"valid_user\"\n    And I enter password \"valid_password\"\n    When I click login\n    Then I should see the dashboard home link\n    And I should see the global search bar\n\n  @C101\n  Scenario: Login with valid credentials navigates to dashboard\n    Then I should see the dashboard home link\n    And I should see the global search bar\n\n  @C102\n  Scenario: Navigate to Loans page via navigation\n    When I click the Loans navigation link\n    Then I should see the recent activity table\n\n  @C103\n  Scenario: Create new loan from dashboard\n    When I click the Create New Loan button\n    Then I should see the new application page\n\n  @C104\n  Scenario: Open first loan from recent activity and make payment\n    When I open the first loan from recent activity\n    And I click Make Payment\n    Then I should see the payment dialog\n\n  @C105\n  Scenario: View escrow details tab within loan page\n    When I click the Loans navigation link\n    And I open the first loan from recent activity\n    And I click the Escrow details tab\n    Then I should see escrow details\n
+Feature: Loan Application and Servicing Workflows
+  As a user of the Servicing application
+  I want to login, navigate, search loans, make payments, and view escrow details
+  So that I can validate core flows
+
+  Background:
+    Given I am on the dashboard page
+
+  @TR-1012
+  Scenario: Login with valid credentials
+    When I login with username "valid.user" and password "valid.password"
+    Then I should see the dashboard home
+
+  @TR-1013
+  Scenario: Navigate to Loans from Dashboard
+    When I login with username "valid.user" and password "valid.password"
+    And I navigate to Loans
+    Then I should see the loan grid
+
+  @TR-1014
+  Scenario Outline: Global search by Loan Number
+    When I login with username "valid.user" and password "valid.password"
+    And I search for loan "<LoanNumber>"
+    And I open the first loan result
+    Then I should see the loan details page
+
+    Examples:
+      | LoanNumber |
+      | 1234567890 |
+
+  @TR-1015
+  Scenario: Make a Payment from Loan Details
+    When I login with username "valid.user" and password "valid.password"
+    And I search for loan "1234567890"
+    And I open the first loan result
+    And I make a payment with data row "1"
+    Then I should see a payment success confirmation
+
+  @TR-1016
+  Scenario: View Escrow details tab
+    When I login with username "valid.user" and password "valid.password"
+    And I search for loan "1234567890"
+    And I open the first loan result
+    And I open the Escrow tab
+    Then I should see the escrow details

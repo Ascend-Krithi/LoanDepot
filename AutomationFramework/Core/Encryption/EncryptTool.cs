@@ -1,14 +1,20 @@
 using System;
+using AutomationFramework.Core.Encryption;
 
 namespace AutomationFramework.Core.Encryption
 {
     public static class EncryptTool
     {
-        // Stub helper to read secrets from env and decrypt if needed
-        public static string GetSecret(string envVar, string defaultValue = "")
+        // Utility for local generation of encrypted secrets in CI if needed
+        public static void MainEncrypt(string[] args)
         {
-            var val = Environment.GetEnvironmentVariable(envVar);
-            return string.IsNullOrWhiteSpace(val) ? defaultValue : val;
+            if (args.Length < 2)
+            {
+                Console.WriteLine("Usage: EncryptTool <secret> <key>");
+                return;
+            }
+            var enc = EncryptionManager.Encrypt(args[0], args[1]);
+            Console.WriteLine(enc);
         }
     }
 }

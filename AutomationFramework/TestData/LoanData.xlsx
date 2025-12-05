@@ -1,1 +1,3 @@
-PHANDOM_PLACEHOLDER_FOR_LOAN_DATA/
+Row,LoanNumber,Borrower,SSN,Notes
+1,1234567890,John Doe,***-**-1234,Primary loan for smoke tests
+2,9876543210,Jane Smith,***-**-5678,Secondary loan for regression

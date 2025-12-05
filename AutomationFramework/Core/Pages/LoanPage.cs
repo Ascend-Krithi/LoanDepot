@@ -1,48 +1,55 @@
+using System;
 using OpenQA.Selenium;
 using AutomationFramework.Core.SelfHealing;
 using AutomationFramework.Core.Locators;
+using AutomationFramework.Core.Utilities;
 
 namespace AutomationFramework.Core.Pages
 {
     public class LoanPage
     {
-        private readonly IWebDriver _driver;
-        private readonly SelfHealingWebDriver _sh;
+        private readonly SelfHealingWebDriver _driver;
 
-        public LoanPage(IWebDriver driver)
+        public LoanPage(SelfHealingWebDriver driver)
         {
             _driver = driver;
-            _sh = new SelfHealingWebDriver(driver);
         }
 
-        public bool IsRecentActivityVisible()
+        public void NavigateToLoans()
         {
-            return _sh.IsVisible(null, LoanPageLocators.RecentActivityTableByXpath, LoanPageLocators.RecentActivityTableByCss);
+            _driver.FindElementWithFallback(LoanPageLocators.LoansLink).Click();
         }
 
-        public void ClickLoansNav()
+        public void SearchLoan(string loanNumber)
         {
-            _sh.Click(null, LoanPageLocators.LoansLinkByXpath, LoanPageLocators.LoansLinkByCss);
+            var search = _driver.FindElementWithFallback(LoanPageLocators.GlobalSearchBar);
+            search.Clear();
+            search.SendKeys(loanNumber + Keys.Enter);
         }
 
-        public void ClickCreateNewLoan()
+        public void OpenFirstLoanFromGrid()
         {
-            _sh.Click(null, LoanPageLocators.CreateNewLoanButtonByXpath, LoanPageLocators.CreateNewLoanButtonByCss);
+            _driver.FindElementWithFallback(LoanPageLocators.FirstLoanRow).Click();
         }
 
-        public void OpenFirstLoanRow()
+        public void MakePayment()
         {
-            _sh.Click(null, LoanPageLocators.FirstLoanRowByXpath, null);
-        }
-
-        public void ClickMakePayment()
-        {
-            _sh.Click(null, LoanPageLocators.MakePaymentButtonByXpath, LoanPageLocators.MakePaymentButtonByCss);
+            _driver.FindElementWithFallback(LoanPageLocators.MakePaymentButton).Click();
         }
 
         public void OpenEscrowTab()
         {
-            _sh.Click(null, LoanPageLocators.EscrowTabByXpath, LoanPageLocators.EscrowTabByCss);
+            _driver.FindElementWithFallback(LoanPageLocators.EscrowDetailsTab).Click();
+        }
+
+        public bool IsRecentActivityTableVisible()
+        {
+            try
+            {
+                var table = _driver.FindElementWithFallback(LoanPageLocators.RecentActivityTable);
+                return table.Displayed;
+            }
+            catch { return false; }
         }
     }
 }

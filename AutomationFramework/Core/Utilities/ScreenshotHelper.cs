@@ -6,21 +6,18 @@ namespace AutomationFramework.Core.Utilities
 {
     public static class ScreenshotHelper
     {
-        public static string Capture(IWebDriver driver, string scenarioName)
+        public static string TakeScreenshot(IWebDriver driver, string namePrefix = "screenshot")
         {
             try
             {
                 var ss = ((ITakesScreenshot)driver).GetScreenshot();
-                var dir = Path.Combine(Directory.GetCurrentDirectory(), "Screenshots");
-                Directory.CreateDirectory(dir);
-                var path = Path.Combine(dir, $DateTime.UtcNow:yyyyMMddHHmmss");
-                ss.SaveAsFile(path);
-                return path;
+                var folder = Path.Combine(AppContext.BaseDirectory, "Screenshots");
+                Directory.CreateDirectory(folder);
+                var file = Path.Combine(folder, $"{namePrefix}_{DateTime.UtcNow:yyyyMMdd_HHmmss}.png");
+                ss.SaveAsFile(file, ScreenshotImageFormat.Png);
+                return file;
             }
-            catch
-            {
-                return string.Empty;
-            }
+            catch { return string.Empty; }
         }
     }
 }

@@ -1,7 +1,9 @@
 using System;
+using System.Collections.Generic;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Support.UI;
 using SeleniumExtras.WaitHelpers;
+using AutomationFramework.Core.Utilities;
 
 namespace AutomationFramework.Core.SelfHealing
 {
@@ -10,57 +12,35 @@ namespace AutomationFramework.Core.SelfHealing
         private readonly IWebDriver _driver;
         private readonly WebDriverWait _wait;
 
-        public SelfHealingWebDriver(IWebDriver driver, TimeSpan? timeout = null)
+        public SelfHealingWebDriver(IWebDriver driver, TimeSpan timeout)
         {
             _driver = driver;
-            _wait = new WebDriverWait(_driver, timeout ?? TimeSpan.FromSeconds(20));
+            _wait = new WebDriverWait(_driver, timeout);
         }
 
-        public IWebElement Find(By? idSelector = null, By? xpathSelector = null, By? cssSelector = null)
+        public IWebElement FindElementWithFallback(IEnumerable<By> strategies)
         {
-            IWebElement? element = null;
-            Exception? lastEx = null;
-            foreach (var by in new By?[] { idSelector, xpathSelector, cssSelector })
+            foreach (var by in strategies)
             {
-                if (by == null) continue;
                 try
                 {
-                    element = _wait.Until(ExpectedConditions.ElementExists(by));
-                    if (element != null) return element;
+                    return _wait.Until(ExpectedConditions.ElementExists(by));
                 }
-                catch (Exception ex)
-                {
-                    lastEx = ex;
-                }
+                catch { }
             }
-            throw new NoSuchElementException($"Element not found by any selector. Last error: {lastEx?.Message}");
+            throw new NoSuchElementException("Element not found with provided strategies.");
         }
 
-        public void Click(By? idSelector = null, By? xpathSelector = null, By? cssSelector = null)
+        public IReadOnlyCollection<IWebElement> FindElementsWithFallback(IEnumerable<By> strategies)
         {
-            var el = Find(idSelector, xpathSelector, cssSelector);
-            _wait.Until(ExpectedConditions.ElementToBeClickable(el));
-            el.Click();
-        }
-
-        public void Type(string text, By? idSelector = null, By? xpathSelector = null, By? cssSelector = null)
-        {
-            var el = Find(idSelector, xpathSelector, cssSelector);
-            el.Clear();
-            el.SendKeys(text);
-        }
-
-        public bool IsVisible(By? idSelector = null, By? xpathSelector = null, By? cssSelector = null)
-        {
-            try
+            foreach (var by in strategies)
             {
-                var el = Find(idSelector, xpathSelector, cssSelector);
-                return el.Displayed;
+                var elements = _driver.FindElements(by);
+                if (elements != null && elements.Count > 0) return elements;
             }
-            catch
-            {
-                return false;
-            }
+            return Array.Empty<IWebElement>();
         }
+
+        public IWebDriver RawDriver => _driver;
     }
 }

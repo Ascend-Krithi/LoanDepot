@@ -1,40 +1,44 @@
 using System;
 using OpenQA.Selenium;
 using AutomationFramework.Core.SelfHealing;
-using AutomationFramework.Core.Configuration;
 using AutomationFramework.Core.Locators;
+using AutomationFramework.Core.Utilities;
 
 namespace AutomationFramework.Core.Pages
 {
     public class LoginPage
     {
-        private readonly IWebDriver _driver;
-        private readonly SelfHealingWebDriver _sh;
+        private readonly SelfHealingWebDriver _driver;
 
-        public LoginPage(IWebDriver driver)
+        public LoginPage(SelfHealingWebDriver driver)
         {
             _driver = driver;
-            _sh = new SelfHealingWebDriver(driver);
-        }
-
-        public void Navigate()
-        {
-            _driver.Navigate().GoToUrl(ConfigManager.BaseUrl);
         }
 
         public void EnterUsername(string username)
         {
-            _sh.Type(username, LoginPageLocators.UsernameById, LoginPageLocators.UsernameByXpath, LoginPageLocators.UsernameByCss);
+            var el = _driver.FindElementWithFallback(LoginPageLocators.Username);
+            el.Clear();
+            el.SendKeys(username);
         }
 
         public void EnterPassword(string password)
         {
-            _sh.Type(password, LoginPageLocators.PasswordById, LoginPageLocators.PasswordByXpath, LoginPageLocators.PasswordByCss);
+            var el = _driver.FindElementWithFallback(LoginPageLocators.Password);
+            el.Clear();
+            el.SendKeys(password);
         }
 
         public void ClickLogin()
         {
-            _sh.Click(null, LoginPageLocators.LoginButtonByXpath, LoginPageLocators.LoginButtonByCss);
+            _driver.FindElementWithFallback(LoginPageLocators.LoginButton).Click();
+        }
+
+        public void Login(string username, string password)
+        {
+            EnterUsername(username);
+            EnterPassword(password);
+            ClickLogin();
         }
     }
 }

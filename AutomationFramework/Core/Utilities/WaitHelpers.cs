@@ -2,21 +2,21 @@ using System;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Support.UI;
 using SeleniumExtras.WaitHelpers;
+using AutomationFramework.Core.Configuration;
 
 namespace AutomationFramework.Core.Utilities
 {
     public static class WaitHelpers
     {
-        public static void WaitForElementVisible(IWebDriver driver, By by, int seconds = 20)
+        public static WebDriverWait GetWait(IWebDriver driver)
         {
-            var wait = new WebDriverWait(driver, TimeSpan.FromSeconds(seconds));
-            wait.Until(ExpectedConditions.ElementIsVisible(by));
+            var seconds = int.TryParse(ConfigManager.Get("DefaultWaitSeconds", "20"), out var s) ? s : 20;
+            return new WebDriverWait(driver, TimeSpan.FromSeconds(seconds));
         }
 
-        public static void WaitForPageLoad(IWebDriver driver, int seconds = 20)
+        public static IWebElement WaitForVisible(IWebDriver driver, By by)
         {
-            var wait = new WebDriverWait(driver, TimeSpan.FromSeconds(seconds));
-            wait.Until(d => ((IJavaScriptExecutor)d).ExecuteScript("return document.readyState").Equals("complete"));
+            return GetWait(driver).Until(ExpectedConditions.ElementIsVisible(by));
         }
     }
 }
