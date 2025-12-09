@@ -1,8 +1,6 @@
-using System;
-using OpenQA.Selenium;
 using AutomationFramework.Core.SelfHealing;
 using AutomationFramework.Core.Locators;
-using AutomationFramework.Core.Utilities;
+using OpenQA.Selenium;
 
 namespace AutomationFramework.Core.Pages
 {
@@ -17,28 +15,22 @@ namespace AutomationFramework.Core.Pages
 
         public void EnterUsername(string username)
         {
-            var el = _driver.FindElementWithFallback(LoginPageLocators.Username);
-            el.Clear();
-            el.SendKeys(username);
+            var element = _driver.FindElementByKey(LoginPageLocators.UsernameInputKey);
+            element.Clear();
+            element.SendKeys(username);
         }
 
         public void EnterPassword(string password)
         {
-            var el = _driver.FindElementWithFallback(LoginPageLocators.Password);
-            el.Clear();
-            el.SendKeys(password);
+            var element = _driver.FindElementByKey(LoginPageLocators.PasswordInputKey);
+            element.Clear();
+            element.SendKeys(password);
         }
 
         public void ClickLogin()
         {
-            _driver.FindElementWithFallback(LoginPageLocators.LoginButton).Click();
-        }
-
-        public void Login(string username, string password)
-        {
-            EnterUsername(username);
-            EnterPassword(password);
-            ClickLogin();
+            var element = _driver.FindElementByKey(LoginPageLocators.LoginButtonKey);
+            element.Click();
         }
     }
 }

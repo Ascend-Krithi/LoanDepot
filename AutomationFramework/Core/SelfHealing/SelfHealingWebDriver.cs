@@ -1,46 +1,64 @@
+using OpenQA.Selenium;
 using System;
 using System.Collections.Generic;
-using OpenQA.Selenium;
-using OpenQA.Selenium.Support.UI;
-using SeleniumExtras.WaitHelpers;
-using AutomationFramework.Core.Utilities;
+using AutomationFramework.Core.Locators;
 
 namespace AutomationFramework.Core.SelfHealing
 {
-    public class SelfHealingWebDriver
+    public class SelfHealingWebDriver : IWebDriver
     {
         private readonly IWebDriver _driver;
-        private readonly WebDriverWait _wait;
+        private readonly ILocatorRepository _locatorRepo;
 
-        public SelfHealingWebDriver(IWebDriver driver, TimeSpan timeout)
+        public SelfHealingWebDriver(IWebDriver driver, ILocatorRepository locatorRepo)
         {
             _driver = driver;
-            _wait = new WebDriverWait(_driver, timeout);
+            _locatorRepo = locatorRepo;
         }
 
-        public IWebElement FindElementWithFallback(IEnumerable<By> strategies)
+        public IWebElement FindElementByKey(string key)
         {
-            foreach (var by in strategies)
+            var locator = _locatorRepo.GetLocator(key);
+            try
             {
-                try
+                return _driver.FindElement(locator);
+            }
+            catch (NoSuchElementException)
+            {
+                var alternatives = _locatorRepo.GetAlternatives(key);
+                foreach (var alt in alternatives)
                 {
-                    return _wait.Until(ExpectedConditions.ElementExists(by));
+                    try
+                    {
+                        var element = _driver.FindElement(alt);
+                        LogHealingEvent(key, alt);
+                        return element;
+                    }
+                    catch { }
                 }
-                catch { }
+                throw;
             }
-            throw new NoSuchElementException("Element not found with provided strategies.");
         }
 
-        public IReadOnlyCollection<IWebElement> FindElementsWithFallback(IEnumerable<By> strategies)
+        private void LogHealingEvent(string key, By alt)
         {
-            foreach (var by in strategies)
-            {
-                var elements = _driver.FindElements(by);
-                if (elements != null && elements.Count > 0) return elements;
-            }
-            return Array.Empty<IWebElement>();
+            Console.WriteLine($"[Self-Healing] Locator healed for '{key}' using alternative: {alt}");
+            // Optionally log to file or report
         }
 
-        public IWebDriver RawDriver => _driver;
+        // IWebDriver implementation (delegated)
+        public string Url { get => _driver.Url; set => _driver.Url = value; }
+        public string Title => _driver.Title;
+        public string PageSource => _driver.PageSource;
+        public string CurrentWindowHandle => _driver.CurrentWindowHandle;
+        public ReadOnlyCollection<string> WindowHandles => _driver.WindowHandles;
+        public void Close() => _driver.Close();
+        public void Quit() => _driver.Quit();
+        public IOptions Manage() => _driver.Manage();
+        public INavigation Navigate() => _driver.Navigate();
+        public ITargetLocator SwitchTo() => _driver.SwitchTo();
+        public IWebElement FindElement(By by) => _driver.FindElement(by);
+        public ReadOnlyCollection<IWebElement> FindElements(By by) => _driver.FindElements(by);
+        public void Dispose() => _driver.Dispose();
     }
 }

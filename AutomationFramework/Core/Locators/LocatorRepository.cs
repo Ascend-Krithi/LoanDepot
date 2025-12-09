@@ -1,56 +1,33 @@
 using OpenQA.Selenium;
-using System;
 using System.Collections.Generic;
-using System.Reflection;
 
 namespace AutomationFramework.Core.Locators
 {
-    public class LocatorRepository
+    public class LocatorRepository : ILocatorRepository
     {
-        private readonly Dictionary<string, List<By>> _locatorMap = new();
-
-        public LocatorRepository()
+        private readonly Dictionary<string, By> _locators = new()
         {
-            LoadLocators();
-        }
+            { LoginPageLocators.UsernameInputKey, LoginPageLocators.UsernameInput },
+            { LoginPageLocators.PasswordInputKey, LoginPageLocators.PasswordInput },
+            { LoginPageLocators.LoginButtonKey, LoginPageLocators.LoginButton },
+            { DashboardPageLocators.LoanDropdownKey, DashboardPageLocators.LoanDropdown },
+            { DashboardPageLocators.LoanListKey, DashboardPageLocators.LoanList },
+            { DashboardPageLocators.ChatPopupKey, DashboardPageLocators.ChatPopup },
+            { DashboardPageLocators.DatePickerKey, DashboardPageLocators.DatePicker }
+        };
 
-        private void LoadLocators()
+        private readonly Dictionary<string, By[]> _alternatives = new()
         {
-            var locatorTypes = Assembly.GetExecutingAssembly().GetTypes();
-            foreach (var type in locatorTypes)
-            {
-                if (type.Namespace != null && type.Namespace.Contains("AutomationFramework.Core.Locators") && type.Name.EndsWith("Locators"))
-                {
-                    foreach (var field in type.GetFields(BindingFlags.Public | BindingFlags.Static))
-                    {
-                        if (field.FieldType == typeof(By))
-                        {
-                            string key = field.Name;
-                            var by = (By)field.GetValue(null);
-                            if (!_locatorMap.ContainsKey(key))
-                                _locatorMap[key] = new List<By>();
-                            _locatorMap[key].Add(by);
-                        }
-                        else if (field.FieldType == typeof(By[]))
-                        {
-                            var byArr = (By[])field.GetValue(null);
-                            foreach (var by in byArr)
-                            {
-                                if (!_locatorMap.ContainsKey(field.Name))
-                                    _locatorMap[field.Name] = new List<By>();
-                                _locatorMap[field.Name].Add(by);
-                            }
-                        }
-                    }
-                }
-            }
-        }
+            { LoginPageLocators.UsernameInputKey, LoginPageLocators.UsernameInputAlternatives },
+            { LoginPageLocators.PasswordInputKey, LoginPageLocators.PasswordInputAlternatives },
+            { LoginPageLocators.LoginButtonKey, LoginPageLocators.LoginButtonAlternatives },
+            { DashboardPageLocators.LoanDropdownKey, DashboardPageLocators.LoanDropdownAlternatives },
+            { DashboardPageLocators.LoanListKey, DashboardPageLocators.LoanListAlternatives },
+            { DashboardPageLocators.ChatPopupKey, DashboardPageLocators.ChatPopupAlternatives },
+            { DashboardPageLocators.DatePickerKey, DashboardPageLocators.DatePickerAlternatives }
+        };
 
-        public By[] GetLocators(string key)
-        {
-            if (_locatorMap.ContainsKey(key))
-                return _locatorMap[key].ToArray();
-            throw new KeyNotFoundException($"Locator key '{key}' not found in repository.");
-        }
+        public By GetLocator(string key) => _locators[key];
+        public By[] GetAlternatives(string key) => _alternatives.ContainsKey(key) ? _alternatives[key] : new By[0];
     }
 }

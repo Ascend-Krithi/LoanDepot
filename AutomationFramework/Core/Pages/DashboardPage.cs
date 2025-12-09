@@ -1,3 +1,4 @@
+```csharp
 using AutomationFramework.Core.SelfHealing;
 using AutomationFramework.Core.Locators;
 using OpenQA.Selenium;
@@ -17,52 +18,33 @@ namespace AutomationFramework.Core.Pages
         public void SelectLoanType(string loanType)
         {
             var dropdown = _driver.FindElementByKey(DashboardPageLocators.LoanDropdownKey);
-            var select = new OpenQA.Selenium.Support.UI.SelectElement(dropdown);
-            select.SelectByText(loanType);
+            var selectElement = new OpenQA.Selenium.Support.UI.SelectElement(dropdown);
+            selectElement.SelectByText(loanType);
         }
 
         public void SelectLoanFromList(string loanName)
         {
-            var loans = _driver.FindElements(DashboardPageLocators.LoanList);
+            var loans = _driver.FindElements(DashboardPageLocators.LoanListKey);
             var loan = loans.FirstOrDefault(l => l.Text.Contains(loanName));
             loan?.Click();
         }
 
-        public void DismissPopup()
+        public void DismissChatPopup()
         {
-            var closeBtn = _driver.FindElementByKey(DashboardPageLocators.PopupCloseKey);
-            closeBtn.Click();
-        }
-
-        public void HandleDelayedChatPopup()
-        {
-            try
+            var popup = _driver.FindElementByKey(DashboardPageLocators.ChatPopupKey);
+            if (popup.Displayed)
             {
-                var chat = _driver.FindElementByKey(DashboardPageLocators.ChatPopupKey);
-                if (chat.Displayed)
-                {
-                    _driver.SwitchTo().Frame(chat);
-                    var closeBtn = _driver.FindElement(By.XPath("//button[contains(@aria-label,'Close')]") );
-                    closeBtn.Click();
-                    _driver.SwitchTo().DefaultContent();
-                }
+                var closeBtn = popup.FindElement(By.XPath(".//button[contains(@class,'close')]"));
+                closeBtn.Click();
             }
-            catch { /* Ignore if not present */ }
         }
 
         public void SelectDate(string date)
         {
-            var dateInput = _driver.FindElementByKey(DashboardPageLocators.DatePickerInputKey);
-            dateInput.Click();
-            dateInput.Clear();
-            dateInput.SendKeys(date);
-            dateInput.SendKeys(Keys.Enter);
-        }
-
-        public string GetMessage()
-        {
-            var msg = _driver.FindElementByKey(DashboardPageLocators.MessageKey);
-            return msg.Text;
+            var datePicker = _driver.FindElementByKey(DashboardPageLocators.DatePickerKey);
+            datePicker.Click();
+            // Assume Angular Material date picker, select date via input
+            datePicker.SendKeys(date);
+            datePicker.SendKeys(Keys.Enter);
         }
     }
-}
