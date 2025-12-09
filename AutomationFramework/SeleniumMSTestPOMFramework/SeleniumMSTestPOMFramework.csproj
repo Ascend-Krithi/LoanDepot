@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>SeleniumMSTestPOMFramework</RootNamespace>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Selenium.WebDriver" Version="4.18.1" />
+    <PackageReference Include="Selenium.Support" Version="4.18.1" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.9.0" />
+    <PackageReference Include="MSTest.TestAdapter" Version="3.2.0" />
+    <PackageReference Include="MSTest.TestFramework" Version="3.2.0" />
+    <PackageReference Include="NPOI" Version="2.6.1" />
+    <PackageReference Include="System.Security.Cryptography.Algorithms" Version="8.0.0" />
+  </ItemGroup>
+
+</Project>
