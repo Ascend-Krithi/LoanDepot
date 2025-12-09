@@ -1,50 +1,37 @@
-```csharp
-using AutomationFramework.Core.SelfHealing;
+using AutomationFramework.Core.Drivers;
 using AutomationFramework.Core.Locators;
 using OpenQA.Selenium;
 using System.Linq;
 
 namespace AutomationFramework.Core.Pages
 {
-    public class DashboardPage
+    public class DashboardPage : BasePage
     {
-        private readonly SelfHealingWebDriver _driver;
+        public DashboardPage(SelfHealingWebDriver driver) : base(driver) { }
 
-        public DashboardPage(SelfHealingWebDriver driver)
+        public string GetWelcomeMessage()
         {
-            _driver = driver;
+            var welcome = Driver.FindElement(DashboardPageLocators.WelcomeMessage);
+            return welcome.Text;
         }
 
-        public void SelectLoanType(string loanType)
+        public void SelectLoanFromDropdown(string loanName)
         {
-            var dropdown = _driver.FindElementByKey(DashboardPageLocators.LoanDropdownKey);
-            var selectElement = new OpenQA.Selenium.Support.UI.SelectElement(dropdown);
-            selectElement.SelectByText(loanType);
+            var dropdown = Driver.FindElement(DashboardPageLocators.LoanListDropdown);
+            dropdown.Click();
+            var options = Driver.FindElements(DashboardPageLocators.LoanListDropdown);
+            var option = options.FirstOrDefault(o => o.Text.Contains(loanName));
+            option?.Click();
         }
 
-        public void SelectLoanFromList(string loanName)
+        public void DismissChatPopupIfPresent()
         {
-            var loans = _driver.FindElements(DashboardPageLocators.LoanListKey);
-            var loan = loans.FirstOrDefault(l => l.Text.Contains(loanName));
-            loan?.Click();
-        }
-
-        public void DismissChatPopup()
-        {
-            var popup = _driver.FindElementByKey(DashboardPageLocators.ChatPopupKey);
-            if (popup.Displayed)
+            var popups = Driver.FindElements(DashboardPageLocators.ChatPopup);
+            if (popups.Any())
             {
-                var closeBtn = popup.FindElement(By.XPath(".//button[contains(@class,'close')]"));
+                var closeBtn = Driver.FindElement(DashboardPageLocators.ChatPopupClose);
                 closeBtn.Click();
             }
         }
-
-        public void SelectDate(string date)
-        {
-            var datePicker = _driver.FindElementByKey(DashboardPageLocators.DatePickerKey);
-            datePicker.Click();
-            // Assume Angular Material date picker, select date via input
-            datePicker.SendKeys(date);
-            datePicker.SendKeys(Keys.Enter);
-        }
     }
+}

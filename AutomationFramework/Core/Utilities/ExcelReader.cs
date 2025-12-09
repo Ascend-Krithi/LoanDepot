@@ -1,31 +1,53 @@
-using System;
+using NPOI.SS.UserModel;
+using NPOI.XSSF.UserModel;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace AutomationFramework.Core.Utilities
 {
-    // Lightweight CSV-style reader for demo purposes. Place CSV-like content inside .xlsx placeholder files.
-    public static class ExcelReader
+    public class ExcelReader
     {
-        public static IEnumerable<Dictionary<string, string>> Read(string filePath)
+        private readonly string _filePath;
+        private readonly IWorkbook _workbook;
+
+        public ExcelReader(string filePath)
         {
-            var result = new List<Dictionary<string, string>>();
-            if (!File.Exists(filePath)) return result;
-            var lines = File.ReadAllLines(filePath);
-            if (lines.Length == 0) return result;
-            var headers = lines[0].Split(',');
-            for (int i = 1; i < lines.Length; i++)
+            _filePath = filePath;
+            using (var fs = new FileStream(_filePath, FileMode.Open, FileAccess.Read))
             {
-                if (string.IsNullOrWhiteSpace(lines[i])) continue;
-                var vals = lines[i].Split;
-                var dict = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-                for (int h = 0; h < headers.Length && h < vals.Length; h++)
-                {
-                    dict[headers[h].Trim()] = vals[h].Trim();
-                }
-                result.Add(dict);
+                _workbook = new XSSFWorkbook(fs);
             }
-            return result;
+        }
+
+        public Dictionary<string, string> GetRowByTestCaseId(string sheetName, string testCaseId)
+        {
+            var sheet = _workbook.GetSheet(sheetName);
+            var headerRow = sheet.GetRow(0);
+            var headers = new List<string>();
+            for (int i = 0; i < headerRow.LastCellNum; i++)
+            {
+                headers.Add(headerRow.GetCell(i).StringCellValue);
+            }
+
+            for (int i = 1; i <= sheet.LastRowNum; i++)
+            {
+                var row = sheet.GetRow(i);
+                if (row == null) continue;
+                var idCell = row.GetCell(0);
+                if (idCell == null) continue;
+                if (idCell.StringCellValue == testCaseId)
+                {
+                    var dict = new Dictionary<string, string>();
+                    for (int j = 0; j < headers.Count; j++)
+                    {
+                        var cell = row.GetCell(j);
+                        dict[headers[j]] = cell?.ToString() ?? string.Empty;
+                    }
+                    return dict;
+                }
+            }
+            return null;
         }
     }
 }

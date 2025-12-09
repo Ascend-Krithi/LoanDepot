@@ -4,32 +4,44 @@ namespace AutomationFramework.Core.Locators
 {
     public static class DashboardPageLocators
     {
-        public const string LoanDropdownKey = "Dashboard.LoanDropdown";
-        public static readonly By LoanDropdown = By.XPath("//select[@id='loanType']");
-        public static readonly By[] LoanDropdownAlternatives = {
-            By.CssSelector("select.loan-type"),
-            By.XPath("//select[contains(@name,'loan')]")
+        public const string WelcomeMessage = "DashboardPage.WelcomeMessage";
+        public const string LoanListDropdown = "DashboardPage.LoanListDropdown";
+        public const string ChatPopup = "DashboardPage.ChatPopup";
+        public const string ChatPopupClose = "DashboardPage.ChatPopupClose";
+
+        public static readonly By[] WelcomeMessageAlternatives = new By[]
+        {
+            By.CssSelector(".welcome-message"),
+            By.XPath("//h1[contains(text(),'Welcome')]")
         };
 
-        public const string LoanListKey = "Dashboard.LoanList";
-        public static readonly By LoanList = By.XPath("//ul[@id='loanList']/li");
-        public static readonly By[] LoanListAlternatives = {
-            By.CssSelector("ul.loan-list > li"),
-            By.XPath("//div[@class='loan-list']//li")
+        public static readonly By[] LoanListDropdownAlternatives = new By[]
+        {
+            By.Id("loanList"),
+            By.CssSelector("mat-select[formcontrolname='loan']")
         };
 
-        public const string ChatPopupKey = "Dashboard.ChatPopup";
-        public static readonly By ChatPopup = By.XPath("//div[@id='chatPopup']");
-        public static readonly By[] ChatPopupAlternatives = {
-            By.CssSelector("div.chat-popup"),
-            By.XPath("//div[contains(@class,'chat-popup')]")
+        public static readonly By[] ChatPopupAlternatives = new By[]
+        {
+            By.Id("chat-popup"),
+            By.CssSelector(".chat-popup")
         };
 
-        public const string DatePickerKey = "Dashboard.DatePicker";
-        public static readonly By DatePicker = By.XPath("//input[@id='mat-datepicker']");
-        public static readonly By[] DatePickerAlternatives = {
-            By.CssSelector("input.mat-datepicker-input"),
-            By.XPath("//input[contains(@class,'mat-datepicker')]")
+        public static readonly By[] ChatPopupCloseAlternatives = new By[]
+        {
+            By.CssSelector(".chat-popup .close"),
+            By.XPath("//div[@id='chat-popup']//button[contains(@class,'close')]")
         };
+
+        public static Dictionary<string, By[]> GetLocators()
+        {
+            return new Dictionary<string, By[]>
+            {
+                { WelcomeMessage, WelcomeMessageAlternatives },
+                { LoanListDropdown, LoanListDropdownAlternatives },
+                { ChatPopup, ChatPopupAlternatives },
+                { ChatPopupClose, ChatPopupCloseAlternatives }
+            };
+        }
     }
 }

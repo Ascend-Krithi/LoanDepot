@@ -1,15 +1,20 @@
 using System;
+using AutomationFramework.Core.Encryption;
 
 namespace AutomationFramework.Core.Encryption
 {
-    public static class EncryptTool
+    public class EncryptTool
     {
         public static void Main(string[] args)
         {
-            Console.WriteLine("Enter plain text to encrypt:");
-            var plainText = Console.ReadLine();
-            var encrypted = EncryptionManager.Encrypt(plainText);
-            Console.WriteLine($"Encrypted: {encrypted}");
+            if (args.Length < 1)
+            {
+                Console.WriteLine("Usage: EncryptTool <text-to-encrypt>");
+                return;
+            }
+            string plainText = args[0];
+            string encrypted = EncryptionManager.Encrypt(plainText);
+            Console.WriteLine("Encrypted: " + encrypted);
         }
     }
 }

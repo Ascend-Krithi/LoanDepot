@@ -1,34 +1,46 @@
-using AutomationFramework.Core.SelfHealing;
+using AutomationFramework.Core.Drivers;
+using AutomationFramework.Core.Locators;
 using OpenQA.Selenium;
 using System.Linq;
 
 namespace AutomationFramework.Core.Pages
 {
-    public class LoanListPage
+    public class LoanListPage : BasePage
     {
-        private readonly SelfHealingWebDriver _driver;
-        public LoanListPage(SelfHealingWebDriver driver)
-        {
-            _driver = driver;
-        }
+        public LoanListPage(SelfHealingWebDriver driver) : base(driver) { }
 
         public void SelectLoanByName(string loanName)
         {
-            var rows = _driver.FindElements(Locators.LoanListPageLocators.LoanRowLocator);
-            foreach (var row in rows)
+            var rows = Driver.FindElements(LoanListPageLocators.LoanRows);
+            var row = rows.FirstOrDefault(r => r.Text.Contains(loanName));
+            row?.Click();
+        }
+
+        public void SelectDate(string day)
+        {
+            var dateInput = Driver.FindElement(LoanListPageLocators.DatePickerInput);
+            dateInput.Click();
+            var dayAlternatives = LoanListPageLocators.GetDatePickerDayAlternatives(day);
+            foreach (var by in dayAlternatives)
             {
-                if (row.Text.Contains(loanName))
+                var days = Driver.FindElements(by);
+                var dayElem = days.FirstOrDefault();
+                if (dayElem != null)
                 {
-                    row.Click();
+                    dayElem.Click();
                     break;
                 }
             }
         }
 
-        public void DismissPopup()
+        public void DismissPopupIfPresent()
         {
-            var closeBtn = _driver.FindElementByKey(Locators.LoanListPageLocators.PopupCloseKey);
-            closeBtn.Click();
+            var popups = Driver.FindElements(LoanListPageLocators.PopupDialog);
+            if (popups.Any())
+            {
+                var closeBtn = Driver.FindElement(LoanListPageLocators.PopupClose);
+                closeBtn.Click();
+            }
         }
     }
 }
