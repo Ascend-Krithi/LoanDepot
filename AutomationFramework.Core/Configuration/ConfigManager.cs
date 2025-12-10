@@ -9,7 +9,7 @@ namespace AutomationFramework.Core.Configuration
 
         static ConfigManager()
         {
-            var configText = File.ReadAllText("AutomationFramework.Core/Configuration/appsettings.json");
+            var configText = File.ReadAllText("appsettings.json");
             _config = JObject.Parse(configText);
         }
 

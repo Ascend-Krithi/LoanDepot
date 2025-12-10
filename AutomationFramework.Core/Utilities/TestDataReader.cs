@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Data;
 using System.IO;
-using ClosedXML.Excel;
+using ExcelDataReader;
 
 namespace AutomationFramework.Core.Utilities
 {
@@ -11,27 +11,24 @@ namespace AutomationFramework.Core.Utilities
 
         public TestDataReader(string filePath)
         {
-            using (var workbook = new XLWorkbook(filePath))
+            System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
+            using var stream = File.Open(filePath, FileMode.Open, FileAccess.Read);
+            using var reader = ExcelReaderFactory.CreateReader(stream);
+            var result = reader.AsDataSet();
+            var table = result.Tables[0];
+
+            var headers = new List<string>();
+            for (int i = 0; i < table.Columns.Count; i++)
+                headers.Add(table.Rows[0][i].ToString());
+
+            for (int i = 1; i < table.Rows.Count; i++)
             {
-                var worksheet = workbook.Worksheet(1);
-                var rows = worksheet.RangeUsed().RowsUsed();
-                var headers = new List<string>();
-
-                foreach (var cell in rows.First().Cells())
-                {
-                    headers.Add(cell.Value.ToString());
-                }
-
-                foreach (var row in rows.Skip(1))
-                {
-                    var testCaseId = row.Cell(1).Value.ToString();
-                    var data = new Dictionary<string, string>();
-                    for (int i = 0; i < headers.Count; i++)
-                    {
-                        data[headers[i]] = row.Cell(i + 1).Value.ToString();
-                    }
-                    _testData[testCaseId] = data;
-                }
+                var row = table.Rows[i];
+                var tcId = row[0].ToString();
+                var dict = new Dictionary<string, string>();
+                for (int j = 0; j < headers.Count; j++)
+                    dict[headers[j]] = row[j].ToString();
+                _testData[tcId] = dict;
             }
         }
 

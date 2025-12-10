@@ -1,4 +1,5 @@
 // TestCaseID: TC02 – HELOC Late Fee Validation
+using AutomationFramework.Core.Base;
 using AutomationFramework.Core.Utilities;
 using AutomationFramework.Core.Widgets;
 using NUnit.Framework;
@@ -20,71 +21,82 @@ namespace AutomationFramework.Tests.StepDefinitions
             _popupHandler = (UniversalPopupHandler)_scenarioContext["PopupHandler"];
         }
 
-        [Given(@"the application is launched")]
-        public void GivenTheApplicationIsLaunched()
+        [Given(@"the user has valid credentials and a HELOC loan available")]
+        public void GivenTheUserHasValidCredentials()
         {
-            // Launch logic here
+            // Credentials and loan data are loaded in Hooks
         }
 
-        [When(@"the user logs in using valid credentials")]
-        public void WhenTheUserLogsInUsingValidCredentials()
+        [When(@"the user launches the application")]
+        public void WhenUserLaunchesApplication()
         {
-            // Login logic here
+            // Driver is initialized in Hooks
+        }
+
+        [When(@"logs in using valid credentials")]
+        public void WhenLogsIn()
+        {
+            _popupHandler.HandleAllPopups();
+            // LoginPage.Login(...)
         }
 
         [When(@"completes MFA verification")]
-        public void WhenCompletesMFAVerification()
+        public void WhenCompletesMfa()
         {
-            // MFA logic here
+            _popupHandler.HandleAllPopups();
+            // MfaPage.CompleteMfa(...)
         }
 
         [When(@"navigates to the dashboard")]
-        public void WhenNavigatesToTheDashboard()
+        public void WhenNavigatesToDashboard()
         {
-            // Navigation logic here
+            _popupHandler.HandleAllPopups();
+            // DashboardPage.NavigateTo()
         }
 
-        [When(@"closes or dismisses any pop-ups")]
-        public void WhenClosesOrDismissesAnyPopups()
+        [When(@"closes or dismisses any pop-ups if they appear")]
+        public void WhenClosesPopups()
         {
             _popupHandler.HandleAllPopups();
         }
 
         [When(@"selects the applicable loan account")]
-        public void WhenSelectsTheApplicableLoanAccount()
+        public void WhenSelectsLoanAccount()
         {
-            // Select loan logic here
+            // DashboardPage.SelectLoanAccount(...)
         }
 
         [When(@"clicks Make a Payment")]
-        public void WhenClicksMakeAPayment()
+        public void WhenClicksMakePayment()
         {
-            // Click Make a Payment logic here
+            _popupHandler.HandleAllPopups();
+            // DashboardPage.ClickMakePayment()
         }
 
-        [When(@"if scheduled payment popup appears, clicks Continue")]
-        public void WhenIfScheduledPaymentPopupAppearsClicksContinue()
+        [When(@"if a scheduled payment popup appears, clicks Continue")]
+        public void WhenScheduledPaymentPopupContinue()
         {
             _popupHandler.HandleAllPopups();
         }
 
         [When(@"opens the payment date picker")]
-        public void WhenOpensThePaymentDatePicker()
+        public void WhenOpensDatePicker()
         {
-            // Open date picker logic here
+            // PaymentPage.OpenDatePicker()
         }
 
-        [When(@"selects the payment date from test data \(exactly 15 days past due\)")]
-        public void WhenSelectsThePaymentDateFromTestData()
+        [When(@"selects the payment date from test data exactly 15 days past due")]
+        public void WhenSelectsPaymentDate()
         {
             var data = _testDataReader.GetDataByTestCaseId("TC02");
-            // Select date logic using data
+            var paymentDate = data["PaymentDate"];
+            // PaymentPage.SelectPaymentDate(paymentDate)
         }
 
         [Then(@"no late fee message should be displayed")]
-        public void ThenNoLateFeeMessageShouldBeDisplayed()
+        public void ThenNoLateFeeMessage()
         {
-            // Assert no late fee message
+            // Assert.IsFalse(PaymentPage.IsLateFeeMessageDisplayed())
         }
     }
 }

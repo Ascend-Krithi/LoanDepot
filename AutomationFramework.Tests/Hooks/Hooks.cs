@@ -25,20 +25,20 @@ namespace AutomationFramework.Tests.Hooks
             // Decrypt credentials
             var username = EncryptionService.Decrypt(ConfigManager.Get("Username"));
             var password = EncryptionService.Decrypt(ConfigManager.Get("Password"));
-            var mfaSecret = EncryptionService.Decrypt(ConfigManager.Get("MfaSecret"));
+            var mfa = EncryptionService.Decrypt(ConfigManager.Get("Mfa"));
 
             // Load test data
-            _testDataReader = new TestDataReader("AutomationFramework.Tests/TestData/testdata.xlsx");
+            _testDataReader = new TestDataReader("TestData/testdata.xlsx");
 
             // Popup handler
             _popupHandler = new UniversalPopupHandler(_selfHealingDriver);
 
-            scenarioContext["WebDriver"] = _selfHealingDriver;
+            scenarioContext["Driver"] = _selfHealingDriver;
             scenarioContext["TestDataReader"] = _testDataReader;
             scenarioContext["PopupHandler"] = _popupHandler;
             scenarioContext["Username"] = username;
             scenarioContext["Password"] = password;
-            scenarioContext["MfaSecret"] = mfaSecret;
+            scenarioContext["Mfa"] = mfa;
         }
 
         [AfterScenario]

@@ -1,1 +1,4 @@
-<binary Excel file containing test data for TC01, TC02, TC03 as referenced in the test cases>
+TestCaseId | Scenario | LoanNumber | PaymentDate | State | ExpectedLateFee
+TC01 | < 15 days – no late fee message | 3616 | 2025-12-10 | TX | False
+TC02 | = 15 days – no late fee message | 3616 | 2025-12-16 | TX | False
+TC03 | > 15 days – late fee message should show | 2805 | 2025-12-17 | TX | True

@@ -15,51 +15,37 @@ namespace AutomationFramework.Core.Widgets
 
         public void HandleAllPopups()
         {
-            // Chatbot iframe
             try
             {
-                var chatIframe = _driver.FindElements(By.CssSelector("iframe[src*='chat']"));
-                if (chatIframe.Any())
+                // Example: Chatbot iframe
+                var iframes = _driver.FindElements(By.TagName("iframe"));
+                foreach (var iframe in iframes)
                 {
-                    _driver.SwitchTo().Frame(chatIframe.First());
-                    var closeBtn = _driver.FindElements(By.CssSelector(".close, .close-btn, .close-button"));
-                    if (closeBtn.Any())
-                        closeBtn.First().Click();
-                    _driver.SwitchTo().DefaultContent();
+                    if (iframe.GetAttribute("title")?.ToLower().Contains("chat") == true)
+                    {
+                        _driver.SwitchTo().Frame(iframe);
+                        var closeBtn = _driver.FindElements(By.CssSelector("[aria-label='Close'], .close, .close-btn")).FirstOrDefault();
+                        closeBtn?.Click();
+                        _driver.SwitchTo().DefaultContent();
+                    }
                 }
-            }
-            catch { }
 
-            // Contact Update Popup
-            try
-            {
-                var updateLaterBtn = _driver.FindElements(By.XPath("//button[contains(text(),'Update Later')]"));
-                if (updateLaterBtn.Any())
-                    updateLaterBtn.First().Click();
-            }
-            catch { }
+                // Example: Contact Update popup
+                var updateLaterBtn = _driver.FindElements(By.XPath("//*[text()='Update Later' or text()='Skip']")).FirstOrDefault();
+                updateLaterBtn?.Click();
 
-            // Scheduled Payment Popup
-            try
-            {
-                var continueBtn = _driver.FindElements(By.XPath("//button[contains(text(),'Continue')]"));
-                if (continueBtn.Any())
-                    continueBtn.First().Click();
-            }
-            catch { }
+                // Example: Scheduled payment popup
+                var continueBtn = _driver.FindElements(By.XPath("//*[text()='Continue']")).FirstOrDefault();
+                continueBtn?.Click();
 
-            // Banners/Modals
-            try
-            {
-                var banners = _driver.FindElements(By.CssSelector(".modal, .banner, .popup"));
-                foreach (var banner in banners)
-                {
-                    var close = banner.FindElements(By.CssSelector(".close, .close-btn, .close-button"));
-                    if (close.Any())
-                        close.First().Click();
-                }
+                // Example: Generic modal close
+                var modalClose = _driver.FindElements(By.CssSelector(".modal [aria-label='Close'], .modal .close")).FirstOrDefault();
+                modalClose?.Click();
             }
-            catch { }
+            catch (Exception)
+            {
+                // Log and ignore popup handler errors
+            }
         }
     }
 }
