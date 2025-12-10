@@ -1,51 +1,33 @@
-using OpenQA.Selenium;
-using System;
-using System.Linq;
+using AutomationFramework.Core.SelfHealing;
 
 namespace AutomationFramework.Core.Widgets
 {
     public class UniversalPopupHandler
     {
-        private readonly IWebDriver _driver;
+        private readonly SelfHealingWebDriver _driver;
 
-        public UniversalPopupHandler(IWebDriver driver)
+        public UniversalPopupHandler(SelfHealingWebDriver driver)
         {
             _driver = driver;
         }
 
-        public void HandleAllPopups()
+        public void HandlePopups()
         {
-            try
-            {
-                // Example: Chatbot iframe
-                var iframes = _driver.FindElements(By.TagName("iframe"));
-                foreach (var iframe in iframes)
-                {
-                    if (iframe.GetAttribute("title")?.ToLower().Contains("chat") == true)
-                    {
-                        _driver.SwitchTo().Frame(iframe);
-                        var closeBtn = _driver.FindElements(By.CssSelector("[aria-label='Close'], .close, .close-btn")).FirstOrDefault();
-                        closeBtn?.Click();
-                        _driver.SwitchTo().DefaultContent();
-                    }
-                }
+            // Detect and close Chat Iframes
+            if (_driver.ElementExists("ChatIframe"))
+                _driver.FindElement("ChatIframeClose").Click();
 
-                // Example: Contact Update popup
-                var updateLaterBtn = _driver.FindElements(By.XPath("//*[text()='Update Later' or text()='Skip']")).FirstOrDefault();
-                updateLaterBtn?.Click();
+            // Close "Update Contact" modals
+            if (_driver.ElementExists("UpdateContactModal"))
+                _driver.FindElement("UpdateContactClose").Click();
 
-                // Example: Scheduled payment popup
-                var continueBtn = _driver.FindElements(By.XPath("//*[text()='Continue']")).FirstOrDefault();
-                continueBtn?.Click();
+            // Close Scheduled Payment dialogs
+            if (_driver.ElementExists("ScheduledPaymentDialog"))
+                _driver.FindElement("ScheduledPaymentClose").Click();
 
-                // Example: Generic modal close
-                var modalClose = _driver.FindElements(By.CssSelector(".modal [aria-label='Close'], .modal .close")).FirstOrDefault();
-                modalClose?.Click();
-            }
-            catch (Exception)
-            {
-                // Log and ignore popup handler errors
-            }
+            // Remove blocking overlays
+            if (_driver.ElementExists("BlockingOverlay"))
+                _driver.FindElement("BlockingOverlay").Click();
         }
     }
 }

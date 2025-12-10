@@ -1,5 +1,6 @@
-using System.IO;
 using Newtonsoft.Json.Linq;
+using System.IO;
+using AutomationFramework.Core.Utilities;
 
 namespace AutomationFramework.Core.Configuration
 {
@@ -9,8 +10,9 @@ namespace AutomationFramework.Core.Configuration
 
         static ConfigManager()
         {
-            var configText = File.ReadAllText("appsettings.json");
-            _config = JObject.Parse(configText);
+            var encryptedJson = File.ReadAllText("AutomationFramework.Core/Configuration/appsettings.json");
+            var decryptedJson = EncryptionService.Decrypt(encryptedJson);
+            _config = JObject.Parse(decryptedJson);
         }
 
         public static string Get(string key)

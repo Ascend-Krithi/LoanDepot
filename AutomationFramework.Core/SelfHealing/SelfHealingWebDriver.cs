@@ -1,32 +1,33 @@
 using OpenQA.Selenium;
-using System;
 using System.Collections.Generic;
 
 namespace AutomationFramework.Core.SelfHealing
 {
-    public class SelfHealingWebDriver : IWebDriver
+    public class SelfHealingWebDriver
     {
         private readonly IWebDriver _driver;
+        private readonly Dictionary<string, (string bestLocator, List<string> fallbackLocators)> _locators;
 
-        public SelfHealingWebDriver(IWebDriver driver)
+        public SelfHealingWebDriver(IWebDriver driver, Dictionary<string, (string, List<string>)> locators)
         {
             _driver = driver;
+            _locators = locators;
         }
 
-        // Example usage: Try best_locator, then fallback_locators
-        public IWebElement FindElementWithFallback(By bestLocator, List<By> fallbackLocators)
+        public IWebElement FindElement(string alias)
         {
+            var locator = _locators[alias].bestLocator;
             try
             {
-                return _driver.FindElement(bestLocator);
+                return _driver.FindElement(By.XPath(locator));
             }
             catch
             {
-                foreach (var locator in fallbackLocators)
+                foreach (var fallback in _locators[alias].fallbackLocators)
                 {
                     try
                     {
-                        return _driver.FindElement(locator);
+                        return _driver.FindElement(By.XPath(fallback));
                     }
                     catch { }
                 }
@@ -34,19 +35,17 @@ namespace AutomationFramework.Core.SelfHealing
             }
         }
 
-        // Implement all IWebDriver members by delegating to _driver
-        public string Url { get => _driver.Url; set => _driver.Url = value; }
-        public string Title => _driver.Title;
-        public string PageSource => _driver.PageSource;
-        public string CurrentWindowHandle => _driver.CurrentWindowHandle;
-        public ReadOnlyCollection<string> WindowHandles => _driver.WindowHandles;
-        public void Close() => _driver.Close();
-        public void Dispose() => _driver.Dispose();
-        public IWebElement FindElement(By by) => _driver.FindElement(by);
-        public ReadOnlyCollection<IWebElement> FindElements(By by) => _driver.FindElements(by);
-        public IOptions Manage() => _driver.Manage();
-        public INavigation Navigate() => _driver.Navigate();
-        public void Quit() => _driver.Quit();
-        public ITargetLocator SwitchTo() => _driver.SwitchTo();
+        public bool ElementExists(string alias)
+        {
+            try
+            {
+                FindElement(alias);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
     }
 }
