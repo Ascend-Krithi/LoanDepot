@@ -3,27 +3,49 @@ using AutomationFramework.Core.SelfHealing;
 
 namespace AutomationFramework.Core.Pages
 {
-    // Automation for Page: LoginPage
     public class LoginPage : BasePage
     {
         public LoginPage(SelfHealingWebDriver driver) : base(driver) { }
 
         public void EnterUsername(string username)
         {
-            BeforeCriticalAction();
-            Driver.FindElement("UsernameInput").SendKeys(username);
+            HandleUniversalPopups();
+            Driver.SendKeys("UsernameInput", username);
         }
 
         public void EnterPassword(string password)
         {
-            BeforeCriticalAction();
-            Driver.FindElement("PasswordInput").SendKeys(password);
+            Driver.SendKeys("PasswordInput", password);
         }
 
         public void ClickLogin()
         {
-            BeforeCriticalAction();
-            Driver.FindElement("LoginButton").Click();
+            Driver.Click("LoginButton");
+        }
+
+        public void ClickRememberMe()
+        {
+            Driver.Click("RememberMeCheckbox");
+        }
+
+        public void ClickForgotPassword()
+        {
+            Driver.Click("ForgotPasswordLink");
+        }
+
+        public string GetLoginErrorMessage()
+        {
+            return Driver.GetText("LoginErrorMessage");
+        }
+
+        public void ClickSignInWithSSO()
+        {
+            Driver.Click("SignInWithSSOButton");
+        }
+
+        public void SelectTenant(string tenant)
+        {
+            Driver.SelectDropdownByText("TenantDropdown", tenant);
         }
     }
 }

@@ -6,18 +6,16 @@ namespace AutomationFramework.Core.Base
 {
     public abstract class BasePage
     {
-        protected SelfHealingWebDriver Driver { get; private set; }
-        protected UniversalPopupHandler PopupHandler { get; private set; }
+        protected readonly SelfHealingWebDriver Driver;
 
         protected BasePage(SelfHealingWebDriver driver)
         {
             Driver = driver;
-            PopupHandler = new UniversalPopupHandler(driver);
         }
 
-        protected void BeforeCriticalAction()
+        protected void HandleUniversalPopups()
         {
-            PopupHandler.HandlePopups();
+            UniversalPopupHandler.HandlePopups(Driver);
         }
     }
 }
