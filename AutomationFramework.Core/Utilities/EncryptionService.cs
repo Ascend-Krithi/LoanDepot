@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -6,40 +7,49 @@ namespace AutomationFramework.Core.Utilities
 {
     public static class EncryptionService
     {
-        public static string Encrypt(string plainText, string hexKey, string hexIV)
+        private static readonly string Key = "Your32CharLongEncryptionKey!"; // Must be 32 chars for AES-256
+
+        public static string Encrypt(string plainText)
         {
-            var key = HexStringToBytes(hexKey);
-            var iv = HexStringToBytes(hexIV);
-            using var aes = Aes.Create();
-            aes.Mode = CipherMode.CBC;
-            aes.Padding = PaddingMode.PKCS7;
-            using var encryptor = aes.CreateEncryptor(key, iv);
-            var plainBytes = Encoding.UTF8.GetBytes(plainText);
-            var cipherBytes = encryptor.TransformFinalBlock(plainBytes, 0, plainBytes.Length);
-            return Convert.ToBase64String(cipherBytes);
+            using (Aes aesAlg = Aes.Create())
+            {
+                aesAlg.Key = Encoding.UTF8.GetBytes(Key);
+                aesAlg.GenerateIV();
+                var iv = aesAlg.IV;
+
+                using (var encryptor = aesAlg.CreateEncryptor(aesAlg.Key, iv))
+                using (var msEncrypt = new MemoryStream())
+                {
+                    msEncrypt.Write(iv, 0, iv.Length);
+                    using (var csEncrypt = new CryptoStream(msEncrypt, encryptor, CryptoStreamMode.Write))
+                    using (var swEncrypt = new StreamWriter(csEncrypt))
+                    {
+                        swEncrypt.Write(plainText);
+                    }
+                    return Convert.ToBase64String(msEncrypt.ToArray());
+                }
+            }
         }
 
-        public static string Decrypt(string base64Cipher, string hexKey, string hexIV)
+        public static string Decrypt(string cipherText)
         {
-            var key = HexStringToBytes(hexKey);
-            var iv = HexStringToBytes(hexIV);
-            using var aes = Aes.Create();
-            aes.Mode = CipherMode.CBC;
-            aes.Padding = PaddingMode.PKCS7;
-            using var decryptor = aes.CreateDecryptor(key, iv);
-            var cipherBytes = Convert.FromBase64String(base64Cipher);
-            var plainBytes = decryptor.TransformFinalBlock(cipherBytes, 0, cipherBytes.Length);
-            return Encoding.UTF8.GetString(plainBytes);
-        }
+            var fullCipher = Convert.FromBase64String(cipherText);
 
-        private static byte[] HexStringToBytes(string hex)
-        {
-            if (hex.Length % 2 != 0)
-                throw new ArgumentException("Invalid hex key/IV length.");
-            var bytes = new byte[hex.Length / 2];
-            for (int i = 0; i < bytes.Length; i++)
-                bytes[i] = Convert.ToByte(hex.Substring(i * 2, 2), 16);
-            return bytes;
+            using (Aes aesAlg = Aes.Create())
+            {
+                aesAlg.Key = Encoding.UTF8.GetBytes(Key);
+                var iv = new byte[16];
+                Array.Copy(fullCipher, 0, iv, 0, iv.Length);
+                aesAlg.IV = iv;
+
+                using (var decryptor = aesAlg.CreateDecryptor(aesAlg.Key, aesAlg.IV))
+                using (var msDecrypt = new MemoryStream(fullCipher, 16, fullCipher.Length - 16))
+                using (var csDecrypt = new CryptoStream(msDecrypt, decryptor, CryptoStreamMode.Read))
+                using (var srDecrypt = new StreamReader(csDecrypt))
+                {
+                    return srDecrypt.ReadToEnd();
+                }
+            }
         }
     }
 }

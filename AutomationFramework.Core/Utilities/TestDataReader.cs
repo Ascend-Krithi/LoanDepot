@@ -1,58 +1,43 @@
 using System.Collections.Generic;
+using System.Data;
 using System.IO;
-using OfficeOpenXml;
+using ClosedXML.Excel;
 
 namespace AutomationFramework.Core.Utilities
 {
-    public static class TestDataReader
+    public class TestDataReader
     {
-        static TestDataReader()
+        private readonly Dictionary<string, Dictionary<string, string>> _testData = new();
+
+        public TestDataReader(string filePath)
         {
-            ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+            using (var workbook = new XLWorkbook(filePath))
+            {
+                var worksheet = workbook.Worksheet(1);
+                var rows = worksheet.RangeUsed().RowsUsed();
+                var headers = new List<string>();
+
+                foreach (var cell in rows.First().Cells())
+                {
+                    headers.Add(cell.Value.ToString());
+                }
+
+                foreach (var row in rows.Skip(1))
+                {
+                    var testCaseId = row.Cell(1).Value.ToString();
+                    var data = new Dictionary<string, string>();
+                    for (int i = 0; i < headers.Count; i++)
+                    {
+                        data[headers[i]] = row.Cell(i + 1).Value.ToString();
+                    }
+                    _testData[testCaseId] = data;
+                }
+            }
         }
 
-        public static IDictionary<string, string> ReadRowByTestCaseId(string filePath, string sheetName, string testCaseId)
+        public Dictionary<string, string> GetDataByTestCaseId(string testCaseId)
         {
-            using var package = new ExcelPackage(new FileInfo(filePath));
-            var sheet = package.Workbook.Worksheets[sheetName];
-            var headerMap = new Dictionary<int, string>();
-            int colCount = sheet.Dimension.Columns;
-            int rowCount = sheet.Dimension.Rows;
-
-            for (int c = 1; c <= colCount; c++)
-            {
-                var header = sheet.Cells[1, c].Text?.Trim();
-                if (!string.IsNullOrWhiteSpace(header))
-                    headerMap[c] = header;
-            }
-
-            int keyColIndex = -1;
-            foreach (var kv in headerMap)
-            {
-                if (kv.Value.Equals("TestCaseId", System.StringComparison.OrdinalIgnoreCase))
-                {
-                    keyColIndex = kv.Key;
-                    break;
-                }
-            }
-            if (keyColIndex == -1)
-                throw new System.InvalidOperationException($"Key column 'TestCaseId' not found in sheet '{sheetName}'.");
-
-            for (int r = 2; r <= rowCount; r++)
-            {
-                var cellKey = sheet.Cells[r, keyColIndex].Text?.Trim();
-                if (cellKey != null && cellKey.Equals(testCaseId, System.StringComparison.OrdinalIgnoreCase))
-                {
-                    var dict = new Dictionary<string, string>(System.StringComparer.OrdinalIgnoreCase);
-                    foreach (var kv in headerMap)
-                    {
-                        var val = sheet.Cells[r, kv.Key].Text?.Trim() ?? string.Empty;
-                        dict[kv.Value] = val;
-                    }
-                    return dict;
-                }
-            }
-            throw new System.InvalidOperationException($"Row with key '{testCaseId}' not found in sheet '{sheetName}'.");
+            return _testData.ContainsKey(testCaseId) ? _testData[testCaseId] : null;
         }
     }
 }

@@ -1,77 +1,90 @@
-using TechTalk.SpecFlow;
+// TestCaseID: TC01 – HELOC Late Fee Validation
 using AutomationFramework.Core.Utilities;
 using AutomationFramework.Core.Widgets;
+using NUnit.Framework;
+using TechTalk.SpecFlow;
 
 namespace AutomationFramework.Tests.StepDefinitions
 {
     [Binding]
-    // TestCaseID: TC01 – HELOC Late Fee Validation
     public class TC01StepDefinitions
     {
-        [Given(@"I launch the application")]
-        public void GivenILaunchTheApplication()
+        private readonly ScenarioContext _scenarioContext;
+        private readonly TestDataReader _testDataReader;
+        private readonly UniversalPopupHandler _popupHandler;
+
+        public TC01StepDefinitions(ScenarioContext scenarioContext)
         {
-            // Handled by Hooks
+            _scenarioContext = scenarioContext;
+            _testDataReader = (TestDataReader)_scenarioContext["TestDataReader"];
+            _popupHandler = (UniversalPopupHandler)_scenarioContext["PopupHandler"];
         }
 
-        [Given(@"I login with encrypted credentials")]
-        public void GivenILoginWithEncryptedCredentials()
+        [Given(@"the customer servicing application is launched")]
+        public void GivenTheCustomerServicingApplicationIsLaunched()
         {
-            // Use EncryptionService to decrypt credentials and perform login
+            // Launch logic here
         }
 
-        [Given(@"I complete MFA")]
-        public void GivenICompleteMFA()
+        [When(@"the user logs in using valid customer credentials")]
+        public void WhenTheUserLogsInUsingValidCustomerCredentials()
         {
-            // Complete MFA step
+            // Login logic here
         }
 
-        [Given(@"I am on the dashboard")]
-        public void GivenIAmOnTheDashboard()
+        [When(@"completes MFA verification")]
+        public void WhenCompletesMFAVerification()
         {
-            // Verify dashboard loaded
+            // MFA logic here
         }
 
-        [Given(@"I dismiss any popups")]
-        public void GivenIDismissAnyPopups()
+        [When(@"navigates to the dashboard")]
+        public void WhenNavigatesToTheDashboard()
         {
-            UniversalPopupHandler.DismissAllPopups(Hooks.Hooks.Driver);
+            // Navigation logic here
         }
 
-        [Given(@"I select the applicable loan account")]
-        public void GivenISelectTheApplicableLoanAccount()
+        [When(@"closes or dismisses any pop-ups if they appear")]
+        public void WhenClosesOrDismissesAnyPopupsIfTheyAppear()
         {
-            // Select loan account
+            _popupHandler.HandleAllPopups();
         }
 
-        [When(@"I navigate to Make a Payment")]
-        public void WhenINavigateToMakeAPayment()
+        [When(@"selects the applicable loan account")]
+        public void WhenSelectsTheApplicableLoanAccount()
         {
-            // Navigate to Make Payment
+            // Select loan logic here
         }
 
-        [When(@"I handle any scheduled payment popup")]
-        public void WhenIHandleAnyScheduledPaymentPopup()
+        [When(@"clicks Make a Payment")]
+        public void WhenClicksMakeAPayment()
         {
-            UniversalPopupHandler.DismissAllPopups(Hooks.Hooks.Driver);
+            // Click Make a Payment logic here
         }
 
-        [When(@"I open the payment date picker")]
-        public void WhenIOpenThePaymentDatePicker()
+        [When(@"if a scheduled payment popup appears, clicks Continue")]
+        public void WhenIfAScheduledPaymentPopupAppearsClicksContinue()
         {
-            // Open date picker
+            _popupHandler.HandleAllPopups();
         }
 
-        [When(@"I select the payment date less than 15 days past due")]
-        public void WhenISelectThePaymentDateLessThan15DaysPastDue()
+        [When(@"opens the payment date picker")]
+        public void WhenOpensThePaymentDatePicker()
         {
-            // Select date from test data
+            // Open date picker logic here
         }
 
-        [Then(@"I should not see the late fee message")]
-        public void ThenIShouldNotSeeTheLateFeeMessage()
+        [When(@"selects the payment date from test data \(less than 15 days past due\)")]
+        public void WhenSelectsThePaymentDateFromTestData()
         {
-            // Assert late fee message not present
+            var data = _testDataReader.GetDataByTestCaseId("TC01");
+            // Select date logic using data
+        }
+
+        [Then(@"no late fee message is displayed")]
+        public void ThenNoLateFeeMessageIsDisplayed()
+        {
+            // Assert no late fee message
         }
     }
 }

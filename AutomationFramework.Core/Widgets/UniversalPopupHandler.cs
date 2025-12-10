@@ -1,53 +1,65 @@
 using OpenQA.Selenium;
-using System.Collections.Generic;
+using System;
+using System.Linq;
 
 namespace AutomationFramework.Core.Widgets
 {
-    public static class UniversalPopupHandler
+    public class UniversalPopupHandler
     {
-        public static void DismissAllPopups(IWebDriver driver)
+        private readonly IWebDriver _driver;
+
+        public UniversalPopupHandler(IWebDriver driver)
         {
-            try
-            {
-                DismissJavascriptAlert(driver);
-                DismissCommonModalButtons(driver);
-                CloseOverlayByClasses(driver);
-            }
-            catch { }
+            _driver = driver;
         }
 
-        private static void DismissJavascriptAlert(IWebDriver driver)
+        public void HandleAllPopups()
         {
+            // Chatbot iframe
             try
             {
-                var alert = driver.SwitchTo().Alert();
-                alert.Dismiss();
-            }
-            catch { }
-        }
-
-        private static void DismissCommonModalButtons(IWebDriver driver)
-        {
-            var candidates = new List<string> { "Close", "Dismiss", "No Thanks", "Okay", "OK", "Cancel", "Got it" };
-            foreach (var text in candidates)
-            {
-                var buttons = driver.FindElements(By.XPath($"//button[normalize-space()='{text}']|//a[normalize-space()='{text}']"));
-                foreach (var btn in buttons)
+                var chatIframe = _driver.FindElements(By.CssSelector("iframe[src*='chat']"));
+                if (chatIframe.Any())
                 {
-                    if (btn.Displayed && btn.Enabled)
-                        btn.Click();
+                    _driver.SwitchTo().Frame(chatIframe.First());
+                    var closeBtn = _driver.FindElements(By.CssSelector(".close, .close-btn, .close-button"));
+                    if (closeBtn.Any())
+                        closeBtn.First().Click();
+                    _driver.SwitchTo().DefaultContent();
                 }
             }
-        }
+            catch { }
 
-        private static void CloseOverlayByClasses(IWebDriver driver)
-        {
-            var closeIcons = driver.FindElements(By.CssSelector(".modal .close, .modal .btn-close, .x-close, .popup-close, .overlay-close"));
-            foreach (var el in closeIcons)
+            // Contact Update Popup
+            try
             {
-                if (el.Displayed && el.Enabled)
-                    el.Click();
+                var updateLaterBtn = _driver.FindElements(By.XPath("//button[contains(text(),'Update Later')]"));
+                if (updateLaterBtn.Any())
+                    updateLaterBtn.First().Click();
             }
+            catch { }
+
+            // Scheduled Payment Popup
+            try
+            {
+                var continueBtn = _driver.FindElements(By.XPath("//button[contains(text(),'Continue')]"));
+                if (continueBtn.Any())
+                    continueBtn.First().Click();
+            }
+            catch { }
+
+            // Banners/Modals
+            try
+            {
+                var banners = _driver.FindElements(By.CssSelector(".modal, .banner, .popup"));
+                foreach (var banner in banners)
+                {
+                    var close = banner.FindElements(By.CssSelector(".close, .close-btn, .close-button"));
+                    if (close.Any())
+                        close.First().Click();
+                }
+            }
+            catch { }
         }
     }
 }

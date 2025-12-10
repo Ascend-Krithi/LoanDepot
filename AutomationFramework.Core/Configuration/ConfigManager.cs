@@ -1,20 +1,21 @@
 using System.IO;
-using Microsoft.Extensions.Configuration;
+using Newtonsoft.Json.Linq;
 
 namespace AutomationFramework.Core.Configuration
 {
     public static class ConfigManager
     {
-        private static IConfigurationRoot _config;
+        private static JObject _config;
 
         static ConfigManager()
         {
-            _config = new ConfigurationBuilder()
-                .SetBasePath(Directory.GetCurrentDirectory())
-                .AddJsonFile("appsettings.json")
-                .Build();
+            var configText = File.ReadAllText("AutomationFramework.Core/Configuration/appsettings.json");
+            _config = JObject.Parse(configText);
         }
 
-        public static string Get(string key) => _config[key];
+        public static string Get(string key)
+        {
+            return _config[key]?.ToString();
+        }
     }
 }
