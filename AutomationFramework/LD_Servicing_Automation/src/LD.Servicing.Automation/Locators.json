@@ -1,0 +1,22 @@
+{
+  "Login.Username": { "css": "#username, input[name='username'], [data-test='username']" },
+  "Login.Password": { "css": "#password, input[name='password'], [data-test='password']" },
+  "Login.SignIn": { "css": "button[type='submit'], button#signIn, [data-test='sign-in']" },
+
+  "MFA.SendCode": { "css": "button.send-code, [data-test='send-code'], .mfa button:nth-of-type(1)" },
+  "MFA.CodeInput": { "css": "input[name='mfaCode'], #mfaCode, [data-test='mfa-code']" },
+  "MFA.Verify": { "css": "button.verify, [data-test='verify'], .mfa button:nth-of-type(2)" },
+
+  "Dashboard.PopupDismiss": { "css": ".popup .close, .announcement .dismiss, [data-test='dismiss']" },
+  "Dashboard.LoanList": { "css": ".loan-list, [data-test='loan-list']" },
+  "Dashboard.LoanItem": { "xpath": "//div[contains(@class,'loan-item') or @data-test='loan-item'][1]" },
+
+  "LoanDetails.MakePayment": { "css": "button.make-payment, [data-test='make-payment']" },
+  "LoanDetails.ScheduledPaymentPopup": { "css": ".scheduled-payment-modal, [data-test='scheduled-payment-modal']" },
+  "LoanDetails.ScheduledPaymentContinue": { "xpath": "//div[contains(@class,'scheduled-payment-modal')]//button[contains(.,'Continue') or contains(.,'OK') or @data-test='scheduled-continue']" },
+
+  "Payment.DatePicker.Open": { "css": "input.payment-date, .date-picker input, [data-test='payment-date']" },
+  "Payment.DatePicker.Calendar": { "css": ".ui-datepicker, .calendar, [data-test='date-calendar']" },
+  "Payment.LateFeeMessageArea": { "css": ".late-fee-message, #lateFeeMessage, [data-test='late-fee-message']" },
+  "Payment.Submit": { "css": "button.submit-payment, [data-test='submit-payment']" }
+}
