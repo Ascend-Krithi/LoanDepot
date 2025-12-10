@@ -1,34 +1,45 @@
+using System.Collections.Generic;
 using System.Data;
 using System.IO;
 using ExcelDataReader;
-using System.Collections.Generic;
 
 namespace AutomationFramework.Core.Utilities
 {
-    public static class TestDataReader
+    public class TestDataReader
     {
-        public static Dictionary<string, string> GetTestData(string testCaseId, string filePath)
+        private Dictionary<string, Dictionary<string, string>> testData;
+
+        public TestDataReader(string filePath)
         {
+            testData = new Dictionary<string, Dictionary<string, string>>();
             System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
+
             using (var stream = File.Open(filePath, FileMode.Open, FileAccess.Read))
             using (var reader = ExcelReaderFactory.CreateReader(stream))
             {
                 var result = reader.AsDataSet();
                 var table = result.Tables[0];
-                var data = new Dictionary<string, string>();
+
+                var columns = new List<string>();
+                for (int i = 0; i < table.Columns.Count; i++)
+                    columns.Add(table.Rows[0][i].ToString());
+
                 for (int i = 1; i < table.Rows.Count; i++)
                 {
-                    if (table.Rows[i][0].ToString() == testCaseId)
-                    {
-                        for (int j = 0; j < table.Columns.Count; j++)
-                        {
-                            data[table.Columns[j].ColumnName] = table.Rows[i][j].ToString();
-                        }
-                        break;
-                    }
+                    var row = table.Rows[i];
+                    var rowDict = new Dictionary<string, string>();
+                    for (int j = 0; j < columns.Count; j++)
+                        rowDict[columns[j]] = row[j].ToString();
+
+                    string testCaseId = rowDict["TestCaseId"];
+                    testData[testCaseId] = rowDict;
                 }
-                return data;
             }
+        }
+
+        public Dictionary<string, string> GetDataByTestCaseId(string testCaseId)
+        {
+            return testData.ContainsKey(testCaseId) ? testData[testCaseId] : null;
         }
     }
 }

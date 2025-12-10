@@ -1,34 +1,50 @@
-using TechTalk.SpecFlow;
 using AutomationFramework.Core.Base;
-using AutomationFramework.Core.SelfHealing;
 using AutomationFramework.Core.Configuration;
+using AutomationFramework.Core.SelfHealing;
 using AutomationFramework.Core.Utilities;
+using AutomationFramework.Core.Widgets;
 using OpenQA.Selenium;
+using TechTalk.SpecFlow;
 
 namespace AutomationFramework.Tests.Hooks
 {
     [Binding]
     public class Hooks
     {
-        public static IWebDriver WebDriver;
-        public static SelfHealingWebDriver Driver;
+        private IWebDriver _driver;
+        private SelfHealingWebDriver _selfHealingDriver;
+        private TestDataReader _testDataReader;
+        private UniversalPopupHandler _popupHandler;
 
         [BeforeScenario]
-        public void BeforeScenario()
+        public void BeforeScenario(ScenarioContext scenarioContext)
         {
-            var browser = EncryptionService.Decrypt(ConfigManager.Get("Browser"));
-            WebDriver = DriverFactory.CreateDriver(browser);
-            // Load locators for all pages (pseudo-code, should be loaded from JSONs)
-            var locators = new Dictionary<string, string>(); // Populate from locator JSONs
-            Driver = new SelfHealingWebDriver(WebDriver, locators);
-            // Decrypt credentials and load test data as needed
+            _driver = DriverFactory.CreateDriver();
+            _selfHealingDriver = new SelfHealingWebDriver(_driver);
+
+            // Decrypt credentials
+            var username = EncryptionService.Decrypt(ConfigManager.Get("Username"));
+            var password = EncryptionService.Decrypt(ConfigManager.Get("Password"));
+            var mfa = EncryptionService.Decrypt(ConfigManager.Get("MfaCode"));
+
+            // Load test data
+            _testDataReader = new TestDataReader("TestData/testdata.xlsx");
+
+            // Popup handler
+            _popupHandler = new UniversalPopupHandler(_selfHealingDriver);
+
+            scenarioContext["Driver"] = _selfHealingDriver;
+            scenarioContext["TestDataReader"] = _testDataReader;
+            scenarioContext["PopupHandler"] = _popupHandler;
+            scenarioContext["Username"] = username;
+            scenarioContext["Password"] = password;
+            scenarioContext["Mfa"] = mfa;
         }
 
         [AfterScenario]
         public void AfterScenario()
         {
-            WebDriver.Quit();
-            // Flush reports if needed
+            _driver?.Quit();
         }
     }
 }

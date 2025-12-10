@@ -7,20 +7,25 @@ namespace AutomationFramework.Core.Utilities
 {
     public static class EncryptionService
     {
-        private static readonly string Key = "ReplaceWithYourKey123"; // Should be stored securely
+        private static readonly string Key = "YourEncryptionKey123"; // Should be stored securely
 
-        public static string Decrypt(string encryptedText)
+        public static string Decrypt(string cipherText)
         {
-            // Dummy implementation for illustration. Replace with actual AES decryption logic.
-            // Assume encryptedText is base64-encoded for this example.
-            try
+            byte[] iv = new byte[16];
+            byte[] buffer = Convert.FromBase64String(cipherText);
+
+            using (Aes aes = Aes.Create())
             {
-                byte[] cipherBytes = Convert.FromBase64String(encryptedText);
-                return Encoding.UTF8.GetString(cipherBytes);
-            }
-            catch
-            {
-                return encryptedText; // Return as-is if not encrypted
+                aes.Key = Encoding.UTF8.GetBytes(Key);
+                aes.IV = iv;
+                ICryptoTransform decryptor = aes.CreateDecryptor(aes.Key, aes.IV);
+
+                using (MemoryStream ms = new MemoryStream(buffer))
+                using (CryptoStream cs = new CryptoStream(ms, decryptor, CryptoStreamMode.Read))
+                using (StreamReader reader = new StreamReader(cs))
+                {
+                    return reader.ReadToEnd();
+                }
             }
         }
     }

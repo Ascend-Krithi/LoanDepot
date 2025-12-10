@@ -1,41 +1,55 @@
-using AutomationFramework.Core.SelfHealing;
+using OpenQA.Selenium;
 
 namespace AutomationFramework.Core.Widgets
 {
-    public static class UniversalPopupHandler
+    public class UniversalPopupHandler
     {
-        public static void HandlePopups(SelfHealingWebDriver driver)
+        private readonly IWebDriver driver;
+
+        public UniversalPopupHandler(IWebDriver driver)
         {
-            // Chatbot iframe
-            if (driver.ElementExists("iframe[src*='chatbot']"))
-            {
-                driver.SwitchToFrame("iframe[src*='chatbot']");
-                if (driver.ElementExists("button.close"))
-                    driver.Click("button.close");
-                driver.SwitchToDefaultContent();
-            }
+            this.driver = driver;
+        }
 
-            // Contact Update modal
-            if (driver.ElementExists("div.modal-dialog"))
+        public void HandleAllPopups()
+        {
+            // Example: Dismiss contact update modal
+            try
             {
-                if (driver.ElementExists("button#update-later"))
-                    driver.Click("button#update-later");
-                else if (driver.ElementExists("button.close"))
-                    driver.Click("button.close");
+                var updateLater = driver.FindElements(By.XPath("//button[contains(text(),'Update Later')]"));
+                if (updateLater.Count > 0)
+                    updateLater[0].Click();
             }
+            catch { }
 
-            // Scheduled Payment dialog
-            if (driver.ElementExists("div#scheduled-payment-modal"))
+            // Example: Dismiss chatbot iframe
+            try
             {
-                if (driver.ElementExists("button#continue"))
-                    driver.Click("button#continue");
+                driver.SwitchTo().Frame("chatbot-iframe");
+                var closeBtn = driver.FindElements(By.CssSelector(".close-chat"));
+                if (closeBtn.Count > 0)
+                    closeBtn[0].Click();
+                driver.SwitchTo().DefaultContent();
             }
+            catch { }
 
-            // Blocking overlays
-            if (driver.ElementExists("div.blocking-overlay"))
+            // Example: Dismiss scheduled payment popup
+            try
             {
-                driver.Click("div.blocking-overlay");
+                var continueBtn = driver.FindElements(By.XPath("//button[contains(text(),'Continue')]"));
+                if (continueBtn.Count > 0)
+                    continueBtn[0].Click();
             }
+            catch { }
+
+            // Example: Dismiss banners/modals
+            try
+            {
+                var banners = driver.FindElements(By.CssSelector(".banner-close, .modal-close"));
+                if (banners.Count > 0)
+                    banners[0].Click();
+            }
+            catch { }
         }
     }
 }

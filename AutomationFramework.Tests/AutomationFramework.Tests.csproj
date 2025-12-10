@@ -1,13 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
-    <RootNamespace>AutomationFramework.Tests</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\AutomationFramework.Core\AutomationFramework.Core.csproj" />
-    <PackageReference Include="SpecFlow" Version="3.9.74" />
-    <PackageReference Include="SpecFlow.NUnit" Version="3.9.74" />
+    <PackageReference Include="SpecFlow.NUnit" Version="3.9.40" />
     <PackageReference Include="NUnit" Version="3.13.3" />
-    <PackageReference Include="ExtentReports" Version="5.0.9" />
+    <PackageReference Include="Selenium.WebDriver" Version="4.8.1" />
   </ItemGroup>
 </Project>

@@ -1,26 +1,15 @@
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
-using OpenQA.Selenium.Firefox;
-using OpenQA.Selenium.Edge;
-using System;
 
 namespace AutomationFramework.Core.Base
 {
     public static class DriverFactory
     {
-        public static IWebDriver CreateDriver(string browser)
+        public static IWebDriver CreateDriver()
         {
-            switch (browser.ToLower())
-            {
-                case "chrome":
-                    return new ChromeDriver();
-                case "firefox":
-                    return new FirefoxDriver();
-                case "edge":
-                    return new EdgeDriver();
-                default:
-                    throw new ArgumentException($"Unsupported browser: {browser}");
-            }
+            var options = new ChromeOptions();
+            options.AddArgument("--start-maximized");
+            return new ChromeDriver(options);
         }
     }
 }

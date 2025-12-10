@@ -1,5 +1,4 @@
 {
-  "reportName": "Automation Test Execution Report",
-  "theme": "standard",
-  "documentTitle": "UI Automation Results"
+  "reportTitle": "Automation Test Report",
+  "theme": "standard"
 }

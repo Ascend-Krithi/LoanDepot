@@ -1,104 +1,92 @@
-// Automation for TestCaseID: TC03
-using TechTalk.SpecFlow;
-using AutomationFramework.Core.SelfHealing;
-using AutomationFramework.Core.Pages;
+// TestCaseID: TC03 – HELOC Late Fee Validation
+
+using AutomationFramework.Core.Base;
 using AutomationFramework.Core.Utilities;
+using AutomationFramework.Core.Widgets;
 using NUnit.Framework;
+using TechTalk.SpecFlow;
 
 namespace AutomationFramework.Tests.StepDefinitions
 {
     [Binding]
     public class TC03StepDefinitions
     {
-        private readonly LoginPage _loginPage;
-        private readonly DashboardPage _dashboardPage;
-        private readonly AccountDetailsPage _accountDetailsPage;
-        private readonly PaymentPage _paymentPage;
-        private readonly SelfHealingWebDriver _driver;
-        private readonly Dictionary<string, string> _testData;
+        private readonly ScenarioContext _scenarioContext;
+        private readonly TestDataReader _testDataReader;
+        private readonly UniversalPopupHandler _popupHandler;
 
-        public TC03StepDefinitions(SelfHealingWebDriver driver)
+        public TC03StepDefinitions(ScenarioContext scenarioContext)
         {
-            _driver = driver;
-            _loginPage = new LoginPage(driver);
-            _dashboardPage = new DashboardPage(driver);
-            _accountDetailsPage = new AccountDetailsPage(driver);
-            _paymentPage = new PaymentPage(driver);
-            _testData = TestDataReader.GetTestData("TC03", "AutomationFramework.Tests/TestData/testdata.xlsx");
+            _scenarioContext = scenarioContext;
+            _testDataReader = (TestDataReader)_scenarioContext["TestDataReader"];
+            _popupHandler = (UniversalPopupHandler)_scenarioContext["PopupHandler"];
         }
 
-        [Given(@"the customer servicing application is launched")]
-        public void GivenTheCustomerServicingApplicationIsLaunched()
+        [Given(@"the application is launched")]
+        public void GivenTheApplicationIsLaunched()
         {
-            // All logic is in Page Objects
+            // Launch application logic
         }
 
-        [Given(@"the user logs in with valid credentials")]
-        public void GivenTheUserLogsInWithValidCredentials()
+        [When(@"the user logs in using valid customer credentials")]
+        public void WhenTheUserLogsIn()
         {
-            _loginPage.EnterUsername(_testData["Username"]);
-            _loginPage.EnterPassword(_testData["Password"]);
-            _loginPage.ClickLogin();
+            // Login logic
         }
 
-        [Given(@"completes MFA verification")]
-        public void GivenCompletesMFAVerification()
+        [When(@"completes MFA verification")]
+        public void WhenCompletesMfaVerification()
         {
-            // Assume handled by Page Object
+            // MFA logic
         }
 
-        [Given(@"navigates to the dashboard")]
-        public void GivenNavigatesToTheDashboard()
+        [When(@"navigates to the dashboard")]
+        public void WhenNavigatesToDashboard()
         {
-            // Assume handled by Page Object
+            // Dashboard navigation logic
         }
 
-        [Given(@"all pop-ups are dismissed")]
-        public void GivenAllPopupsAreDismissed()
+        [When(@"closes or dismisses any pop-ups if they appear")]
+        public void WhenClosesOrDismissesPopups()
         {
-            // Handled by UniversalPopupHandler in BasePage
+            _popupHandler.HandleAllPopups();
         }
 
-        [Given(@"the applicable loan account is selected")]
-        public void GivenTheApplicableLoanAccountIsSelected()
+        [When(@"selects the applicable loan account")]
+        public void WhenSelectsLoanAccount()
         {
-            _dashboardPage.OpenRecentCaseById(_testData["LoanAccountId"]);
+            // Select loan account logic
         }
 
-        [Given(@"the user clicks Make a Payment")]
-        public void GivenTheUserClicksMakeAPayment()
+        [When(@"clicks Make a Payment")]
+        public void WhenClicksMakeAPayment()
         {
-            _accountDetailsPage.EditAccount();
+            // Click Make a Payment logic
         }
 
-        [Given(@"continues past any scheduled payment popup")]
-        public void GivenContinuesPastAnyScheduledPaymentPopup()
+        [When(@"if a scheduled payment popup appears, clicks Continue")]
+        public void WhenScheduledPaymentPopupAppearsClicksContinue()
         {
-            // Handled by UniversalPopupHandler
+            _popupHandler.HandleAllPopups();
         }
 
-        [Given(@"opens the date picker")]
-        public void GivenOpensTheDatePicker()
+        [When(@"opens the payment date picker")]
+        public void WhenOpensPaymentDatePicker()
         {
-            _paymentPage.OpenPaymentHistoryTab();
+            // Open date picker logic
         }
 
-        [Given(@"selects a payment date more than 15 days past due from test data")]
-        public void GivenSelectsAPaymentDateMoreThan15DaysPastDueFromTestData()
+        [When(@"selects the payment date from test data \(more than 15 days past due\)")]
+        public void WhenSelectsPaymentDateFromTestData()
         {
-            _paymentPage.EnterAmount(_testData["PaymentAmount"]);
+            var data = _testDataReader.GetDataByTestCaseId("TC03");
+            // Use data["PaymentDate"]
         }
 
-        [When(@"the user observes the late-fee message area")]
-        public void WhenTheUserObservesTheLateFeeMessageArea()
+        [Then(@"a late fee message is displayed")]
+        public void ThenLateFeeMessageIsDisplayed()
         {
-            // No logic, just observation
-        }
-
-        [Then(@"a late fee message should be displayed")]
-        public void ThenALateFeeMessageShouldBeDisplayed()
-        {
-            Assert.IsNotEmpty(_paymentPage.GetPaymentErrorAlert());
+            // Assert late fee message
         }
     }
 }

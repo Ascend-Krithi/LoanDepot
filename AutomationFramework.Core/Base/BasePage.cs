@@ -1,21 +1,16 @@
 using OpenQA.Selenium;
-using AutomationFramework.Core.SelfHealing;
-using AutomationFramework.Core.Widgets;
 
 namespace AutomationFramework.Core.Base
 {
     public abstract class BasePage
     {
-        protected readonly SelfHealingWebDriver Driver;
+        protected IWebDriver Driver;
 
-        protected BasePage(SelfHealingWebDriver driver)
+        protected BasePage(IWebDriver driver)
         {
             Driver = driver;
         }
 
-        protected void HandleUniversalPopups()
-        {
-            UniversalPopupHandler.HandlePopups(Driver);
-        }
+        // Common page methods can be added here
     }
 }

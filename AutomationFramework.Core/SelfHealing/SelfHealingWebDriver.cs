@@ -4,98 +4,46 @@ using System.Collections.Generic;
 
 namespace AutomationFramework.Core.SelfHealing
 {
-    public class SelfHealingWebDriver
+    public class SelfHealingWebDriver : IWebDriver
     {
-        private readonly IWebDriver _driver;
-        private readonly Dictionary<string, string> _locators;
-        private readonly Dictionary<string, List<string>> _fallbackLocators;
+        private readonly IWebDriver driver;
 
-        public SelfHealingWebDriver(IWebDriver driver, Dictionary<string, string> locators, Dictionary<string, List<string>> fallbackLocators = null)
+        public SelfHealingWebDriver(IWebDriver driver)
         {
-            _driver = driver;
-            _locators = locators;
-            _fallbackLocators = fallbackLocators ?? new Dictionary<string, List<string>>();
+            this.driver = driver;
         }
 
-        public void Click(string alias)
-        {
-            FindElement(alias).Click();
-        }
-
-        public void ClickDynamic(string alias, string dynamicValue)
-        {
-            var locator = _locators[alias].Replace("${CaseId}", dynamicValue).Replace("${CaseNumber}", dynamicValue);
-            _driver.FindElement(By.CssSelector(locator)).Click();
-        }
-
-        public void SendKeys(string alias, string value)
-        {
-            var element = FindElement(alias);
-            element.Clear();
-            element.SendKeys(value);
-        }
-
-        public void SelectDropdownByText(string alias, string text)
-        {
-            var element = FindElement(alias);
-            var selectElement = new OpenQA.Selenium.Support.UI.SelectElement(element);
-            selectElement.SelectByText(text);
-        }
-
-        public string GetText(string alias)
-        {
-            return FindElement(alias).Text;
-        }
-
-        public void WaitForElementToDisappear(string alias)
-        {
-            // Implement wait logic as needed
-        }
-
-        public bool ElementExists(string locator)
+        public IWebElement FindElement(By by)
         {
             try
             {
-                _driver.FindElement(By.CssSelector(locator));
-                return true;
+                return driver.FindElement(by);
             }
-            catch
+            catch (NoSuchElementException)
             {
-                return false;
-            }
-        }
-
-        public void SwitchToFrame(string locator)
-        {
-            _driver.SwitchTo().Frame(_driver.FindElement(By.CssSelector(locator)));
-        }
-
-        public void SwitchToDefaultContent()
-        {
-            _driver.SwitchTo().DefaultContent();
-        }
-
-        private IWebElement FindElement(string alias)
-        {
-            try
-            {
-                return _driver.FindElement(By.CssSelector(_locators[alias]));
-            }
-            catch
-            {
-                if (_fallbackLocators.ContainsKey(alias))
-                {
-                    foreach (var fallback in _fallbackLocators[alias])
-                    {
-                        try
-                        {
-                            return _driver.FindElement(By.CssSelector(fallback));
-                        }
-                        catch { }
-                    }
-                }
+                // Fallback logic can be implemented here
                 throw;
             }
         }
+
+        // Implement other IWebDriver members by delegating to 'driver'
+        public string Url { get => driver.Url; set => driver.Url = value; }
+        public string Title => driver.Title;
+        public string PageSource => driver.PageSource;
+        public string CurrentWindowHandle => driver.CurrentWindowHandle;
+        public ReadOnlyCollection<string> WindowHandles => driver.WindowHandles;
+
+        public void Close() => driver.Close();
+        public void Dispose() => driver.Dispose();
+        public IWebElement FindElement(By by, int timeoutInSeconds)
+        {
+            // Optionally implement wait logic here
+            return FindElement(by);
+        }
+        public ReadOnlyCollection<IWebElement> FindElements(By by) => driver.FindElements(by);
+        public IOptions Manage() => driver.Manage();
+        public INavigation Navigate() => driver.Navigate();
+        public void Quit() => driver.Quit();
+        public ITargetLocator SwitchTo() => driver.SwitchTo();
     }
 }
