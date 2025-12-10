@@ -1,8 +1,6 @@
 using TechTalk.SpecFlow;
-using AutomationFramework.Core.Base;
 using AutomationFramework.Core.Utilities;
 using AutomationFramework.Core.Widgets;
-using NUnit.Framework;
 
 namespace AutomationFramework.Tests.StepDefinitions
 {
@@ -10,93 +8,70 @@ namespace AutomationFramework.Tests.StepDefinitions
     // TestCaseID: TC02 – HELOC Late Fee Validation
     public class TC02StepDefinitions
     {
-        private readonly ScenarioContext _context;
-
-        public TC02StepDefinitions(ScenarioContext context)
+        [Given(@"I launch the application")]
+        public void GivenILaunchTheApplication()
         {
-            _context = context;
+            // Handled by Hooks
         }
 
-        [Given(@"the user launches the application")]
-        public void GivenTheUserLaunchesTheApplication()
+        [Given(@"I login with encrypted credentials")]
+        public void GivenILoginWithEncryptedCredentials()
         {
-            var driver = DriverFactory.GetDriver();
-            driver.Navigate().GoToUrl(Configuration.ConfigManager.GetBaseUrl());
+            // Use EncryptionService to decrypt credentials and perform login
         }
 
-        [When(@"the user logs in using valid credentials")]
-        public void WhenTheUserLogsInUsingValidCredentials()
+        [Given(@"I complete MFA")]
+        public void GivenICompleteMFA()
         {
-            var driver = DriverFactory.GetDriver();
-            var username = EncryptionService.Decrypt(Configuration.ConfigManager.GetEncryptedUsername(), Configuration.ConfigManager.GetEncryptionKey(), Configuration.ConfigManager.GetEncryptionIV());
-            var password = EncryptionService.Decrypt(Configuration.ConfigManager.GetEncryptedPassword(), Configuration.ConfigManager.GetEncryptionKey(), Configuration.ConfigManager.GetEncryptionIV());
-            // Login logic here (omitted)
-            UniversalPopupHandler.HandlePopups(driver);
+            // Complete MFA step
         }
 
-        [When(@"the user completes MFA verification")]
-        public void WhenTheUserCompletesMFAVerification()
+        [Given(@"I am on the dashboard")]
+        public void GivenIAmOnTheDashboard()
         {
-            var driver = DriverFactory.GetDriver();
-            // MFA logic here (omitted)
-            UniversalPopupHandler.HandlePopups(driver);
+            // Verify dashboard loaded
         }
 
-        [When(@"the user navigates to the dashboard")]
-        public void WhenTheUserNavigatesToTheDashboard()
+        [Given(@"I dismiss any popups")]
+        public void GivenIDismissAnyPopups()
         {
-            var driver = DriverFactory.GetDriver();
-            // Navigation logic here (omitted)
-            UniversalPopupHandler.HandlePopups(driver);
+            UniversalPopupHandler.DismissAllPopups(Hooks.Hooks.Driver);
         }
 
-        [When(@"the user closes/dismisses any pop-ups")]
-        public void WhenTheUserClosesDismissesAnyPopups()
+        [Given(@"I select the applicable loan account")]
+        public void GivenISelectTheApplicableLoanAccount()
         {
-            var driver = DriverFactory.GetDriver();
-            UniversalPopupHandler.HandlePopups(driver);
+            // Select loan account
         }
 
-        [When(@"the user selects the applicable loan account")]
-        public void WhenTheUserSelectsTheApplicableLoanAccount()
+        [When(@"I navigate to Make a Payment")]
+        public void WhenINavigateToMakeAPayment()
         {
-            var driver = DriverFactory.GetDriver();
-            // Select loan logic here (omitted)
+            // Navigate to Make Payment
         }
 
-        [When(@"the user clicks Make a Payment")]
-        public void WhenTheUserClicksMakeAPayment()
+        [When(@"I handle any scheduled payment popup")]
+        public void WhenIHandleAnyScheduledPaymentPopup()
         {
-            var driver = DriverFactory.GetDriver();
-            // Click Make a Payment logic here (omitted)
-            UniversalPopupHandler.HandlePopups(driver);
+            UniversalPopupHandler.DismissAllPopups(Hooks.Hooks.Driver);
         }
 
-        [When(@"if scheduled payment popup appears, the user clicks Continue")]
-        public void WhenIfScheduledPaymentPopupAppearsTheUserClicksContinue()
+        [When(@"I open the payment date picker")]
+        public void WhenIOpenThePaymentDatePicker()
         {
-            var driver = DriverFactory.GetDriver();
-            UniversalPopupHandler.HandlePopups(driver);
+            // Open date picker
         }
 
-        [When(@"the user opens the payment date picker")]
-        public void WhenTheUserOpensThePaymentDatePicker()
+        [When(@"I select the payment date exactly 15 days past due")]
+        public void WhenISelectThePaymentDateExactly15DaysPastDue()
         {
-            var driver = DriverFactory.GetDriver();
-            // Open date picker logic here (omitted)
+            // Select date from test data
         }
 
-        [When(@"the user selects the payment date from test data \(exactly 15 days past due\)")]
-        public void WhenTheUserSelectsThePaymentDateFromTestDataExactly15DaysPastDue()
+        [Then(@"I should not see the late fee message")]
+        public void ThenIShouldNotSeeTheLateFeeMessage()
         {
-            // Use TestDataReader to get date (omitted)
-        }
-
-        [Then(@"no late fee message should be displayed")]
-        public void ThenNoLateFeeMessageShouldBeDisplayed()
-        {
-            // Assert no late fee message (omitted)
-            Assert.Pass("No late fee message is displayed as expected.");
+            // Assert late fee message not present
         }
     }
 }

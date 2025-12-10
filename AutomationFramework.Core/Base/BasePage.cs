@@ -10,7 +10,5 @@ namespace AutomationFramework.Core.Base
         {
             Driver = driver;
         }
-
-        // Common navigation, wait, and popup handling methods would go here.
     }
 }

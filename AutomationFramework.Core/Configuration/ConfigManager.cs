@@ -1,22 +1,20 @@
-using Newtonsoft.Json;
 using System.IO;
+using Microsoft.Extensions.Configuration;
 
 namespace AutomationFramework.Core.Configuration
 {
-    public class ConfigManager
+    public static class ConfigManager
     {
-        private static dynamic _config;
+        private static IConfigurationRoot _config;
+
         static ConfigManager()
         {
-            var configText = File.ReadAllText("AutomationFramework.Core/Configuration/appsettings.json");
-            _config = JsonConvert.DeserializeObject(configText);
+            _config = new ConfigurationBuilder()
+                .SetBasePath(Directory.GetCurrentDirectory())
+                .AddJsonFile("appsettings.json")
+                .Build();
         }
 
-        public static string GetBrowser() => _config["browser"];
-        public static string GetEncryptedUsername() => _config["usernameEnc"];
-        public static string GetEncryptedPassword() => _config["passwordEnc"];
-        public static string GetBaseUrl() => _config["baseUrl"];
-        public static string GetEncryptionKey() => _config["encryptionKey"];
-        public static string GetEncryptionIV() => _config["encryptionIV"];
+        public static string Get(string key) => _config[key];
     }
 }

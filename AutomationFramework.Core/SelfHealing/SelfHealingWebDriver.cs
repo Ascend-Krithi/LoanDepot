@@ -11,9 +11,8 @@ namespace AutomationFramework.Core.SelfHealing
             _driver = driver;
         }
 
-        // Implement IWebDriver members, using best_locator and fallback_locators if available.
-        // Omitted here due to missing locator JSON.
-        // All methods delegate to _driver.
+        // Implement all IWebDriver members, fallback logic omitted as no locator JSON is present.
+        // This is a stub for future locator JSON integration.
         public string Url { get => _driver.Url; set => _driver.Url = value; }
         public string Title => _driver.Title;
         public string PageSource => _driver.PageSource;
