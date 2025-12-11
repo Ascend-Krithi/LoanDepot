@@ -17,7 +17,6 @@ namespace AutomationFramework.Core.Drivers
                     return new ChromeDriver(chromeOptions);
                 case "firefox":
                     var firefoxOptions = new FirefoxOptions();
-                    firefoxOptions.AddArgument("--start-maximized");
                     return new FirefoxDriver(firefoxOptions);
                 default:
                     throw new ArgumentException($"Unsupported browser: {browser}");

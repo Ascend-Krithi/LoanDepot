@@ -1,5 +1,4 @@
 using System;
-using AutomationFramework.Core.Encryption;
 
 namespace AutomationFramework.Core.Encryption
 {
@@ -7,14 +6,11 @@ namespace AutomationFramework.Core.Encryption
     {
         public static void Main(string[] args)
         {
-            if (args.Length < 1)
-            {
-                Console.WriteLine("Usage: EncryptTool <text-to-encrypt>");
-                return;
-            }
-            string plainText = args[0];
-            string encrypted = EncryptionManager.Encrypt(plainText);
-            Console.WriteLine("Encrypted: " + encrypted);
+            Console.WriteLine("Enter plain text to encrypt:");
+            var plainText = Console.ReadLine();
+            var encrypted = EncryptionManager.Encrypt(plainText);
+            Console.WriteLine("Encrypted text:");
+            Console.WriteLine(encrypted);
         }
     }
 }

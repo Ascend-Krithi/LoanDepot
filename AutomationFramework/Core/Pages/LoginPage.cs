@@ -1,38 +1,35 @@
-using AutomationFramework.Core.Drivers;
+using AutomationFramework.Core.SelfHealing;
 using AutomationFramework.Core.Locators;
-using AutomationFramework.Core.Encryption;
 using OpenQA.Selenium;
 
 namespace AutomationFramework.Core.Pages
 {
-    public class LoginPage : BasePage
+    public class LoginPage
     {
-        public LoginPage(SelfHealingWebDriver driver) : base(driver) { }
+        private readonly SelfHealingWebDriver _driver;
+
+        public LoginPage(SelfHealingWebDriver driver)
+        {
+            _driver = driver;
+        }
 
         public void EnterUsername(string username)
         {
-            var usernameInput = Driver.FindElement(LoginPageLocators.UsernameInput);
-            usernameInput.Clear();
-            usernameInput.SendKeys(username);
+            var input = _driver.FindElementByKey(LoginPageLocators.UsernameInputKey);
+            input.Clear();
+            input.SendKeys(username);
         }
 
         public void EnterPassword(string password)
         {
-            var passwordInput = Driver.FindElement(LoginPageLocators.PasswordInput);
-            passwordInput.Clear();
-            passwordInput.SendKeys(password);
+            var input = _driver.FindElementByKey(LoginPageLocators.PasswordInputKey);
+            input.Clear();
+            input.SendKeys(password);
         }
 
         public void ClickLogin()
         {
-            var loginButton = Driver.FindElement(LoginPageLocators.LoginButton);
-            loginButton.Click();
-        }
-
-        public string GetErrorMessage()
-        {
-            var error = Driver.FindElement(LoginPageLocators.ErrorMessage);
-            return error.Text;
+            _driver.FindElementByKey(LoginPageLocators.LoginButtonKey).Click();
         }
     }
 }

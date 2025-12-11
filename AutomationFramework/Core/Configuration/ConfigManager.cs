@@ -1,7 +1,6 @@
 using System;
 using System.IO;
-using System.Text.Json;
-using System.Collections.Generic;
+using Newtonsoft.Json;
 
 namespace AutomationFramework.Core.Configuration
 {
@@ -11,30 +10,22 @@ namespace AutomationFramework.Core.Configuration
         public string Browser { get; set; }
         public string EncryptedUsername { get; set; }
         public string EncryptedPassword { get; set; }
-        public string TestEnvironment { get; set; }
     }
 
     public static class ConfigManager
     {
         private static Config _config;
-
         public static Config Settings
         {
             get
             {
                 if (_config == null)
                 {
-                    LoadConfig();
+                    var json = File.ReadAllText("config.json");
+                    _config = JsonConvert.DeserializeObject<Config>(json);
                 }
                 return _config;
             }
-        }
-
-        private static void LoadConfig()
-        {
-            var configPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Core", "Configuration", "appsettings.json");
-            var json = File.ReadAllText(configPath);
-            _config = JsonSerializer.Deserialize<Config>(json);
         }
     }
 }

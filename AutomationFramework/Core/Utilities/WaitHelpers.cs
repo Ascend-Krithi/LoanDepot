@@ -1,22 +1,21 @@
-using System;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Support.UI;
-using SeleniumExtras.WaitHelpers;
-using AutomationFramework.Core.Configuration;
+using System;
 
 namespace AutomationFramework.Core.Utilities
 {
     public static class WaitHelpers
     {
-        public static WebDriverWait GetWait(IWebDriver driver)
+        public static IWebElement WaitForElementVisible(IWebDriver driver, By by, int timeoutSeconds = 10)
         {
-            var seconds = int.TryParse(ConfigManager.Get("DefaultWaitSeconds", "20"), out var s) ? s : 20;
-            return new WebDriverWait(driver, TimeSpan.FromSeconds(seconds));
+            return new WebDriverWait(driver, TimeSpan.FromSeconds(timeoutSeconds))
+                .Until(SeleniumExtras.WaitHelpers.ExpectedConditions.ElementIsVisible(by));
         }
 
-        public static IWebElement WaitForVisible(IWebDriver driver, By by)
+        public static IWebElement WaitForElementClickable(IWebDriver driver, By by, int timeoutSeconds = 10)
         {
-            return GetWait(driver).Until(ExpectedConditions.ElementIsVisible(by));
+            return new WebDriverWait(driver, TimeSpan.FromSeconds(timeoutSeconds))
+                .Until(SeleniumExtras.WaitHelpers.ExpectedConditions.ElementToBeClickable(by));
         }
     }
 }

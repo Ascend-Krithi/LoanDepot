@@ -1,37 +1,68 @@
-using AutomationFramework.Core.Drivers;
+using AutomationFramework.Core.SelfHealing;
 using AutomationFramework.Core.Locators;
 using OpenQA.Selenium;
 using System.Linq;
+using System.Threading;
 
 namespace AutomationFramework.Core.Pages
 {
-    public class DashboardPage : BasePage
+    public class DashboardPage
     {
-        public DashboardPage(SelfHealingWebDriver driver) : base(driver) { }
+        private readonly SelfHealingWebDriver _driver;
 
-        public string GetWelcomeMessage()
+        public DashboardPage(SelfHealingWebDriver driver)
         {
-            var welcome = Driver.FindElement(DashboardPageLocators.WelcomeMessage);
-            return welcome.Text;
+            _driver = driver;
         }
 
-        public void SelectLoanFromDropdown(string loanName)
+        public void SelectLoanType(string loanType)
         {
-            var dropdown = Driver.FindElement(DashboardPageLocators.LoanListDropdown);
-            dropdown.Click();
-            var options = Driver.FindElements(DashboardPageLocators.LoanListDropdown);
-            var option = options.FirstOrDefault(o => o.Text.Contains(loanName));
-            option?.Click();
+            var dropdown = _driver.FindElementByKey(DashboardPageLocators.LoanDropdownKey);
+            var select = new OpenQA.Selenium.Support.UI.SelectElement(dropdown);
+            select.SelectByText(loanType);
         }
 
-        public void DismissChatPopupIfPresent()
+        public void SelectLoanFromList(string loanName)
         {
-            var popups = Driver.FindElements(DashboardPageLocators.ChatPopup);
-            if (popups.Any())
+            var items = _driver.FindElements(DashboardPageLocators.LoanList);
+            var item = items.FirstOrDefault(i => i.Text.Contains(loanName));
+            if (item != null)
+                item.Click();
+            else
+                throw new NoSuchElementException($"Loan '{loanName}' not found in list.");
+        }
+
+        public void DismissPopup()
+        {
+            var closeBtn = _driver.FindElementByKey(DashboardPageLocators.PopupCloseKey);
+            closeBtn.Click();
+        }
+
+        public void HandleChatPopupIfPresent()
+        {
+            try
             {
-                var closeBtn = Driver.FindElement(DashboardPageLocators.ChatPopupClose);
-                closeBtn.Click();
+                var chatPopup = _driver.FindElementByKey(DashboardPageLocators.ChatPopupKey, 3);
+                if (chatPopup.Displayed)
+                {
+                    chatPopup.FindElement(By.CssSelector("button.close")).Click();
+                }
             }
+            catch (NoSuchElementException) { }
+        }
+
+        public void SelectDate(string date)
+        {
+            var dateInput = _driver.FindElementByKey(DashboardPageLocators.DatePickerInputKey);
+            dateInput.Click();
+            dateInput.Clear();
+            dateInput.SendKeys(date);
+            dateInput.SendKeys(Keys.Enter);
+        }
+
+        public string GetMessageBanner()
+        {
+            return _driver.FindElementByKey(DashboardPageLocators.MessageBannerKey).Text;
         }
     }
 }

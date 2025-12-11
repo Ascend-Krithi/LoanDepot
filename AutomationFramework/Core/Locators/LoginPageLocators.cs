@@ -4,46 +4,25 @@ namespace AutomationFramework.Core.Locators
 {
     public static class LoginPageLocators
     {
-        public const string UsernameInput = "LoginPage.UsernameInput";
-        public const string PasswordInput = "LoginPage.PasswordInput";
-        public const string LoginButton = "LoginPage.LoginButton";
-        public const string ErrorMessage = "LoginPage.ErrorMessage";
-
-        public static readonly By[] UsernameInputAlternatives = new By[]
-        {
-            By.Id("username"),
-            By.Name("username"),
-            By.CssSelector("input[formcontrolname='username']")
+        public const string UsernameInputKey = "LoginPage.UsernameInput";
+        public static readonly By UsernameInput = By.XPath("//input[@id='username']");
+        public static readonly By[] UsernameInputAlternatives = {
+            By.CssSelector("input[name='user']"),
+            By.XPath("//input[contains(@placeholder, 'User')]")
         };
 
-        public static readonly By[] PasswordInputAlternatives = new By[]
-        {
-            By.Id("password"),
-            By.Name("password"),
-            By.CssSelector("input[formcontrolname='password']")
+        public const string PasswordInputKey = "LoginPage.PasswordInput";
+        public static readonly By PasswordInput = By.XPath("//input[@id='password']");
+        public static readonly By[] PasswordInputAlternatives = {
+            By.CssSelector("input[type='password']"),
+            By.XPath("//input[contains(@placeholder, 'Pass')]")
         };
 
-        public static readonly By[] LoginButtonAlternatives = new By[]
-        {
+        public const string LoginButtonKey = "LoginPage.LoginButton";
+        public static readonly By LoginButton = By.XPath("//button[@id='loginBtn']");
+        public static readonly By[] LoginButtonAlternatives = {
             By.CssSelector("button[type='submit']"),
             By.XPath("//button[contains(text(),'Login')]")
         };
-
-        public static readonly By[] ErrorMessageAlternatives = new By[]
-        {
-            By.CssSelector(".error-message"),
-            By.XPath("//div[contains(@class,'error')]")
-        };
-
-        public static Dictionary<string, By[]> GetLocators()
-        {
-            return new Dictionary<string, By[]>
-            {
-                { UsernameInput, UsernameInputAlternatives },
-                { PasswordInput, PasswordInputAlternatives },
-                { LoginButton, LoginButtonAlternatives },
-                { ErrorMessage, ErrorMessageAlternatives }
-            };
-        }
     }
 }

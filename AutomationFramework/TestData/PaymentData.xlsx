@@ -1,3 +1,3 @@
-Row,Amount,Currency,Method,Notes
-1,100.00,USD,ACH,Regular monthly payment
-2,250.50,USD,Card,Additional principal
+// This is a binary Excel file. Please create an Excel file with the following columns in Sheet1:
+// TestCaseId | Username | Password | Amount | ExpectedMessage
+// TC_001     | testuser | testpass | 500    | Payment successful

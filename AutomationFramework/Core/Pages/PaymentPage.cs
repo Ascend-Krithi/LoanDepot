@@ -1,7 +1,5 @@
 using AutomationFramework.Core.SelfHealing;
 using AutomationFramework.Core.Locators;
-using OpenQA.Selenium;
-using System.Threading;
 
 namespace AutomationFramework.Core.Pages
 {
@@ -14,31 +12,16 @@ namespace AutomationFramework.Core.Pages
             _driver = driver;
         }
 
-        public void SelectPaymentType(string type)
+        public void EnterAmount(string amount)
         {
-            var dropdown = _driver.FindElementByKey(nameof(PaymentPageLocators.PaymentDropdownLocator));
-            dropdown.Click();
-            var option = dropdown.FindElements(By.TagName("mat-option"))
-                .FirstOrDefault(o => o.Text.Contains(type));
-            if (option != null)
-                option.Click();
-            else
-                throw new Exception($"Payment type '{type}' not found.");
+            var input = _driver.FindElementByKey(PaymentPageLocators.AmountInputKey);
+            input.Clear();
+            input.SendKeys(amount);
         }
 
-        public void SelectDate(string date)
+        public void ClickPay()
         {
-            var dateInput = _driver.FindElementByKey(nameof(PaymentPageLocators.DatePickerInputLocator));
-            dateInput.Click();
-            dateInput.Clear();
-            dateInput.SendKeys(date);
-            dateInput.SendKeys(Keys.Enter);
-        }
-
-        public void SubmitPayment()
-        {
-            var btn = _driver.FindElementByKey(nameof(PaymentPageLocators.SubmitButtonLocator));
-            btn.Click();
+            _driver.FindElementByKey(PaymentPageLocators.PayButtonKey).Click();
         }
     }
 }

@@ -1,33 +1,37 @@
-using OpenQA.Selenium;
+using System;
 using System.Collections.Generic;
+using OpenQA.Selenium;
 
 namespace AutomationFramework.Core.Locators
 {
-    public class LocatorRepository : ILocatorRepository
+    public static class LocatorRepository
     {
-        private readonly Dictionary<string, By> _locators = new()
-        {
-            { LoginPageLocators.UsernameInputKey, LoginPageLocators.UsernameInput },
-            { LoginPageLocators.PasswordInputKey, LoginPageLocators.PasswordInput },
-            { LoginPageLocators.LoginButtonKey, LoginPageLocators.LoginButton },
-            { DashboardPageLocators.LoanDropdownKey, DashboardPageLocators.LoanDropdown },
-            { DashboardPageLocators.LoanListKey, DashboardPageLocators.LoanList },
-            { DashboardPageLocators.ChatPopupKey, DashboardPageLocators.ChatPopup },
-            { DashboardPageLocators.DatePickerKey, DashboardPageLocators.DatePicker }
-        };
+        private static readonly Dictionary<string, (By primary, By[] alternatives)> _locators =
+            new Dictionary<string, (By, By[])>
+            {
+                // LoginPage
+                { LoginPageLocators.UsernameInputKey, (LoginPageLocators.UsernameInput, LoginPageLocators.UsernameInputAlternatives) },
+                { LoginPageLocators.PasswordInputKey, (LoginPageLocators.PasswordInput, LoginPageLocators.PasswordInputAlternatives) },
+                { LoginPageLocators.LoginButtonKey, (LoginPageLocators.LoginButton, LoginPageLocators.LoginButtonAlternatives) },
 
-        private readonly Dictionary<string, By[]> _alternatives = new()
-        {
-            { LoginPageLocators.UsernameInputKey, LoginPageLocators.UsernameInputAlternatives },
-            { LoginPageLocators.PasswordInputKey, LoginPageLocators.PasswordInputAlternatives },
-            { LoginPageLocators.LoginButtonKey, LoginPageLocators.LoginButtonAlternatives },
-            { DashboardPageLocators.LoanDropdownKey, DashboardPageLocators.LoanDropdownAlternatives },
-            { DashboardPageLocators.LoanListKey, DashboardPageLocators.LoanListAlternatives },
-            { DashboardPageLocators.ChatPopupKey, DashboardPageLocators.ChatPopupAlternatives },
-            { DashboardPageLocators.DatePickerKey, DashboardPageLocators.DatePickerAlternatives }
-        };
+                // DashboardPage
+                { DashboardPageLocators.LoanDropdownKey, (DashboardPageLocators.LoanDropdown, DashboardPageLocators.LoanDropdownAlternatives) },
+                { DashboardPageLocators.LoanListKey, (DashboardPageLocators.LoanList, DashboardPageLocators.LoanListAlternatives) },
+                { DashboardPageLocators.PopupCloseKey, (DashboardPageLocators.PopupClose, DashboardPageLocators.PopupCloseAlternatives) },
+                { DashboardPageLocators.ChatPopupKey, (DashboardPageLocators.ChatPopup, DashboardPageLocators.ChatPopupAlternatives) },
+                { DashboardPageLocators.DatePickerInputKey, (DashboardPageLocators.DatePickerInput, DashboardPageLocators.DatePickerInputAlternatives) },
+                { DashboardPageLocators.MessageBannerKey, (DashboardPageLocators.MessageBanner, DashboardPageLocators.MessageBannerAlternatives) },
 
-        public By GetLocator(string key) => _locators[key];
-        public By[] GetAlternatives(string key) => _alternatives.ContainsKey(key) ? _alternatives[key] : new By[0];
+                // PaymentPage
+                { PaymentPageLocators.AmountInputKey, (PaymentPageLocators.AmountInput, PaymentPageLocators.AmountInputAlternatives) },
+                { PaymentPageLocators.PayButtonKey, (PaymentPageLocators.PayButton, PaymentPageLocators.PayButtonAlternatives) }
+            };
+
+        public static (By primary, By[] alternatives) GetLocators(string key)
+        {
+            if (!_locators.ContainsKey(key))
+                throw new ArgumentException($"Locator key not found: {key}");
+            return _locators[key];
+        }
     }
 }
