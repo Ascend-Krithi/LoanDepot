@@ -9,11 +9,16 @@ namespace AutomationFramework.Core.Pages
         public const string CloseButtonKey = "GenericModal.CloseButton";
 
         private readonly By _modalContainer = By.CssSelector("[role='dialog'],.modal,[aria-modal='true']");
-        private readonly By _closeButton = By.CssSelector("[aria-label*='close'],.close,button.close");
+        private readonly By _closeButton = By.CssSelector("button.close,button[aria-label='Close'],.btn-close");
 
         public GenericModalComponent(SelfHealingWebDriver driver) : base(driver) { }
 
         public IWebElement ModalContainer => FindElement(ModalContainerKey, _modalContainer);
         public IWebElement CloseButton => FindElement(CloseButtonKey, _closeButton);
+
+        public void Close()
+        {
+            JsClick(CloseButton);
+        }
     }
 }

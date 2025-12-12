@@ -1,6 +1,7 @@
 using OpenQA.Selenium;
-using AutomationFramework.Core.SelfHealing;
 using System.Collections.Generic;
+using System.Linq;
+using AutomationFramework.Core.SelfHealing;
 
 namespace AutomationFramework.Core.Pages
 {
@@ -26,6 +27,17 @@ namespace AutomationFramework.Core.Pages
         public IList<IWebElement> GetCells(IWebElement row)
         {
             return row.FindElements(_cell);
+        }
+
+        public IWebElement GetCell(int rowIndex, int colIndex)
+        {
+            var rows = GetRows();
+            if (rowIndex < 0 || rowIndex >= rows.Count)
+                return null;
+            var cells = GetCells(rows[rowIndex]);
+            if (colIndex < 0 || colIndex >= cells.Count)
+                return null;
+            return cells[colIndex];
         }
     }
 }

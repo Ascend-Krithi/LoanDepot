@@ -2,52 +2,57 @@ using System;
 using System.Linq;
 using System.Threading;
 using OpenQA.Selenium;
+using System.Collections.Generic;
 
 namespace AutomationFramework.Core.Utilities
 {
     public static class PopupEngine
     {
-        private static bool _chatIframesHandled = false;
+        private static bool _chatWidgetsCleaned = false;
+
+        private static readonly string[] OverlaySelectors = new[]
+        {
+            "[role='dialog']",
+            ".cdk-overlay-backdrop",
+            ".modal-backdrop",
+            "[aria-modal='true']",
+            "[id*='cookie']",
+            "[class*='cookie']"
+        };
+
+        private static readonly string[] ChatSelectors = new[]
+        {
+            "[id*='chat']",
+            "[class*='chat']"
+        };
 
         public static void CleanPopups(IWebDriver driver)
         {
             try
             {
-                // Universal selectors for overlays/modals/cookie banners
-                string[] selectors = new[]
+                foreach (var selector in OverlaySelectors)
                 {
-                    "[role='dialog']",
-                    ".cdk-overlay-backdrop",
-                    ".modal-backdrop",
-                    "[aria-modal='true']",
-                    "[id*='cookie']",
-                    "[class*='cookie']"
-                };
-
-                foreach (var selector in selectors)
-                {
-                    var elements = driver.FindElements(By.CssSelector(selector));
-                    foreach (var el in elements)
+                    var overlays = driver.FindElements(By.CssSelector(selector));
+                    foreach (var overlay in overlays)
                     {
                         try
                         {
-                            var closeBtn = el.FindElements(By.CssSelector("[aria-label*='close'],[class*='close'],button")).FirstOrDefault();
-                            if (closeBtn != null && closeBtn.Displayed && closeBtn.Enabled)
+                            var closeButton = overlay.FindElements(By.CssSelector("button, [role='button'], .close, .btn-close")).FirstOrDefault();
+                            if (closeButton != null && closeButton.Displayed && closeButton.Enabled)
                             {
-                                closeBtn.Click();
+                                closeButton.Click();
+                                Thread.Sleep(60);
+                                continue;
                             }
-                            else
-                            {
-                                ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].parentNode.removeChild(arguments[0]);", el);
-                            }
+                            // Remove via JS
+                            ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].parentNode.removeChild(arguments[0]);", overlay);
+                            Thread.Sleep(60);
                         }
                         catch { }
-                        Thread.Sleep(60); // micro-sleep
                     }
                 }
 
-                // Handle chat widgets in iframes only once per run
-                if (!_chatIframesHandled)
+                if (!_chatWidgetsCleaned)
                 {
                     var iframes = driver.FindElements(By.TagName("iframe"));
                     foreach (var iframe in iframes)
@@ -55,20 +60,23 @@ namespace AutomationFramework.Core.Utilities
                         try
                         {
                             driver.SwitchTo().Frame(iframe);
-                            var chatEls = driver.FindElements(By.CssSelector("[id*='chat'],[class*='chat']"));
-                            foreach (var chatEl in chatEls)
+                            foreach (var selector in ChatSelectors)
                             {
-                                ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].parentNode.removeChild(arguments[0]);", chatEl);
+                                var chats = driver.FindElements(By.CssSelector(selector));
+                                foreach (var chat in chats)
+                                {
+                                    ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].parentNode.removeChild(arguments[0]);", chat);
+                                    Thread.Sleep(60);
+                                }
                             }
                             driver.SwitchTo().DefaultContent();
                         }
                         catch
                         {
-                            driver.SwitchTo().DefaultContent();
+                            try { driver.SwitchTo().DefaultContent(); } catch { }
                         }
-                        Thread.Sleep(60);
                     }
-                    _chatIframesHandled = true;
+                    _chatWidgetsCleaned = true;
                 }
             }
             catch { }

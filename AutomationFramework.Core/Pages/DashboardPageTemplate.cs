@@ -9,9 +9,9 @@ namespace AutomationFramework.Core.Pages
         public const string TableKey = "DashboardPage.Table";
         public const string DropdownKey = "DashboardPage.Dropdown";
 
-        private readonly By _header = By.CssSelector("h1,h2,.header,[role='banner']");
+        private readonly By _header = By.CssSelector("header, .header, [role='banner']");
         private readonly By _table = By.CssSelector("table");
-        private readonly By _dropdown = By.CssSelector("select,.dropdown,[role='listbox']");
+        private readonly By _dropdown = By.CssSelector("select, .dropdown");
 
         public DashboardPageTemplate(SelfHealingWebDriver driver) : base(driver) { }
 

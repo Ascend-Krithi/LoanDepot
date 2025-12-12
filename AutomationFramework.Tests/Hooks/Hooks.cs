@@ -15,7 +15,6 @@ namespace AutomationFramework.Tests.Hooks
     {
         private readonly IObjectContainer _container;
         private readonly ScenarioContext _scenarioContext;
-        private SelfHealingWebDriver _driver;
 
         public Hooks(IObjectContainer container, ScenarioContext scenarioContext)
         {
@@ -33,48 +32,47 @@ namespace AutomationFramework.Tests.Hooks
         [BeforeScenario]
         public void BeforeScenario()
         {
-            _driver = WebDriverFactory.CreateDriver();
-            _container.RegisterInstanceAs<IWebDriver>(_driver.InnerDriver);
-            _container.RegisterInstanceAs<SelfHealingWebDriver>(_driver);
+            var driver = WebDriverFactory.CreateDriver();
+            _container.RegisterInstanceAs<IWebDriver>(driver.InnerDriver);
+            _container.RegisterInstanceAs(driver);
 
             var baseUrl = ConfigManager.Settings.BaseUrl;
             if (!string.IsNullOrWhiteSpace(baseUrl))
             {
-                _driver.Url = baseUrl;
+                driver.Navigate().GoToUrl(baseUrl);
             }
         }
 
         [AfterScenario]
         public void AfterScenario()
         {
-            bool passed = _scenarioContext.TestError == null;
-            string featureName = _scenarioContext.ScenarioInfo?.FeatureTitle ?? "UnknownFeature";
-            string scenarioName = _scenarioContext.ScenarioInfo?.Title ?? "UnknownScenario";
-            string errorMessage = _scenarioContext.TestError?.ToString();
+            var driver = _container.Resolve<SelfHealingWebDriver>();
+            bool failed = _scenarioContext.TestError != null;
+            string featureName = _scenarioContext.ScenarioInfo.FeatureTitle;
+            string scenarioName = _scenarioContext.ScenarioInfo.Title;
+            string errorMessage = failed ? _scenarioContext.TestError?.ToString() : null;
 
-            // Screenshot on failure
-            if (!passed)
+            if (failed)
             {
                 try
                 {
-                    var screenshotDriver = _driver.InnerDriver as ITakesScreenshot;
-                    if (screenshotDriver != null)
+                    var takesScreenshot = driver.InnerDriver as ITakesScreenshot;
+                    if (takesScreenshot != null)
                     {
-                        var screenshot = screenshotDriver.GetScreenshot();
-                        var dir = Path.Combine(AppContext.BaseDirectory, "Screenshots");
-                        Directory.CreateDirectory(dir);
-                        var file = Path.Combine(dir, $"{featureName}_{scenarioName}_{DateTime.Now:yyyyMMddHHmmssfff}.png");
-                        screenshot.SaveAsFile(file, ScreenshotImageFormat.Png);
+                        var screenshot = takesScreenshot.GetScreenshot();
+                        var screenshotsDir = Path.Combine(AppContext.BaseDirectory, "Screenshots");
+                        Directory.CreateDirectory(screenshotsDir);
+                        var fileName = $"{featureName}_{scenarioName}_{DateTime.Now:yyyyMMdd_HHmmss}.png";
+                        var filePath = Path.Combine(screenshotsDir, fileName);
+                        screenshot.SaveAsFile(filePath, ScreenshotImageFormat.Png);
                     }
                 }
                 catch { }
             }
 
-            // HTML report
-            HtmlReportGenerator.GenerateReport(featureName, scenarioName, passed, errorMessage);
+            HtmlReportGenerator.GenerateReport(featureName, scenarioName, !failed, errorMessage);
 
-            // Dispose driver
-            try { _driver?.Quit(); } catch { }
+            try { driver.Quit(); } catch { }
         }
     }
 }

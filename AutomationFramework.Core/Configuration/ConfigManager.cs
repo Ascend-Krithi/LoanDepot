@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using Microsoft.Extensions.Configuration;
-using AutomationFramework.Core.Encryption;
 
 namespace AutomationFramework.Core.Configuration
 {
@@ -31,17 +30,16 @@ namespace AutomationFramework.Core.Configuration
             configuration.Bind(settings);
 
             // Decrypt credentials if needed
-            if (settings.Credentials != null && settings.Encryption != null && 
-                !string.IsNullOrWhiteSpace(settings.Encryption.Key))
+            if (settings.Credentials != null && settings.Encryption != null && !string.IsNullOrWhiteSpace(settings.Encryption.Key))
             {
                 var key = settings.Encryption.Key;
                 if (!string.IsNullOrWhiteSpace(settings.Credentials.Username))
                 {
-                    settings.Credentials.Username = EncryptionManager.Decrypt(settings.Credentials.Username, key);
+                    settings.Credentials.Username = Encryption.EncryptionManager.Decrypt(settings.Credentials.Username, key);
                 }
                 if (!string.IsNullOrWhiteSpace(settings.Credentials.Password))
                 {
-                    settings.Credentials.Password = EncryptionManager.Decrypt(settings.Credentials.Password, key);
+                    settings.Credentials.Password = Encryption.EncryptionManager.Decrypt(settings.Credentials.Password, key);
                 }
             }
 

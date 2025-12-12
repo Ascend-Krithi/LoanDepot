@@ -1,7 +1,6 @@
 using System;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Support.UI;
-using SeleniumExtras.WaitHelpers;
 
 namespace AutomationFramework.Core.Utilities
 {
@@ -25,7 +24,11 @@ namespace AutomationFramework.Core.Utilities
             try
             {
                 var wait = new WebDriverWait(driver, TimeSpan.FromSeconds(timeoutSeconds));
-                return wait.Until(ExpectedConditions.ElementIsVisible(locator));
+                return wait.Until(drv =>
+                {
+                    var el = drv.FindElement(locator);
+                    return el.Displayed ? el : null;
+                });
             }
             catch
             {
