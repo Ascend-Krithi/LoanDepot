@@ -1,30 +1,23 @@
-using AutomationFramework.Core.SelfHealing;
-using AutomationFramework.Core.Utilities;
-using AutomationFramework.Core.PopupEngine;
+using OpenQA.Selenium;
 
 namespace AutomationFramework.Core.Pages
 {
     public class OTPVerificationPageTemplate : BasePage
     {
-        public const string OtpInputKey = "OTPVerification.OtpInput";
-        public const string VerifyButtonKey = "OTPVerification.VerifyButton";
+        private readonly By otpInput = By.Id("verificationCode");
+        private readonly By verifyButton = By.CssSelector("button[type='submit']");
 
-        public OTPVerificationPageTemplate(SelfHealingWebDriver driver, WaitHelper waitHelper, PopupEngine popupEngine)
-            : base(driver, waitHelper, popupEngine) { }
-
-        public void EnterOtp(string otp)
+        public void EnterOTP(string otp)
         {
-            FindElement(OtpInputKey).SendKeys(otp);
+            var input = FindElement("OTPPage.OTPInput", otpInput);
+            input.Clear();
+            input.SendKeys(otp);
         }
 
         public void ClickVerify()
         {
-            FindElement(VerifyButtonKey).Click();
-        }
-
-        public override void WaitForPageToLoad()
-        {
-            WaitHelper.WaitForElementVisible(OtpInputKey);
+            var button = FindElement("OTPPage.VerifyButton", verifyButton);
+            button.Click();
         }
     }
 }

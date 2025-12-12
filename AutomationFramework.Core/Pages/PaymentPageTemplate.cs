@@ -1,38 +1,28 @@
-using AutomationFramework.Core.SelfHealing;
-using AutomationFramework.Core.Utilities;
-using AutomationFramework.Core.PopupEngine;
-using System;
+using OpenQA.Selenium;
 
 namespace AutomationFramework.Core.Pages
 {
     public class PaymentPageTemplate : BasePage
     {
-        public const string PaymentDatePickerKey = "Payment.PaymentDatePicker";
-        public const string PaymentDateCellKey = "Payment.PaymentDateCell";
-        public const string LateFeeMessageAreaKey = "Payment.LateFeeMessageArea";
-
-        public PaymentPageTemplate(SelfHealingWebDriver driver, WaitHelper waitHelper, PopupEngine popupEngine)
-            : base(driver, waitHelper, popupEngine) { }
+        private readonly By paymentDatePicker = By.Id("paymentDatePicker");
+        private readonly By lateFeeMessageArea = By.Id("lateFeeMessage");
 
         public void OpenPaymentDatePicker()
         {
-            FindElement(PaymentDatePickerKey).Click();
+            var picker = FindElement("PaymentPage.PaymentDatePicker", paymentDatePicker);
+            picker.Click();
         }
 
-        public void SelectPaymentDate(DateTime paymentDate)
+        public void SelectPaymentDate(string paymentDate)
         {
-            var dynamicKey = $"{PaymentDateCellKey}:{paymentDate:yyyy-MM-dd}";
-            FindElement(dynamicKey).Click();
+            // Assume calendar widget logic here
+            var dateElement = FindElement("PaymentPage.PaymentDate", By.XPath($"//td[@data-date='{paymentDate}']"));
+            dateElement.Click();
         }
 
         public bool IsLateFeeMessageDisplayed()
         {
-            return FindElement(LateFeeMessageAreaKey).Displayed && !string.IsNullOrWhiteSpace(FindElement(LateFeeMessageAreaKey).Text);
-        }
-
-        public override void WaitForPageToLoad()
-        {
-            WaitHelper.WaitForElementVisible(PaymentDatePickerKey);
+            return IsElementVisible(lateFeeMessageArea);
         }
     }
 }

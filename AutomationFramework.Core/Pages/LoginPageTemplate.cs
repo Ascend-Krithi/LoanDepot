@@ -1,36 +1,37 @@
-using AutomationFramework.Core.SelfHealing;
-using AutomationFramework.Core.Utilities;
-using AutomationFramework.Core.PopupEngine;
+using OpenQA.Selenium;
 
 namespace AutomationFramework.Core.Pages
 {
     public class LoginPageTemplate : BasePage
     {
-        public const string EmailInputKey = "Login.EmailInput";
-        public const string PasswordInputKey = "Login.PasswordInput";
-        public const string SignInButtonKey = "Login.SignInButton";
+        private readonly By emailInput = By.Id("email");
+        private readonly By passwordInput = By.Id("password");
+        private readonly By signInButton = By.CssSelector("button[type='submit']");
 
-        public LoginPageTemplate(SelfHealingWebDriver driver, WaitHelper waitHelper, PopupEngine popupEngine)
-            : base(driver, waitHelper, popupEngine) { }
+        public void OpenApplication()
+        {
+            Driver.Navigate().GoToUrl(AppConfig.ApplicationUrl);
+            WaitHelper.WaitForElementVisible(emailInput);
+        }
 
         public void EnterEmail(string email)
         {
-            FindElement(EmailInputKey).SendKeys(email);
+            var input = FindElement("LoginPage.EmailInput", emailInput);
+            input.Clear();
+            input.SendKeys(email);
         }
 
         public void EnterPassword(string password)
         {
-            FindElement(PasswordInputKey).SendKeys(password);
+            var input = FindElement("LoginPage.PasswordInput", passwordInput);
+            input.Clear();
+            input.SendKeys(password);
         }
 
         public void ClickSignIn()
         {
-            FindElement(SignInButtonKey).Click();
-        }
-
-        public override void WaitForPageToLoad()
-        {
-            WaitHelper.WaitForElementVisible(EmailInputKey);
+            var button = FindElement("LoginPage.SignInButton", signInButton);
+            button.Click();
         }
     }
 }

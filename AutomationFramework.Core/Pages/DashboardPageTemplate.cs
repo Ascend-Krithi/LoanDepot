@@ -1,47 +1,27 @@
-using AutomationFramework.Core.SelfHealing;
-using AutomationFramework.Core.Utilities;
-using AutomationFramework.Core.PopupEngine;
 using OpenQA.Selenium;
 
 namespace AutomationFramework.Core.Pages
 {
     public class DashboardPageTemplate : BasePage
     {
-        public const string LoanAccountRowKey = "Dashboard.LoanAccountRow";
-        public const string PopUpContactUpdateKey = "Dashboard.ContactUpdatePopup";
-        public const string PopUpChatbotIframeKey = "Dashboard.ChatbotIframe";
-        public const string MakeAPaymentButtonKey = "Dashboard.MakeAPaymentButton";
+        private readonly By loanAccountSelector = By.CssSelector("div.loan-account[data-loan-number]");
+        private readonly By makePaymentButton = By.Id("makePaymentBtn");
 
-        public DashboardPageTemplate(SelfHealingWebDriver driver, WaitHelper waitHelper, PopupEngine popupEngine)
-            : base(driver, waitHelper, popupEngine) { }
-
-        public bool CheckLoanAccountsVisible()
+        public void WaitForDashboardToLoad()
         {
-            return FindElement(LoanAccountRowKey).Displayed;
+            WaitHelper.WaitForElementVisible(loanAccountSelector);
         }
 
         public void SelectLoanAccount(string loanNumber)
         {
-            var dynamicKey = $"{LoanAccountRowKey}:{loanNumber}";
-            FindElement(dynamicKey).Click();
-            WaitForPageToLoad();
+            var account = FindElement("DashboardPage.LoanAccount", By.CssSelector($"div.loan-account[data-loan-number='{loanNumber}']"));
+            account.Click();
         }
 
-        public void DismissPopupsIfPresent()
+        public void ClickMakePayment()
         {
-            if (PopupEngine.IsPopupPresent(PopUpContactUpdateKey))
-            {
-                PopupEngine.DismissPopup(PopUpContactUpdateKey, "Update Later");
-            }
-            if (PopupEngine.IsPopupPresent(PopUpChatbotIframeKey))
-            {
-                PopupEngine.DismissPopup(PopUpChatbotIframeKey);
-            }
-        }
-
-        public override void WaitForPageToLoad()
-        {
-            WaitHelper.WaitForElementVisible(LoanAccountRowKey);
+            var button = FindElement("DashboardPage.MakePaymentButton", makePaymentButton);
+            button.Click();
         }
     }
 }
