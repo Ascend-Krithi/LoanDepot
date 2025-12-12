@@ -7,28 +7,11 @@ namespace AutomationFramework.Core.Configuration
 {
     public static class ConfigManager
     {
-        private static readonly object _lock = new object();
-        private static TestSettings _settings;
+        private static readonly Lazy<TestSettings> _settings = new Lazy<TestSettings>(LoadSettings);
 
-        public static TestSettings Settings
-        {
-            get
-            {
-                if (_settings == null)
-                {
-                    lock (_lock)
-                    {
-                        if (_settings == null)
-                        {
-                            LoadSettings();
-                        }
-                    }
-                }
-                return _settings;
-            }
-        }
+        public static TestSettings Settings => _settings.Value;
 
-        private static void LoadSettings()
+        private static TestSettings LoadSettings()
         {
             var builder = new ConfigurationBuilder()
                 .SetBasePath(AppContext.BaseDirectory)
@@ -39,22 +22,30 @@ namespace AutomationFramework.Core.Configuration
             {
                 builder.AddJsonFile($"appsettings.{env}.json", optional: true, reloadOnChange: false);
             }
+
             builder.AddEnvironmentVariables();
 
             var configuration = builder.Build();
+
             var settings = new TestSettings();
             configuration.Bind(settings);
 
-            if (settings.Credentials != null && !string.IsNullOrWhiteSpace(settings.Credentials.Username) && !string.IsNullOrWhiteSpace(settings.Encryption?.Key))
+            // Decrypt credentials if needed
+            if (settings.Credentials != null && settings.Encryption != null && 
+                !string.IsNullOrWhiteSpace(settings.Encryption.Key))
             {
-                settings.Credentials.Username = EncryptionManager.Decrypt(settings.Credentials.Username, settings.Encryption.Key);
-            }
-            if (settings.Credentials != null && !string.IsNullOrWhiteSpace(settings.Credentials.Password) && !string.IsNullOrWhiteSpace(settings.Encryption?.Key))
-            {
-                settings.Credentials.Password = EncryptionManager.Decrypt(settings.Credentials.Password, settings.Encryption.Key);
+                var key = settings.Encryption.Key;
+                if (!string.IsNullOrWhiteSpace(settings.Credentials.Username))
+                {
+                    settings.Credentials.Username = EncryptionManager.Decrypt(settings.Credentials.Username, key);
+                }
+                if (!string.IsNullOrWhiteSpace(settings.Credentials.Password))
+                {
+                    settings.Credentials.Password = EncryptionManager.Decrypt(settings.Credentials.Password, key);
+                }
             }
 
-            _settings = settings;
+            return settings;
         }
     }
 }
