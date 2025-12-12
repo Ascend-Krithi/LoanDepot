@@ -1,32 +1,28 @@
-using System.Linq;
-using OpenQA.Selenium;
 using AutomationFramework.Core.SelfHealing;
+using OpenQA.Selenium;
+using OpenQA.Selenium.Support.UI;
 
 namespace AutomationFramework.Core.Pages
 {
     public class GenericDropdownComponent : BasePage
     {
-        public const string DropdownKey = "GenericDropdown.Dropdown";
-        public const string OptionKey = "GenericDropdown.Option";
+        private readonly IWebElement _selectElement;
 
-        private readonly By dropdown = By.CssSelector("select, .dropdown, [role='listbox']");
-        private readonly By option = By.CssSelector("option, [role='option'], .dropdown-item");
-
-        public GenericDropdownComponent(SelfHealingWebDriver driver) : base(driver) { }
-
-        public IWebElement Dropdown => FindElement(DropdownKey, dropdown);
-
-        public IWebElement GetOptionByText(string text)
+        public GenericDropdownComponent(SelfHealingWebDriver driver, By locator) : base(driver)
         {
-            var options = Dropdown.FindElements(option);
-            return options.FirstOrDefault(o => o.Text.Trim().Equals(text.Trim(), System.StringComparison.OrdinalIgnoreCase));
+            _selectElement = FindElement("GenericDropdown.SelectElement", locator);
         }
 
         public void SelectByText(string text)
         {
-            var opt = GetOptionByText(text);
-            if (opt != null)
-                JsClick(opt);
+            var select = new SelectElement(_selectElement);
+            select.SelectByText(text);
+        }
+
+        public void SelectByValue(string value)
+        {
+            var select = new SelectElement(_selectElement);
+            select.SelectByValue(value);
         }
     }
 }

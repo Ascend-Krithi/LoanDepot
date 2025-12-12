@@ -1,57 +1,46 @@
-using System;
-using System.IO;
+using AutomationFramework.Core.Configuration;
 using NPOI.SS.UserModel;
 using NPOI.XSSF.UserModel;
-using AutomationFramework.Core.Configuration;
+using System;
+using System.IO;
 
 namespace AutomationFramework.Core.Utilities
 {
     public static class ExcelReader
     {
-        private static string ResolveFilePath(string filePathOrName)
+        private static string GetFullFilePath(string fileName)
         {
-            if (File.Exists(filePathOrName))
-                return filePathOrName;
+            var testDataFolder = ConfigManager.Settings.TestDataFolder ?? "TestData";
+            var baseDirectory = AppContext.BaseDirectory;
+            var filePath = Path.Combine(baseDirectory, testDataFolder, fileName);
 
-            var folder = ConfigManager.Settings.TestDataFolder;
-            if (string.IsNullOrWhiteSpace(folder))
-                folder = Path.Combine(AppContext.BaseDirectory, "TestData");
-
-            var fullPath = Path.Combine(folder, filePathOrName);
-            if (!File.Exists(fullPath))
-                throw new FileNotFoundException($"Excel file not found: {fullPath}");
-
-            return fullPath;
-        }
-
-        public static string GetCell(string filePathOrName, string sheetName, int rowIndex, int colIndex)
-        {
-            var path = ResolveFilePath(filePathOrName);
-            using (var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            if (!File.Exists(filePath))
             {
-                IWorkbook workbook = new XSSFWorkbook(fs);
-                var sheet = workbook.GetSheet(sheetName);
-                if (sheet == null)
-                    throw new ArgumentException($"Sheet '{sheetName}' not found in file '{filePathOrName}'.");
-
-                var row = sheet.GetRow(rowIndex);
-                if (row == null)
-                    return null;
-
-                var cell = row.GetCell(colIndex);
-                if (cell == null)
-                    return null;
-
-                return cell.ToString();
+                throw new FileNotFoundException($"Excel file not found at path: {filePath}");
             }
+            return filePath;
         }
 
-        public static DateTime? GetCellAsDateTime(string filePathOrName, string sheetName, int rowIndex, int colIndex)
+        public static string GetCell(string fileName, string sheetName, int rowIndex, int colIndex)
         {
-            var value = GetCell(filePathOrName, sheetName, rowIndex, colIndex);
-            if (DateTime.TryParse(value, out var dt))
-                return dt;
-            return null;
+            var filePath = GetFullFilePath(fileName);
+            IWorkbook workbook;
+
+            using (var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read))
+            {
+                workbook = new XSSFWorkbook(fileStream);
+            }
+
+            var sheet = workbook.GetSheet(sheetName);
+            if (sheet == null)
+            {
+                throw new ArgumentException($"Sheet '{sheetName}' not found in file '{fileName}'.");
+            }
+
+            var row = sheet.GetRow(rowIndex);
+            var cell = row?.GetCell(colIndex);
+
+            return cell?.ToString() ?? string.Empty;
         }
     }
 }

@@ -1,17 +1,17 @@
-using System;
-using System.IO;
-using BoDi;
-using TechTalk.SpecFlow;
-using OpenQA.Selenium;
 using AutomationFramework.Core.Configuration;
 using AutomationFramework.Core.Drivers;
 using AutomationFramework.Core.SelfHealing;
 using AutomationFramework.Tests.Reporting;
+using BoDi;
+using OpenQA.Selenium;
+using System;
+using System.IO;
+using TechTalk.SpecFlow;
 
 namespace AutomationFramework.Tests.Hooks
 {
     [Binding]
-    public class Hooks
+    public sealed class Hooks
     {
         private readonly IObjectContainer _container;
         private readonly ScenarioContext _scenarioContext;
@@ -22,58 +22,56 @@ namespace AutomationFramework.Tests.Hooks
             _scenarioContext = scenarioContext;
         }
 
-        [BeforeTestRun(Order = 0)]
+        [BeforeTestRun]
         public static void BeforeTestRun()
         {
-            // Ensure configuration is loaded
-            var _ = ConfigManager.Settings;
+            // Eagerly load configuration to ensure it's available and valid
+            _ = ConfigManager.Settings;
         }
 
-        [BeforeScenario(Order = 0)]
+        [BeforeScenario]
         public void BeforeScenario()
         {
             var driver = WebDriverFactory.CreateDriver();
             _container.RegisterInstanceAs<IWebDriver>(driver.InnerDriver);
-            _container.RegisterInstanceAs<SelfHealingWebDriver>(driver);
+            _container.RegisterInstanceAs(driver);
 
-            var baseUrl = ConfigManager.Settings.BaseUrl;
-            if (!string.IsNullOrWhiteSpace(baseUrl))
+            if (!string.IsNullOrEmpty(ConfigManager.Settings.BaseUrl))
             {
-                driver.Navigate().GoToUrl(baseUrl);
+                driver.Navigate().GoToUrl(ConfigManager.Settings.BaseUrl);
             }
         }
 
-        [AfterScenario(Order = 100)]
+        [AfterScenario]
         public void AfterScenario()
         {
             var driver = _container.Resolve<SelfHealingWebDriver>();
-            bool passed = !_scenarioContext.TestError.HasValue;
-            string featureName = _scenarioContext.ScenarioInfo.FeatureTitle;
-            string scenarioName = _scenarioContext.ScenarioInfo.Title;
-            string errorMessage = _scenarioContext.TestError?.Message;
+            var featureName = _scenarioContext.ScenarioContainer.Resolve<FeatureContext>().FeatureInfo.Title;
+            var scenarioName = _scenarioContext.ScenarioInfo.Title;
+            var passed = _scenarioContext.TestError == null;
+            string? errorMessage = null;
 
-            // Screenshot on failure
             if (!passed)
             {
+                errorMessage = _scenarioContext.TestError.Message;
                 try
                 {
-                    var takesScreenshot = driver.InnerDriver as ITakesScreenshot;
-                    if (takesScreenshot != null)
-                    {
-                        var screenshot = takesScreenshot.GetScreenshot();
-                        var screenshotsDir = Path.Combine(AppContext.BaseDirectory, "Screenshots");
-                        Directory.CreateDirectory(screenshotsDir);
-                        var fileName = $"{featureName}_{scenarioName}_{DateTime.Now:yyyyMMdd_HHmmss}.png".Replace(" ", "_");
-                        var filePath = Path.Combine(screenshotsDir, fileName);
-                        screenshot.SaveAsFile(filePath, ScreenshotImageFormat.Png);
-                    }
+                    var screenshotDriver = (ITakesScreenshot)driver.InnerDriver;
+                    var screenshot = screenshotDriver.GetScreenshot();
+                    var screenshotDir = Path.Combine(AppContext.BaseDirectory, "Screenshots");
+                    Directory.CreateDirectory(screenshotDir);
+                    var screenshotPath = Path.Combine(screenshotDir, $"{scenarioName}_{DateTime.Now:yyyyMMddHHmmss}.png");
+                    screenshot.SaveAsFile(screenshotPath);
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Failed to take screenshot: {ex.Message}");
+                }
             }
 
             HtmlReportGenerator.GenerateReport(featureName, scenarioName, passed, errorMessage);
 
-            try { driver.Quit(); } catch { }
+            driver?.Dispose();
         }
     }
 }

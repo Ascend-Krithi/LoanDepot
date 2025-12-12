@@ -1,22 +1,24 @@
-using OpenQA.Selenium;
 using AutomationFramework.Core.SelfHealing;
+using OpenQA.Selenium;
 
 namespace AutomationFramework.Core.Pages
 {
     public class DashboardPageTemplate : BasePage
     {
-        public const string HeaderKey = "DashboardPage.Header";
-        public const string TableKey = "DashboardPage.Table";
-        public const string DropdownKey = "DashboardPage.Dropdown";
+        // Logical Keys
+        private const string HeaderKey = "DashboardPage.Header";
+        private const string MainTableKey = "DashboardPage.MainTable";
+        private const string FilterDropdownKey = "DashboardPage.FilterDropdown";
 
-        private readonly By header = By.CssSelector("header, h1, h2, .dashboard-header");
-        private readonly By table = By.CssSelector("table");
-        private readonly By dropdown = By.CssSelector("select, .dropdown, [role='listbox']");
+        // Locators
+        private readonly By _header = By.CssSelector("h1, h2, .page-title, [role='heading']");
+        private readonly By _mainTable = By.TagName("table");
+        private readonly By _filterDropdown = By.CssSelector("select[name*='filter'], select[id*='filter']");
 
         public DashboardPageTemplate(SelfHealingWebDriver driver) : base(driver) { }
 
-        public IWebElement Header => FindElement(HeaderKey, header);
-        public IWebElement Table => FindElement(TableKey, table);
-        public IWebElement Dropdown => FindElement(DropdownKey, dropdown);
+        public IWebElement Header => FindElement(HeaderKey, _header);
+        public IWebElement MainTable => FindElement(MainTableKey, _mainTable);
+        public IWebElement FilterDropdown => FindElement(FilterDropdownKey, _filterDropdown);
     }
 }

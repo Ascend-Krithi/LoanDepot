@@ -1,24 +1,26 @@
-using OpenQA.Selenium;
 using AutomationFramework.Core.SelfHealing;
+using OpenQA.Selenium;
 
 namespace AutomationFramework.Core.Pages
 {
     public class GenericModalComponent : BasePage
     {
-        public const string ModalContainerKey = "GenericModal.ModalContainer";
-        public const string CloseButtonKey = "GenericModal.CloseButton";
+        // Logical Keys
+        private const string ModalContainerKey = "GenericModal.Container";
+        private const string CloseButtonKey = "GenericModal.CloseButton";
 
-        private readonly By modalContainer = By.CssSelector("[role='dialog'], .modal, [aria-modal='true']");
-        private readonly By closeButton = By.CssSelector("button.close, [aria-label*='close'], .close");
+        // Locators
+        private readonly By _modalContainer = By.CssSelector(".modal-content, [role='dialog']");
+        private readonly By _closeButton = By.CssSelector(".modal-header .close, button[aria-label*='close']");
 
         public GenericModalComponent(SelfHealingWebDriver driver) : base(driver) { }
 
-        public IWebElement ModalContainer => FindElement(ModalContainerKey, modalContainer);
-        public IWebElement CloseButton => FindElement(CloseButtonKey, closeButton);
+        public IWebElement ModalContainer => FindElement(ModalContainerKey, _modalContainer);
+        public IWebElement CloseButton => FindElement(CloseButtonKey, _closeButton);
 
         public void Close()
         {
-            JsClick(CloseButton);
+            CloseButton.Click();
         }
     }
 }

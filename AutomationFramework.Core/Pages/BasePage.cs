@@ -1,14 +1,14 @@
-using OpenQA.Selenium;
 using AutomationFramework.Core.SelfHealing;
 using AutomationFramework.Core.Utilities;
+using OpenQA.Selenium;
 
 namespace AutomationFramework.Core.Pages
 {
-    public class BasePage
+    public abstract class BasePage
     {
         protected readonly SelfHealingWebDriver Driver;
 
-        public BasePage(SelfHealingWebDriver driver)
+        protected BasePage(SelfHealingWebDriver driver)
         {
             Driver = driver;
         }
@@ -21,8 +21,8 @@ namespace AutomationFramework.Core.Pages
 
         protected void JsClick(IWebElement element)
         {
-            var js = (IJavaScriptExecutor)Driver.InnerDriver;
-            js.ExecuteScript("arguments[0].click();", element);
+            var jsExecutor = (IJavaScriptExecutor)Driver.InnerDriver;
+            jsExecutor.ExecuteScript("arguments[0].click();", element);
         }
     }
 }

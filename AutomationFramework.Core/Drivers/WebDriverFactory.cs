@@ -1,10 +1,10 @@
-using System;
+using AutomationFramework.Core.Configuration;
+using AutomationFramework.Core.SelfHealing;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium.Edge;
 using OpenQA.Selenium.Firefox;
-using AutomationFramework.Core.Configuration;
-using AutomationFramework.Core.SelfHealing;
+using System;
 
 namespace AutomationFramework.Core.Drivers
 {
@@ -12,13 +12,14 @@ namespace AutomationFramework.Core.Drivers
     {
         public static SelfHealingWebDriver CreateDriver()
         {
-            string browser = ConfigManager.Settings.Browser?.ToLowerInvariant() ?? "chrome";
+            var browser = ConfigManager.Settings.Browser;
             IWebDriver driver;
 
-            switch (browser)
+            switch (browser.ToLowerInvariant())
             {
                 case "chrome":
                     var chromeOptions = new ChromeOptions();
+                    // Selenium Manager handles driver download automatically
                     driver = new ChromeDriver(chromeOptions);
                     break;
                 case "edge":
@@ -30,7 +31,7 @@ namespace AutomationFramework.Core.Drivers
                     driver = new FirefoxDriver(firefoxOptions);
                     break;
                 default:
-                    throw new ArgumentException($"Unsupported browser: {browser}");
+                    throw new NotSupportedException($"Browser '{browser}' is not supported.");
             }
 
             driver.Manage().Window.Maximize();

@@ -5,35 +5,47 @@ namespace AutomationFramework.Tests.Reporting
 {
     public static class HtmlReportGenerator
     {
-        public static void GenerateReport(string featureName, string scenarioName, bool passed, string errorMessage)
+        public static void GenerateReport(string featureName, string scenarioName, bool passed, string? errorMessage)
         {
-            try
-            {
-                var reportsDir = Path.Combine(AppContext.BaseDirectory, "HtmlReports");
-                Directory.CreateDirectory(reportsDir);
+            var reportDir = Path.Combine(AppContext.BaseDirectory, "HtmlReports");
+            Directory.CreateDirectory(reportDir);
 
-                var fileName = $"{featureName}_{scenarioName}_{DateTime.Now:yyyyMMdd_HHmmss}.html".Replace(" ", "_");
-                var filePath = Path.Combine(reportsDir, fileName);
+            var fileName = $"{scenarioName.Replace(" ", "_")}_{DateTime.Now:yyyyMMddHHmmss}.html";
+            var filePath = Path.Combine(reportDir, fileName);
 
-                using (var sw = new StreamWriter(filePath, false))
-                {
-                    sw.WriteLine("<html><head><title>Test Report</title></head><body>");
-                    sw.WriteLine($"<h2>Feature: {featureName}</h2>");
-                    sw.WriteLine($"<h3>Scenario: {scenarioName}</h3>");
-                    sw.WriteLine($"<p>Status: <b style='color:{(passed ? "green" : "red")}'>{(passed ? "Passed" : "Failed")}</b></p>");
-                    sw.WriteLine($"<p>Timestamp: {DateTime.Now:yyyy-MM-dd HH:mm:ss}</p>");
-                    if (!passed && !string.IsNullOrWhiteSpace(errorMessage))
-                    {
-                        sw.WriteLine("<h4>Error Details:</h4>");
-                        sw.WriteLine($"<pre>{System.Net.WebUtility.HtmlEncode(errorMessage)}</pre>");
-                    }
-                    sw.WriteLine("</body></html>");
-                }
-            }
-            catch
-            {
-                // Swallow all exceptions
-            }
+            var status = passed ? "Passed" : "Failed";
+            var color = passed ? "green" : "red";
+
+            var htmlContent = $@"
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Test Report: {scenarioName}</title>
+                <style>
+                    body {{ font-family: Arial, sans-serif; }}
+                    .container {{ width: 80%; margin: auto; padding: 20px; border: 1px solid #ccc; border-radius: 5px; }}
+                    .header {{ font-size: 24px; font-weight: bold; }}
+                    .status {{ font-size: 20px; font-weight: bold; color: {color}; }}
+                    .details {{ margin-top: 20px; }}
+                    .error {{ background-color: #fdd; border: 1px solid red; padding: 10px; white-space: pre-wrap; }}
+                </style>
+            </head>
+            <body>
+                <div class='container'>
+                    <div class='header'>Test Execution Report</div>
+                    <hr>
+                    <div class='details'>
+                        <p><strong>Feature:</strong> {featureName}</p>
+                        <p><strong>Scenario:</strong> {scenarioName}</p>
+                        <p><strong>Timestamp:</strong> {DateTime.Now:yyyy-MM-dd HH:mm:ss}</p>
+                        <p><strong>Status:</strong> <span class='status'>{status}</span></p>
+                    </div>
+                    {(passed ? "" : $"<div class='error'><strong>Error:</strong><br>{System.Security.SecurityElement.Escape(errorMessage)}</div>")}
+                </div>
+            </body>
+            </html>";
+
+            File.WriteAllText(filePath, htmlContent);
         }
     }
 }

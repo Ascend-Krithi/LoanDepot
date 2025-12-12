@@ -1,7 +1,7 @@
+using AutomationFramework.Core.Utilities;
+using OpenQA.Selenium;
 using System;
 using System.Collections.ObjectModel;
-using OpenQA.Selenium;
-using AutomationFramework.Core.Utilities;
 
 namespace AutomationFramework.Core.SelfHealing
 {
@@ -23,46 +23,79 @@ namespace AutomationFramework.Core.SelfHealing
         public IWebElement FindElement(string logicalKey, By locator, int timeoutSeconds = 10)
         {
             _repository.AddOrUpdate(logicalKey, new LocatorSnapshot(logicalKey, locator));
-            var element = WaitHelper.WaitForElement(_innerDriver, locator, timeoutSeconds);
-            if (element != null)
-                return element;
 
-            Utilities.Logger.Log($"Element not found: {logicalKey} ({locator}) - attempting self-heal.");
-            var healedLocator = _analyzer.Heal(locator);
-            if (!healedLocator.Equals(locator))
+            var element = WaitHelper.WaitForElement(_innerDriver, locator, timeoutSeconds);
+
+            if (element != null)
             {
-                element = WaitHelper.WaitForElement(_innerDriver, healedLocator, timeoutSeconds);
-                if (element != null)
-                    return element;
+                return element;
             }
 
-            throw new NoSuchElementException($"Element not found for logical key '{logicalKey}' using locator '{locator}'.");
+            // Initial attempt failed, begin self-healing
+            Logger.Log($"Self-healing: Initial attempt failed for '{logicalKey}' with locator '{locator}'.");
+
+            var healedLocator = _analyzer.Heal(locator);
+
+            if (!healedLocator.Equals(locator))
+            {
+                Logger.Log($"Self-healing: DOM Analyzer suggested a new locator: '{healedLocator}'.");
+                element = WaitHelper.WaitForElement(_innerDriver, healedLocator, timeoutSeconds);
+
+                if (element != null)
+                {
+                    // Update repository with the successful healed locator
+                    _repository.AddOrUpdate(logicalKey, new LocatorSnapshot(logicalKey, healedLocator));
+                    Logger.Log($"Self-healing: Successfully found element '{logicalKey}' with the new locator.");
+                    return element;
+                }
+            }
+
+            // If healing fails or provides no new locator, throw
+            throw new NoSuchElementException($"Element with logical key '{logicalKey}' could not be found using locator '{locator}' or any healed alternatives.");
         }
 
-        #region IWebDriver Implementation (delegation)
+        #region IWebDriver Implementation (Delegation)
 
-        public string Url { get => _innerDriver.Url; set => _innerDriver.Url = value; }
+        public string Url
+        {
+            get => _innerDriver.Url;
+            set => _innerDriver.Url = value;
+        }
+
         public string Title => _innerDriver.Title;
         public string PageSource => _innerDriver.PageSource;
         public string CurrentWindowHandle => _innerDriver.CurrentWindowHandle;
         public ReadOnlyCollection<string> WindowHandles => _innerDriver.WindowHandles;
 
         public void Close() => _innerDriver.Close();
-        public void Dispose()
-        {
-            try { _innerDriver.Quit(); }
-            catch { /* swallow */ }
-        }
-        public IWebElement FindElement(By by) => _innerDriver.FindElement(by);
-        public ReadOnlyCollection<IWebElement> FindElements(By by) => _innerDriver.FindElements(by);
+        public void Quit() => _innerDriver.Quit();
         public IOptions Manage() => _innerDriver.Manage();
         public INavigation Navigate() => _innerDriver.Navigate();
-        public void Quit()
-        {
-            try { _innerDriver.Quit(); }
-            catch { /* swallow */ }
-        }
         public ITargetLocator SwitchTo() => _innerDriver.SwitchTo();
+
+        public IWebElement FindElement(By by)
+        {
+            // This is the standard IWebDriver method. We delegate but could add healing here too.
+            // For this framework, we enforce using the explicit healing method.
+            return _innerDriver.FindElement(by);
+        }
+
+        public ReadOnlyCollection<IWebElement> FindElements(By by)
+        {
+            return _innerDriver.FindElements(by);
+        }
+
+        public void Dispose()
+        {
+            try
+            {
+                _innerDriver.Dispose();
+            }
+            catch (Exception ex)
+            {
+                Logger.Log($"Error during driver disposal: {ex.Message}");
+            }
+        }
 
         #endregion
     }

@@ -7,54 +7,96 @@ namespace AutomationFramework.Core.Encryption
 {
     public static class EncryptionManager
     {
-        public static string Decrypt(string cipherText, string base64Key)
-        {
-            if (string.IsNullOrWhiteSpace(cipherText))
-                return cipherText;
+        private const int AesKeySize = 32; // 256 bits
+        private const int AesIvSize = 16;  // 128 bits
 
-            // If not valid Base64, treat as plaintext
+        public static string Decrypt(string base64CipherText, string base64Key)
+        {
+            if (string.IsNullOrEmpty(base64CipherText)) return string.Empty;
+
+            byte[] cipherBytes;
             try
             {
-                var cipherBytes = Convert.FromBase64String(cipherText);
-                var keyBytes = Convert.FromBase64String(base64Key);
-
-                if (keyBytes.Length != 32)
-                    throw new ArgumentException("Encryption key must be 32 bytes (Base64-encoded).");
-
-                if (cipherBytes.Length < 16)
-                    throw new ArgumentException("Ciphertext is too short to contain IV.");
-
-                var iv = new byte[16];
-                Array.Copy(cipherBytes, 0, iv, 0, 16);
-
-                var actualCipher = new byte[cipherBytes.Length - 16];
-                Array.Copy(cipherBytes, 16, actualCipher, 0, actualCipher.Length);
-
-                using (var aes = Aes.Create())
-                {
-                    aes.Key = keyBytes;
-                    aes.IV = iv;
-                    aes.Mode = CipherMode.CBC;
-                    aes.Padding = PaddingMode.PKCS7;
-
-                    using (var decryptor = aes.CreateDecryptor())
-                    using (var ms = new MemoryStream(actualCipher))
-                    using (var cs = new CryptoStream(ms, decryptor, CryptoStreamMode.Read))
-                    using (var sr = new StreamReader(cs, Encoding.UTF8))
-                    {
-                        return sr.ReadToEnd();
-                    }
-                }
+                cipherBytes = Convert.FromBase64String(base64CipherText);
             }
             catch (FormatException)
             {
-                // Not Base64, treat as plaintext
-                return cipherText;
+                // If not valid Base64, treat as plaintext
+                return base64CipherText;
             }
-            catch (Exception ex)
+
+            if (string.IsNullOrEmpty(base64Key))
             {
-                throw new InvalidOperationException("Failed to decrypt value: " + ex.Message, ex);
+                throw new ArgumentException("Encryption key cannot be null or empty for decryption.", nameof(base64Key));
             }
+
+            var key = Convert.FromBase64String(base64Key);
+            if (key.Length != AesKeySize)
+            {
+                throw new ArgumentException($"Encryption key must be {AesKeySize} bytes (256 bits) long.", nameof(base64Key));
+            }
+
+            if (cipherBytes.Length < AesIvSize)
+            {
+                throw new CryptographicException("Invalid ciphertext length. It must be at least the size of the IV.");
+            }
+
+            var iv = new byte[AesIvSize];
+            var cipherTextBytes = new byte[cipherBytes.Length - AesIvSize];
+
+            Buffer.BlockCopy(cipherBytes, 0, iv, 0, iv.Length);
+            Buffer.BlockCopy(cipherBytes, iv.Length, cipherTextBytes, 0, cipherTextBytes.Length);
+
+            using var aes = Aes.Create();
+            aes.Key = key;
+            aes.IV = iv;
+            aes.Mode = CipherMode.CBC;
+            aes.Padding = PaddingMode.PKCS7;
+
+            using var decryptor = aes.CreateDecryptor(aes.Key, aes.IV);
+            using var msDecrypt = new MemoryStream(cipherTextBytes);
+            using var csDecrypt = new CryptoStream(msDecrypt, decryptor, CryptoStreamMode.Read);
+            using var srDecrypt = new StreamReader(csDecrypt);
+
+            return srDecrypt.ReadToEnd();
+        }
+
+        public static string Encrypt(string plainText, string base64Key)
+        {
+            if (string.IsNullOrEmpty(plainText)) return string.Empty;
+            if (string.IsNullOrEmpty(base64Key))
+            {
+                throw new ArgumentException("Encryption key cannot be null or empty for encryption.", nameof(base64Key));
+            }
+
+            var key = Convert.FromBase64String(base64Key);
+            if (key.Length != AesKeySize)
+            {
+                throw new ArgumentException($"Encryption key must be {AesKeySize} bytes (256 bits) long.", nameof(base64Key));
+            }
+
+            using var aes = Aes.Create();
+            aes.Key = key;
+            aes.GenerateIV(); // Generate a new IV for each encryption
+            aes.Mode = CipherMode.CBC;
+            aes.Padding = PaddingMode.PKCS7;
+
+            var iv = aes.IV;
+
+            using var encryptor = aes.CreateEncryptor(aes.Key, aes.IV);
+            using var msEncrypt = new MemoryStream();
+            using var csEncrypt = new CryptoStream(msEncrypt, encryptor, CryptoStreamMode.Write);
+            using (var swEncrypt = new StreamWriter(csEncrypt))
+            {
+                swEncrypt.Write(plainText);
+            }
+
+            var encryptedContent = msEncrypt.ToArray();
+            var result = new byte[iv.Length + encryptedContent.Length];
+            Buffer.BlockCopy(iv, 0, result, 0, iv.Length);
+            Buffer.BlockCopy(encryptedContent, 0, result, iv.Length, encryptedContent.Length);
+
+            return Convert.ToBase64String(result);
         }
     }
 }

@@ -4,16 +4,16 @@ namespace AutomationFramework.Core.SelfHealing
 {
     public class SelfHealingRepository
     {
-        private readonly ConcurrentDictionary<string, LocatorSnapshot> _snapshots = new();
+        private readonly ConcurrentDictionary<string, LocatorSnapshot> _repository = new();
 
         public void AddOrUpdate(string logicalKey, LocatorSnapshot snapshot)
         {
-            _snapshots.AddOrUpdate(logicalKey, snapshot, (k, v) => snapshot);
+            _repository.AddOrUpdate(logicalKey, snapshot, (key, existingVal) => snapshot);
         }
 
-        public LocatorSnapshot Get(string logicalKey)
+        public LocatorSnapshot? Get(string logicalKey)
         {
-            _snapshots.TryGetValue(logicalKey, out var snapshot);
+            _repository.TryGetValue(logicalKey, out var snapshot);
             return snapshot;
         }
     }

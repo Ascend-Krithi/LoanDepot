@@ -1,16 +1,14 @@
+using OpenQA.Selenium;
 using System;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading;
-using OpenQA.Selenium;
 
 namespace AutomationFramework.Core.Utilities
 {
     public static class PopupEngine
     {
-        private static bool _chatWidgetsCleaned = false;
-        private static readonly object _lock = new();
-
-        private static readonly string[] OverlaySelectors = new[]
+        private static readonly string[] PopupSelectors =
         {
             "[role='dialog']",
             ".cdk-overlay-backdrop",
@@ -20,96 +18,120 @@ namespace AutomationFramework.Core.Utilities
             "[class*='cookie']"
         };
 
-        private static readonly string[] ChatSelectors = new[]
+        private static readonly string[] CloseButtonSelectors =
         {
-            "[id*='chat']",
-            "[class*='chat']"
+            "[aria-label*='close']",
+            "[aria-label*='dismiss']",
+            "[class*='close']",
+            "button:contains('Accept')",
+            "button:contains('OK')"
         };
+
+        private static readonly string[] ChatIframeSelectors =
+        {
+            "iframe[id*='chat']",
+            "iframe[title*='chat']"
+        };
+
+        private static bool _chatWidgetHandled = false;
 
         public static void CleanPopups(IWebDriver driver)
         {
-            try
+            HandleOverlays(driver);
+            if (!_chatWidgetHandled)
             {
-                foreach (var selector in OverlaySelectors)
-                {
-                    var overlays = driver.FindElements(By.CssSelector(selector));
-                    foreach (var overlay in overlays)
-                    {
-                        try
-                        {
-                            var closeButtons = overlay.FindElements(By.CssSelector("button, [role='button'], .close, [aria-label*='close']"));
-                            if (closeButtons.Any())
-                            {
-                                foreach (var btn in closeButtons)
-                                {
-                                    try
-                                    {
-                                        if (btn.Displayed && btn.Enabled)
-                                        {
-                                            btn.Click();
-                                            Thread.Sleep(60);
-                                            break;
-                                        }
-                                    }
-                                    catch { }
-                                }
-                            }
-                            else
-                            {
-                                var js = (IJavaScriptExecutor)driver;
-                                js.ExecuteScript("arguments[0].parentNode.removeChild(arguments[0]);", overlay);
-                                Thread.Sleep(60);
-                            }
-                        }
-                        catch { }
-                    }
-                }
-
-                CleanChatWidgets(driver);
+                HandleChatWidgets(driver);
+                _chatWidgetHandled = true;
             }
-            catch { }
         }
 
-        private static void CleanChatWidgets(IWebDriver driver)
+        private static void HandleOverlays(IWebDriver driver)
         {
-            lock (_lock)
+            var jsExecutor = (IJavaScriptExecutor)driver;
+            foreach (var selector in PopupSelectors)
             {
-                if (_chatWidgetsCleaned)
-                    return;
-                _chatWidgetsCleaned = true;
-            }
-
-            try
-            {
-                var iframes = driver.FindElements(By.TagName("iframe"));
-                foreach (var iframe in iframes)
+                try
                 {
-                    try
+                    var elements = driver.FindElements(By.CssSelector(selector));
+                    foreach (var element in elements)
                     {
-                        driver.SwitchTo().Frame(iframe);
-                        foreach (var selector in ChatSelectors)
+                        if (!element.Displayed) continue;
+
+                        Logger.Log($"PopupEngine: Found potential overlay with selector '{selector}'.");
+                        bool closed = TryClickCloseButton(element);
+                        if (!closed)
                         {
-                            var chats = driver.FindElements(By.CssSelector(selector));
-                            foreach (var chat in chats)
-                            {
-                                try
-                                {
-                                    var js = (IJavaScriptExecutor)driver;
-                                    js.ExecuteScript("arguments[0].parentNode.removeChild(arguments[0]);", chat);
-                                    Thread.Sleep(60);
-                                }
-                                catch { }
-                            }
+                            Logger.Log($"PopupEngine: Could not find a close button. Removing element via JS.");
+                            jsExecutor.ExecuteScript("arguments[0].parentNode.removeChild(arguments[0]);", element);
+                            Thread.Sleep(80); // Small delay to allow DOM to settle
                         }
-                        driver.SwitchTo().DefaultContent();
-                    }
-                    catch
-                    {
-                        driver.SwitchTo().DefaultContent();
                     }
                 }
+                catch (Exception ex)
+                {
+                    Logger.Log($"PopupEngine: Error handling selector '{selector}': {ex.Message}");
+                }
             }
-            catch { }
+        }
+
+        private static bool TryClickCloseButton(IWebElement popupElement)
+        {
+            foreach (var selector in CloseButtonSelectors)
+            {
+                try
+                {
+                    var closeButton = popupElement.FindElement(By.CssSelector(selector));
+                    if (closeButton.Displayed && closeButton.Enabled)
+                    {
+                        closeButton.Click();
+                        Logger.Log($"PopupEngine: Clicked close button with selector '{selector}'.");
+                        Thread.Sleep(80); // Small delay
+                        return true;
+                    }
+                }
+                catch (NoSuchElementException)
+                {
+                    // Ignore, button not found
+                }
+            }
+            return false;
+        }
+
+        private static void HandleChatWidgets(IWebDriver driver)
+        {
+            var jsExecutor = (IJavaScriptExecutor)driver;
+            ReadOnlyCollection<IWebElement> iframes;
+            try
+            {
+                iframes = driver.FindElements(By.TagName("iframe"));
+            }
+            catch { return; }
+
+
+            foreach (var iframe in iframes)
+            {
+                try
+                {
+                    driver.SwitchTo().Frame(iframe);
+                    foreach (var selector in ChatIframeSelectors)
+                    {
+                        var chatElements = driver.FindElements(By.CssSelector(selector));
+                        if (chatElements.Any())
+                        {
+                            Logger.Log($"PopupEngine: Found and removed chat widget in iframe.");
+                            jsExecutor.ExecuteScript("arguments[0].parentNode.removeChild(arguments[0]);", iframe);
+                            driver.SwitchTo().DefaultContent();
+                            return; // Assume one chat widget
+                        }
+                    }
+                    driver.SwitchTo().DefaultContent();
+                }
+                catch (Exception ex)
+                {
+                    Logger.Log($"PopupEngine: Error handling iframe for chat widget: {ex.Message}");
+                    driver.SwitchTo().DefaultContent(); // Ensure we switch back
+                }
+            }
         }
     }
 }

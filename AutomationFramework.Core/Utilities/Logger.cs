@@ -14,12 +14,13 @@ namespace AutomationFramework.Core.Utilities
             {
                 lock (_lock)
                 {
-                    File.AppendAllText(LogFilePath, $"{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff} | {message}{Environment.NewLine}");
+                    var logMessage = $"{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff} - {message}{System.Environment.NewLine}";
+                    File.AppendAllText(LogFilePath, logMessage);
                 }
             }
-            catch
+            catch (IOException)
             {
-                // Swallow all IO exceptions
+                // Swallow IO exceptions to prevent logging from crashing tests
             }
         }
     }
