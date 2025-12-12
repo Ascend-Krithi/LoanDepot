@@ -1,49 +1,66 @@
-using OpenQA.Selenium;
 using System;
-using System.Collections.Generic;
+using OpenQA.Selenium;
+using System.Collections.ObjectModel;
+using AutomationFramework.Core.Utilities;
 
 namespace AutomationFramework.Core.SelfHealing
 {
     public class SelfHealingWebDriver : IWebDriver
     {
-        private readonly IWebDriver driver;
+        private readonly IWebDriver _innerDriver;
+        private readonly SelfHealingRepository _repository;
+        private readonly DomAnalyzer _analyzer;
 
-        public SelfHealingWebDriver(IWebDriver driver)
+        public IWebDriver InnerDriver => _innerDriver;
+
+        public SelfHealingWebDriver(IWebDriver innerDriver)
         {
-            this.driver = driver;
+            _innerDriver = innerDriver ?? throw new ArgumentNullException(nameof(innerDriver));
+            _repository = new SelfHealingRepository();
+            _analyzer = new DomAnalyzer();
         }
 
-        public IWebElement FindElement(By by)
+        public IWebElement FindElement(string logicalKey, By locator, int timeoutSeconds = 10)
         {
-            try
+            _repository.AddOrUpdate(logicalKey, new LocatorSnapshot(logicalKey, locator));
+            var element = WaitHelper.WaitForElement(_innerDriver, locator, timeoutSeconds);
+            if (element != null)
+                return element;
+
+            Logger.Log($"Element not found: {logicalKey} ({locator}) - attempting self-heal.");
+            var healedLocator = _analyzer.Heal(locator);
+
+            if (!healedLocator.Equals(locator))
             {
-                return driver.FindElement(by);
+                element = WaitHelper.WaitForElement(_innerDriver, healedLocator, timeoutSeconds);
+                if (element != null)
+                    return element;
             }
-            catch (NoSuchElementException)
-            {
-                // Fallback logic can be implemented here
-                throw;
-            }
+
+            throw new NoSuchElementException($"Element not found for logical key '{logicalKey}' with locator {locator}");
         }
 
-        // Implement other IWebDriver members by delegating to 'driver'
-        public string Url { get => driver.Url; set => driver.Url = value; }
-        public string Title => driver.Title;
-        public string PageSource => driver.PageSource;
-        public string CurrentWindowHandle => driver.CurrentWindowHandle;
-        public ReadOnlyCollection<string> WindowHandles => driver.WindowHandles;
+        // IWebDriver implementation (delegates)
+        public string Url { get => _innerDriver.Url; set => _innerDriver.Url = value; }
+        public string Title => _innerDriver.Title;
+        public string PageSource => _innerDriver.PageSource;
+        public string CurrentWindowHandle => _innerDriver.CurrentWindowHandle;
+        public ReadOnlyCollection<string> WindowHandles => _innerDriver.WindowHandles;
 
-        public void Close() => driver.Close();
-        public void Dispose() => driver.Dispose();
-        public IWebElement FindElement(By by, int timeoutInSeconds)
+        public void Close() => _innerDriver.Close();
+        public void Dispose()
         {
-            // Optionally implement wait logic here
-            return FindElement(by);
+            try { _innerDriver.Quit(); } catch { }
+            try { _innerDriver.Dispose(); } catch { }
         }
-        public ReadOnlyCollection<IWebElement> FindElements(By by) => driver.FindElements(by);
-        public IOptions Manage() => driver.Manage();
-        public INavigation Navigate() => driver.Navigate();
-        public void Quit() => driver.Quit();
-        public ITargetLocator SwitchTo() => driver.SwitchTo();
+        public IWebElement FindElement(By by) => _innerDriver.FindElement(by);
+        public ReadOnlyCollection<IWebElement> FindElements(By by) => _innerDriver.FindElements(by);
+        public IOptions Manage() => _innerDriver.Manage();
+        public INavigation Navigate() => _innerDriver.Navigate();
+        public void Quit()
+        {
+            try { _innerDriver.Quit(); } catch { }
+        }
+        public ITargetLocator SwitchTo() => _innerDriver.SwitchTo();
     }
 }
