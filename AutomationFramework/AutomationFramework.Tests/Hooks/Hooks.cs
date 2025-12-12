@@ -25,6 +25,7 @@ namespace AutomationFramework.Tests.Hooks
         [BeforeTestRun]
         public static void BeforeTestRun()
         {
+            // Ensure config is loaded
             var _ = ConfigManager.Settings;
         }
 
@@ -36,7 +37,7 @@ namespace AutomationFramework.Tests.Hooks
             _container.RegisterInstanceAs(driver);
 
             var baseUrl = ConfigManager.Settings.BaseUrl;
-            if (!string.IsNullOrEmpty(baseUrl))
+            if (!string.IsNullOrWhiteSpace(baseUrl))
             {
                 driver.Navigate().GoToUrl(baseUrl);
             }
@@ -49,22 +50,26 @@ namespace AutomationFramework.Tests.Hooks
             bool failed = _scenarioContext.TestError != null;
             string featureName = _scenarioContext.ScenarioInfo.FeatureTitle;
             string scenarioName = _scenarioContext.ScenarioInfo.Title;
-            string errorMsg = failed ? _scenarioContext.TestError?.Message : null;
+            string errorMessage = failed ? _scenarioContext.TestError?.ToString() : null;
 
             if (failed)
             {
                 try
                 {
-                    var screenshot = ((ITakesScreenshot)driver.InnerDriver).GetScreenshot();
-                    var screenshotsDir = Path.Combine(AppContext.BaseDirectory, "Screenshots");
-                    Directory.CreateDirectory(screenshotsDir);
-                    var filePath = Path.Combine(screenshotsDir, $"{scenarioName}_{DateTime.Now:yyyyMMddHHmmss}.png");
-                    screenshot.SaveAsFile(filePath, ScreenshotImageFormat.Png);
+                    var takesScreenshot = driver.InnerDriver as ITakesScreenshot;
+                    if (takesScreenshot != null)
+                    {
+                        var screenshot = takesScreenshot.GetScreenshot();
+                        var screenshotsDir = Path.Combine(AppContext.BaseDirectory, "Screenshots");
+                        Directory.CreateDirectory(screenshotsDir);
+                        var fileName = $"{featureName}_{scenarioName}_{DateTime.Now:yyyyMMdd_HHmmss}.png".Replace(" ", "_");
+                        screenshot.SaveAsFile(Path.Combine(screenshotsDir, fileName), ScreenshotImageFormat.Png);
+                    }
                 }
                 catch { }
             }
 
-            HtmlReportGenerator.GenerateReport(featureName, scenarioName, !failed, errorMsg);
+            HtmlReportGenerator.GenerateReport(featureName, scenarioName, !failed, errorMessage);
 
             try { driver.Quit(); } catch { }
         }

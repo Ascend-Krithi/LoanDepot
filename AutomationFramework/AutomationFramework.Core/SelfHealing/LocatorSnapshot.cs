@@ -4,8 +4,8 @@ namespace AutomationFramework.Core.SelfHealing
 {
     public class LocatorSnapshot
     {
-        public string LogicalKey { get; set; }
-        public By Locator { get; set; }
+        public string LogicalKey { get; }
+        public By Locator { get; }
 
         public LocatorSnapshot(string logicalKey, By locator)
         {

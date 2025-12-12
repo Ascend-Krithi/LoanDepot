@@ -6,61 +6,39 @@ namespace AutomationFramework.Core.Configuration
 {
     public static class ConfigManager
     {
-        private static IConfigurationRoot _configuration;
-        private static TestSettings _settings;
-        private static readonly object _lock = new object();
+        private static readonly Lazy<TestSettings> _settings = new Lazy<TestSettings>(LoadSettings);
+        public static TestSettings Settings => _settings.Value;
 
-        public static TestSettings Settings
+        private static TestSettings LoadSettings()
         {
-            get
-            {
-                if (_settings == null)
-                {
-                    lock (_lock)
-                    {
-                        if (_settings == null)
-                        {
-                            LoadConfiguration();
-                        }
-                    }
-                }
-                return _settings;
-            }
-        }
-
-        private static void LoadConfiguration()
-        {
-            var basePath = AppContext.BaseDirectory;
-            var env = Environment.GetEnvironmentVariable("TEST_ENVIRONMENT");
             var builder = new ConfigurationBuilder()
-                .SetBasePath(basePath)
-                .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
+                .SetBasePath(AppContext.BaseDirectory)
+                .AddJsonFile("appsettings.json", optional: false, reloadOnChange: false);
 
+            var env = Environment.GetEnvironmentVariable("TEST_ENVIRONMENT");
             if (!string.IsNullOrWhiteSpace(env))
             {
-                builder.AddJsonFile($"appsettings.{env}.json", optional: true, reloadOnChange: true);
+                builder.AddJsonFile($"appsettings.{env}.json", optional: true, reloadOnChange: false);
             }
 
             builder.AddEnvironmentVariables();
 
-            _configuration = builder.Build();
+            var configuration = builder.Build();
 
-            _settings = new TestSettings();
-            _configuration.Bind(_settings);
+            var settings = new TestSettings();
+            configuration.Bind(settings);
 
-            // Decrypt credentials if needed
-            if (_settings.Credentials != null &&
-                !string.IsNullOrEmpty(_settings.Credentials.Username) &&
-                !string.IsNullOrEmpty(_settings.Encryption?.Key))
+            // Decrypt credentials if necessary
+            if (settings.Credentials != null && settings.Encryption != null &&
+                !string.IsNullOrWhiteSpace(settings.Credentials.Username) &&
+                !string.IsNullOrWhiteSpace(settings.Credentials.Password) &&
+                !string.IsNullOrWhiteSpace(settings.Encryption.Key))
             {
-                _settings.Credentials.Username = Encryption.EncryptionManager.Decrypt(_settings.Credentials.Username, _settings.Encryption.Key);
+                settings.Credentials.Username = Encryption.EncryptionManager.Decrypt(settings.Credentials.Username, settings.Encryption.Key);
+                settings.Credentials.Password = Encryption.EncryptionManager.Decrypt(settings.Credentials.Password, settings.Encryption.Key);
             }
-            if (_settings.Credentials != null &&
-                !string.IsNullOrEmpty(_settings.Credentials.Password) &&
-                !string.IsNullOrEmpty(_settings.Encryption?.Key))
-            {
-                _settings.Credentials.Password = Encryption.EncryptionManager.Decrypt(_settings.Credentials.Password, _settings.Encryption.Key);
-            }
+
+            return settings;
         }
     }
 }

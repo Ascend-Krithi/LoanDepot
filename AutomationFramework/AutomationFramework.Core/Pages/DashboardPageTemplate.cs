@@ -1,4 +1,5 @@
 using OpenQA.Selenium;
+using AutomationFramework.Core.SelfHealing;
 
 namespace AutomationFramework.Core.Pages
 {
@@ -8,9 +9,9 @@ namespace AutomationFramework.Core.Pages
         public const string TableKey = "DashboardPage.Table";
         public const string DropdownKey = "DashboardPage.Dropdown";
 
-        private readonly By header = By.CssSelector("header, h1, h2");
+        private readonly By header = By.CssSelector("header,h1,h2");
         private readonly By table = By.CssSelector("table");
-        private readonly By dropdown = By.CssSelector("select, .dropdown");
+        private readonly By dropdown = By.CssSelector("select, [role='listbox']");
 
         public DashboardPageTemplate(SelfHealingWebDriver driver) : base(driver) { }
 

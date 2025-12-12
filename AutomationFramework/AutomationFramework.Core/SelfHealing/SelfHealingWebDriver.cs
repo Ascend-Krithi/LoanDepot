@@ -1,5 +1,6 @@
 using System;
 using OpenQA.Selenium;
+using System.Collections.ObjectModel;
 using AutomationFramework.Core.Utilities;
 
 namespace AutomationFramework.Core.SelfHealing
@@ -14,7 +15,7 @@ namespace AutomationFramework.Core.SelfHealing
 
         public SelfHealingWebDriver(IWebDriver innerDriver)
         {
-            _innerDriver = innerDriver;
+            _innerDriver = innerDriver ?? throw new ArgumentNullException(nameof(innerDriver));
             _repository = new SelfHealingRepository();
             _analyzer = new DomAnalyzer();
         }
@@ -26,15 +27,17 @@ namespace AutomationFramework.Core.SelfHealing
             if (element != null)
                 return element;
 
-            Utilities.Logger.Log($"Element not found: {logicalKey} - {locator}");
+            Utilities.Logger.Log($"Element not found: {logicalKey} ({locator}) - attempting self-heal.");
             var healedLocator = _analyzer.Heal(locator);
+
             if (!healedLocator.Equals(locator))
             {
                 element = WaitHelper.WaitForElement(_innerDriver, healedLocator, timeoutSeconds);
                 if (element != null)
                     return element;
             }
-            throw new NoSuchElementException($"Element not found for logical key: {logicalKey}");
+
+            throw new NoSuchElementException($"Element not found for logical key '{logicalKey}' using locator '{locator}'.");
         }
 
         // IWebDriver implementation (delegation)
@@ -43,16 +46,22 @@ namespace AutomationFramework.Core.SelfHealing
         public string PageSource => _innerDriver.PageSource;
         public string CurrentWindowHandle => _innerDriver.CurrentWindowHandle;
         public ReadOnlyCollection<string> WindowHandles => _innerDriver.WindowHandles;
+
         public void Close() => _innerDriver.Close();
-        public void Quit() => _innerDriver.Quit();
+        public void Quit()
+        {
+            try { _innerDriver.Quit(); } catch { }
+        }
         public IOptions Manage() => _innerDriver.Manage();
         public INavigation Navigate() => _innerDriver.Navigate();
         public ITargetLocator SwitchTo() => _innerDriver.SwitchTo();
+
+        public IWebElement FindElement(By by) => _innerDriver.FindElement(by);
+        public ReadOnlyCollection<IWebElement> FindElements(By by) => _innerDriver.FindElements(by);
+
         public void Dispose()
         {
             try { _innerDriver.Dispose(); } catch { }
         }
-        public IWebElement FindElement(By by) => _innerDriver.FindElement(by);
-        public ReadOnlyCollection<IWebElement> FindElements(By by) => _innerDriver.FindElements(by);
     }
 }

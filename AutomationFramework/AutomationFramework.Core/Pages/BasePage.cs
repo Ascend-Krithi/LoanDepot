@@ -21,7 +21,8 @@ namespace AutomationFramework.Core.Pages
 
         protected void JsClick(IWebElement element)
         {
-            ((IJavaScriptExecutor)Driver.InnerDriver).ExecuteScript("arguments[0].click();", element);
+            var js = (IJavaScriptExecutor)Driver.InnerDriver;
+            js.ExecuteScript("arguments[0].click();", element);
         }
     }
 }

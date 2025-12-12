@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Text;
 
 namespace AutomationFramework.Tests.Reporting
 {
@@ -7,24 +8,25 @@ namespace AutomationFramework.Tests.Reporting
     {
         public static void GenerateReport(string featureName, string scenarioName, bool passed, string errorMessage)
         {
-            string reportsDir = Path.Combine(AppContext.BaseDirectory, "HtmlReports");
+            var reportsDir = Path.Combine(AppContext.BaseDirectory, "HtmlReports");
             Directory.CreateDirectory(reportsDir);
-            string fileName = $"{scenarioName}_{DateTime.Now:yyyyMMddHHmmss}.html";
-            string filePath = Path.Combine(reportsDir, fileName);
 
-            string html = $@"
-<html>
-<head><title>Test Report</title></head>
-<body>
-    <h2>Feature: {featureName}</h2>
-    <h3>Scenario: {scenarioName}</h3>
-    <p>Status: {(passed ? "Passed" : "Failed")}</p>
-    {(passed ? "" : $"<pre>Error: {errorMessage}</pre>")}
-    <p>Timestamp: {DateTime.Now:yyyy-MM-dd HH:mm:ss}</p>
-</body>
-</html>";
+            var fileName = $"{featureName}_{scenarioName}_{DateTime.Now:yyyyMMdd_HHmmss}.html".Replace(" ", "_");
+            var filePath = Path.Combine(reportsDir, fileName);
 
-            File.WriteAllText(filePath, html);
+            var sb = new StringBuilder();
+            sb.AppendLine("<html><head><title>Test Report</title></head><body>");
+            sb.AppendLine($"<h2>Feature: {featureName}</h2>");
+            sb.AppendLine($"<h3>Scenario: {scenarioName}</h3>");
+            sb.AppendLine($"<p>Status: <b style='color:{(passed ? "green" : "red")}'>{(passed ? "Passed" : "Failed")}</b></p>");
+            sb.AppendLine($"<p>Timestamp: {DateTime.Now:yyyy-MM-dd HH:mm:ss}</p>");
+            if (!passed && !string.IsNullOrWhiteSpace(errorMessage))
+            {
+                sb.AppendLine("<pre style='color:red;'>" + System.Net.WebUtility.HtmlEncode(errorMessage) + "</pre>");
+            }
+            sb.AppendLine("</body></html>");
+
+            File.WriteAllText(filePath, sb.ToString());
         }
     }
 }

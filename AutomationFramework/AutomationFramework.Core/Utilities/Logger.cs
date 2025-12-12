@@ -5,16 +5,19 @@ namespace AutomationFramework.Core.Utilities
 {
     public static class Logger
     {
-        private static readonly string logPath = Path.Combine(AppContext.BaseDirectory, "automation.log");
+        private static readonly string LogFilePath = Path.Combine(AppContext.BaseDirectory, "automation.log");
 
         public static void Log(string message)
         {
             try
             {
-                var logMsg = $"{DateTime.Now:yyyy-MM-dd HH:mm:ss} {message}{Environment.NewLine}";
-                File.AppendAllText(logPath, logMsg);
+                var logLine = $"{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff} | {message}";
+                File.AppendAllLines(LogFilePath, new[] { logLine });
             }
-            catch { }
+            catch
+            {
+                // Swallow all IO exceptions
+            }
         }
     }
 }
