@@ -7,8 +7,9 @@ namespace AutomationFramework.Core.Configuration
 {
     public static class ConfigManager
     {
-        private static readonly object _lock = new();
+        private static readonly object _lock = new object();
         private static TestSettings _settings;
+
         public static TestSettings Settings
         {
             get
@@ -19,7 +20,7 @@ namespace AutomationFramework.Core.Configuration
                     {
                         if (_settings == null)
                         {
-                            _settings = LoadSettings();
+                            LoadSettings();
                         }
                     }
                 }
@@ -27,44 +28,33 @@ namespace AutomationFramework.Core.Configuration
             }
         }
 
-        private static TestSettings LoadSettings()
+        private static void LoadSettings()
         {
-            var environment = Environment.GetEnvironmentVariable("TEST_ENVIRONMENT");
             var builder = new ConfigurationBuilder()
                 .SetBasePath(AppContext.BaseDirectory)
                 .AddJsonFile("appsettings.json", optional: false, reloadOnChange: false);
 
-            if (!string.IsNullOrWhiteSpace(environment))
+            var env = Environment.GetEnvironmentVariable("TEST_ENVIRONMENT");
+            if (!string.IsNullOrWhiteSpace(env))
             {
-                var envFile = $"appsettings.{environment}.json";
-                if (File.Exists(Path.Combine(AppContext.BaseDirectory, envFile)))
-                {
-                    builder.AddJsonFile(envFile, optional: true, reloadOnChange: false);
-                }
+                builder.AddJsonFile($"appsettings.{env}.json", optional: true, reloadOnChange: false);
             }
-
             builder.AddEnvironmentVariables();
 
-            var config = builder.Build();
+            var configuration = builder.Build();
             var settings = new TestSettings();
-            config.Bind(settings);
+            configuration.Bind(settings);
 
-            // Decrypt credentials if needed
-            if (settings.Credentials != null && settings.Encryption != null && 
-                !string.IsNullOrWhiteSpace(settings.Encryption.Key))
+            if (settings.Credentials != null && !string.IsNullOrWhiteSpace(settings.Credentials.Username) && !string.IsNullOrWhiteSpace(settings.Encryption?.Key))
             {
-                var key = settings.Encryption.Key;
-                if (!string.IsNullOrWhiteSpace(settings.Credentials.Username))
-                {
-                    settings.Credentials.Username = EncryptionManager.Decrypt(settings.Credentials.Username, key);
-                }
-                if (!string.IsNullOrWhiteSpace(settings.Credentials.Password))
-                {
-                    settings.Credentials.Password = EncryptionManager.Decrypt(settings.Credentials.Password, key);
-                }
+                settings.Credentials.Username = EncryptionManager.Decrypt(settings.Credentials.Username, settings.Encryption.Key);
+            }
+            if (settings.Credentials != null && !string.IsNullOrWhiteSpace(settings.Credentials.Password) && !string.IsNullOrWhiteSpace(settings.Encryption?.Key))
+            {
+                settings.Credentials.Password = EncryptionManager.Decrypt(settings.Credentials.Password, settings.Encryption.Key);
             }
 
-            return settings;
+            _settings = settings;
         }
     }
 }
