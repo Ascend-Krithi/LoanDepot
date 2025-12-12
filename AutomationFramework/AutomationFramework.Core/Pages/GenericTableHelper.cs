@@ -1,37 +1,72 @@
 using OpenQA.Selenium;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace AutomationFramework.Core.Pages
 {
     public class GenericTableHelper
     {
-        private readonly IWebDriver _driver;
-        private readonly By _table;
+        private readonly IWebElement _tableElement;
+        private List<string> _headers;
 
-        public GenericTableHelper(IWebDriver driver, By table)
+        public GenericTableHelper(IWebElement tableElement)
         {
-            _driver = driver;
-            _table = table;
+            _tableElement = tableElement;
+            _headers = _tableElement.FindElements(By.TagName("th"))
+                                    .Select(header => header.Text.Trim())
+                                    .ToList();
         }
 
-        public List<Dictionary<string, string>> GetTableData()
+        public int GetRowCount()
         {
-            var tableElement = _driver.FindElement(_table);
-            var headers = tableElement.FindElements(By.TagName("th"));
-            var rows = tableElement.FindElements(By.TagName("tr"));
-            var data = new List<Dictionary<string, string>>();
+            return _tableElement.FindElements(By.CssSelector("tbody tr")).Count;
+        }
 
-            for (int i = 1; i < rows.Count; i++)
+        public int GetColumnCount()
+        {
+            return _headers.Count;
+        }
+
+        public string GetCellValue(int row, int column)
+        {
+            var rows = _tableElement.FindElements(By.CssSelector("tbody tr"));
+            if (row >= rows.Count)
+                throw new ArgumentOutOfRangeException(nameof(row), "Row index is out of bounds.");
+
+            var cells = rows[row].FindElements(By.TagName("td"));
+            if (column >= cells.Count)
+                throw new ArgumentOutOfRangeException(nameof(column), "Column index is out of bounds.");
+
+            return cells[column].Text;
+        }
+
+        public string GetCellValue(int row, string columnName)
+        {
+            int columnIndex = _headers.IndexOf(columnName);
+            if (columnIndex == -1)
+                throw new KeyNotFoundException($"Column with name '{columnName}' not found.");
+
+            return GetCellValue(row, columnIndex);
+        }
+
+        public IWebElement GetCellElement(int row, int column)
+        {
+            var rows = _tableElement.FindElements(By.CssSelector("tbody tr"));
+            var cells = rows[row].FindElements(By.TagName("td"));
+            return cells[column];
+        }
+
+        public Dictionary<string, string> GetRowData(int rowIndex)
+        {
+            var rowData = new Dictionary<string, string>();
+            var rows = _tableElement.FindElements(By.CssSelector("tbody tr"));
+            var cells = rows[rowIndex].FindElements(By.TagName("td"));
+
+            for (int i = 0; i < _headers.Count; i++)
             {
-                var cells = rows[i].FindElements(By.TagName("td"));
-                var rowDict = new Dictionary<string, string>();
-                for (int j = 0; j < headers.Count && j < cells.Count; j++)
-                {
-                    rowDict[headers[j].Text] = cells[j].Text;
-                }
-                data.Add(rowDict);
+                rowData[_headers[i]] = cells[i].Text;
             }
-            return data;
+            return rowData;
         }
     }
 }

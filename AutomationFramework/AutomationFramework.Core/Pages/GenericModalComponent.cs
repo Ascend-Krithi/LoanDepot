@@ -2,33 +2,41 @@ using OpenQA.Selenium;
 
 namespace AutomationFramework.Core.Pages
 {
-    public class GenericModalComponent
+    public class GenericModalComponent : BasePage
     {
-        private readonly IWebDriver _driver;
-        private readonly By _modalRoot;
+        private readonly IWebElement _modalContainer;
 
-        public GenericModalComponent(IWebDriver driver, By modalRoot)
+        public GenericModalComponent(IWebDriver driver, By modalLocator) : base(driver)
         {
-            _driver = driver;
-            _modalRoot = modalRoot;
+            _modalContainer = Wait.WaitForElementToBeVisible(modalLocator);
         }
 
-        public bool IsVisible()
+        // Override GetElement to search within the modal context
+        protected new IWebElement GetElement(string logicalName)
         {
-            try
+            if (!Locators.ContainsKey(logicalName))
             {
-                return _driver.FindElement(_modalRoot).Displayed;
+                throw new KeyNotFoundException($"Locator with logical name '{logicalName}' not found in the modal component.");
             }
-            catch
-            {
-                return false;
-            }
+            return _modalContainer.FindElement(Locators[logicalName]);
         }
 
-        public void Close()
+        public void ClickButton(string buttonText)
         {
-            var closeBtn = _driver.FindElement(By.CssSelector($"{_modalRoot.ToString()} .close, {_modalRoot.ToString()} [aria-label='Close']"));
-            closeBtn.Click();
+            var buttonLocator = By.XPath($".//button[normalize-space()='{buttonText}']");
+            _modalContainer.FindElement(buttonLocator).Click();
+        }
+
+        public string GetModalTitle()
+        {
+            var titleLocator = By.CssSelector(".modal-title, h2, h3"); // Common title selectors
+            return _modalContainer.FindElement(titleLocator).Text;
+        }
+
+        public void CloseModal()
+        {
+            var closeButtonLocator = By.CssSelector("button.close, [aria-label='Close']");
+            _modalContainer.FindElement(closeButtonLocator).Click();
         }
     }
 }

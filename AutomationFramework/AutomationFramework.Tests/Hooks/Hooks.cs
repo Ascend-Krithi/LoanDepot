@@ -1,46 +1,62 @@
-using System;
 using TechTalk.SpecFlow;
+using BoDi;
 using OpenQA.Selenium;
 using AutomationFramework.Core.Drivers;
-using AutomationFramework.Core.SelfHealing;
-using AutomationFramework.Core.Utilities;
 using AutomationFramework.Core.Configuration;
+using AutomationFramework.Tests.Reporting;
+using System.IO;
 
 namespace AutomationFramework.Tests.Hooks
 {
     [Binding]
-    public class Hooks
+    public sealed class Hooks
     {
-        private static IWebDriver _driver;
-        private static SelfHealingRepository _repository;
-        private static SelfHealingWebDriver _selfHealingDriver;
+        private readonly IObjectContainer _container;
+        private IWebDriver _driver;
+        private readonly TestSettings _testSettings;
 
-        [BeforeTestRun]
-        public static void BeforeTestRun()
+        public Hooks(IObjectContainer container)
         {
-            ConfigManager.LoadSettings();
+            _container = container;
+            _testSettings = ConfigManager.GetTestSettings();
         }
 
         [BeforeScenario]
         public void BeforeScenario()
         {
-            _repository = new SelfHealingRepository();
-            _driver = WebDriverFactory.CreateWebDriver();
-            _selfHealingDriver = new SelfHealingWebDriver(_driver, _repository);
-            ScenarioContext.Current["WebDriver"] = _selfHealingDriver;
-            ScenarioContext.Current["SelfHealingRepository"] = _repository;
+            var factory = new WebDriverFactory();
+            _driver = factory.Create(_testSettings);
+            _container.RegisterInstanceAs<IWebDriver>(_driver);
         }
 
         [AfterScenario]
-        public void AfterScenario()
+        public void AfterScenario(ScenarioContext scenarioContext)
         {
-            try
+            if (_driver != null)
             {
-                _selfHealingDriver?.Quit();
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError("Error quitting driver", ex);
+                if (scenarioContext.TestError != null)
+                {
+                    // Take screenshot on failure
+                    try
+                    {
+                        var screenshot = ((ITakesScreenshot)_driver).GetScreenshot();
+                        string screenshotPath = Path.Combine(Directory.GetCurrentDirectory(), $"{scenarioContext.ScenarioInfo.Title.Replace(" ", "_")}_failure.png");
+                        screenshot.SaveAsFile(screenshotPath, ScreenshotImageFormat.Png);
+                        // Attach screenshot path to context for reporting
+                        scenarioContext["ScreenshotPath"] = screenshotPath;
+                    }
+                    catch (System.Exception ex)
+                    {
+                        Core.Utilities.Logger.LogError("Failed to take screenshot.", ex);
+                    }
+                }
+
+                // Generate HTML Report
+                var reportGenerator = new HtmlReportGenerator();
+                reportGenerator.GenerateReport(scenarioContext);
+
+                _driver.Quit();
+                _driver.Dispose();
             }
         }
     }

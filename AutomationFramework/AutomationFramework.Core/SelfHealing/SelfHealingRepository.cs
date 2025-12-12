@@ -1,26 +1,58 @@
 using System.Collections.Concurrent;
-using System.Collections.Generic;
+using System.IO;
+using System.Text.Json;
+using OpenQA.Selenium;
 
 namespace AutomationFramework.Core.SelfHealing
 {
     public class SelfHealingRepository
     {
-        private readonly ConcurrentDictionary<string, LocatorSnapshot> _repository = new();
+        private readonly string _filePath;
+        private readonly ConcurrentDictionary<string, LocatorSnapshot> _repository;
 
-        public void AddOrUpdate(string key, LocatorSnapshot snapshot)
+        public SelfHealingRepository(string filePath)
         {
-            _repository.AddOrUpdate(key, snapshot, (k, v) => snapshot);
+            _filePath = filePath;
+            _repository = LoadRepository();
         }
 
-        public LocatorSnapshot Get(string key)
+        private ConcurrentDictionary<string, LocatorSnapshot> LoadRepository()
         {
-            _repository.TryGetValue(key, out var snapshot);
+            if (!File.Exists(_filePath))
+            {
+                return new ConcurrentDictionary<string, LocatorSnapshot>();
+            }
+
+            var json = File.ReadAllText(_filePath);
+            return JsonSerializer.Deserialize<ConcurrentDictionary<string, LocatorSnapshot>>(json)
+                   ?? new ConcurrentDictionary<string, LocatorSnapshot>();
+        }
+
+        public void SaveRepository()
+        {
+            var json = JsonSerializer.Serialize(_repository, new JsonSerializerOptions { WriteIndented = true });
+            File.WriteAllText(_filePath, json);
+        }
+
+        public LocatorSnapshot Get(By locator)
+        {
+            _repository.TryGetValue(locator.ToString(), out var snapshot);
             return snapshot;
         }
 
-        public IEnumerable<LocatorSnapshot> GetAll()
+        public void Update(By originalLocator, By newHealedLocator)
         {
-            return _repository.Values;
+            var key = originalLocator.ToString();
+            var snapshot = _repository.GetOrAdd(key, new LocatorSnapshot(key));
+            snapshot.HealedLocator = newHealedLocator.ToString();
+            snapshot.FailureCount = 0; // Reset failure count after successful healing
+        }
+
+        public void RecordFailure(By locator)
+        {
+            var key = locator.ToString();
+            var snapshot = _repository.GetOrAdd(key, new LocatorSnapshot(key));
+            snapshot.FailureCount++;
         }
     }
 }

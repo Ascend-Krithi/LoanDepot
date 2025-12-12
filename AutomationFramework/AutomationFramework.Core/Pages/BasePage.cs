@@ -1,40 +1,79 @@
 using OpenQA.Selenium;
 using AutomationFramework.Core.Utilities;
-using AutomationFramework.Core.SelfHealing;
+using System.Collections.Generic;
 
 namespace AutomationFramework.Core.Pages
 {
     public abstract class BasePage
     {
         protected readonly IWebDriver Driver;
-        protected readonly int DefaultTimeout;
+        protected readonly WaitHelper Wait;
+        private readonly PopupEngine _popupEngine;
+
+        // Using logical names for locators to decouple from implementation
+        protected Dictionary<string, By> Locators = new Dictionary<string, By>();
 
         protected BasePage(IWebDriver driver)
         {
             Driver = driver;
-            DefaultTimeout = 10;
+            Wait = new WaitHelper(driver);
+            _popupEngine = new PopupEngine(driver);
+
+            // Automatically handle popups on page initialization
+            _popupEngine.DismissPopups();
         }
 
-        protected IWebElement Find(By by)
+        public virtual void NavigateTo(string url)
         {
-            return WaitHelper.WaitForElementVisible(Driver, by, DefaultTimeout);
+            Driver.Navigate().GoToUrl(url);
+            Wait.WaitForPageToLoad();
+            _popupEngine.DismissPopups(); // Handle popups that may appear on load
         }
 
-        protected void Click(By by)
+        protected IWebElement GetElement(string logicalName)
         {
-            WaitHelper.WaitForElementClickable(Driver, by, DefaultTimeout).Click();
+            if (!Locators.ContainsKey(logicalName))
+            {
+                throw new KeyNotFoundException($"Locator with logical name '{logicalName}' not found in the page object.");
+            }
+            return Wait.WaitForElementToBeVisible(Locators[logicalName]);
         }
 
-        protected void EnterText(By by, string text)
+        protected IWebElement GetClickableElement(string logicalName)
         {
-            var element = Find(by);
+            if (!Locators.ContainsKey(logicalName))
+            {
+                throw new KeyNotFoundException($"Locator with logical name '{logicalName}' not found in the page object.");
+            }
+            return Wait.WaitForElementToBeClickable(Locators[logicalName]);
+        }
+
+        protected void Click(string logicalName)
+        {
+            GetClickableElement(logicalName).Click();
+        }
+
+        protected void SendKeys(string logicalName, string text)
+        {
+            var element = GetElement(logicalName);
             element.Clear();
             element.SendKeys(text);
         }
 
-        public virtual bool IsLoaded()
+        protected string GetText(string logicalName)
         {
-            return true;
+            return GetElement(logicalName).Text;
+        }
+
+        // Use JavaScript click as a fallback for stubborn elements
+        protected void JsClick(string logicalName)
+        {
+            if (!Locators.ContainsKey(logicalName))
+            {
+                throw new KeyNotFoundException($"Locator with logical name '{logicalName}' not found in the page object.");
+            }
+            var element = Wait.WaitForElementToBeVisible(Locators[logicalName]);
+            ((IJavaScriptExecutor)Driver).ExecuteScript("arguments[0].click();", element);
         }
     }
 }

@@ -1,36 +1,32 @@
-using System;
+using Microsoft.Extensions.Configuration;
 using System.IO;
-using System.Text.Json;
 
 namespace AutomationFramework.Core.Configuration
 {
     public static class ConfigManager
     {
-        private static readonly string configFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "testsettings.json");
-        private static TestSettings _settings;
+        private static readonly IConfigurationRoot _configuration;
 
-        public static TestSettings Settings
+        static ConfigManager()
         {
-            get
-            {
-                if (_settings == null)
-                {
-                    LoadSettings();
-                }
-                return _settings;
-            }
+            var builder = new ConfigurationBuilder()
+                .SetBasePath(Directory.GetCurrentDirectory())
+                .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+                .AddEnvironmentVariables();
+
+            _configuration = builder.Build();
         }
 
-        public static void LoadSettings()
+        public static TestSettings GetTestSettings()
         {
-            if (!File.Exists(configFile))
-                throw new FileNotFoundException($"Configuration file not found: {configFile}");
+            var testSettings = new TestSettings();
+            _configuration.GetSection("TestSettings").Bind(testSettings);
+            return testSettings;
+        }
 
-            var json = File.ReadAllText(configFile);
-            _settings = JsonSerializer.Deserialize<TestSettings>(json, new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true
-            });
+        public static string GetConnectionString(string name)
+        {
+            return _configuration.GetConnectionString(name);
         }
     }
 }
