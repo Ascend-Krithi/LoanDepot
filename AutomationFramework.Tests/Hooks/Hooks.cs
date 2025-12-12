@@ -25,7 +25,7 @@ namespace AutomationFramework.Tests.Hooks
         [BeforeTestRun]
         public static void BeforeTestRun()
         {
-            // Ensure config is loaded
+            // Ensure configuration is loaded
             var _ = ConfigManager.Settings;
         }
 
@@ -34,12 +34,12 @@ namespace AutomationFramework.Tests.Hooks
         {
             var driver = WebDriverFactory.CreateDriver();
             _container.RegisterInstanceAs<IWebDriver>(driver.InnerDriver);
-            _container.RegisterInstanceAs(driver);
+            _container.RegisterInstanceAs<SelfHealingWebDriver>(driver);
 
             var baseUrl = ConfigManager.Settings.BaseUrl;
             if (!string.IsNullOrWhiteSpace(baseUrl))
             {
-                driver.Navigate().GoToUrl(baseUrl);
+                driver.Url = baseUrl;
             }
         }
 
@@ -62,8 +62,7 @@ namespace AutomationFramework.Tests.Hooks
                         var screenshot = takesScreenshot.GetScreenshot();
                         var screenshotsDir = Path.Combine(AppContext.BaseDirectory, "Screenshots");
                         Directory.CreateDirectory(screenshotsDir);
-                        var fileName = $"{featureName}_{scenarioName}_{DateTime.Now:yyyyMMdd_HHmmss}.png";
-                        var filePath = Path.Combine(screenshotsDir, fileName);
+                        var filePath = Path.Combine(screenshotsDir, $"{featureName}_{scenarioName}_{DateTime.Now:yyyyMMddHHmmss}.png");
                         screenshot.SaveAsFile(filePath, ScreenshotImageFormat.Png);
                     }
                 }
@@ -72,7 +71,7 @@ namespace AutomationFramework.Tests.Hooks
 
             HtmlReportGenerator.GenerateReport(featureName, scenarioName, !failed, errorMessage);
 
-            try { driver.Quit(); } catch { }
+            try { driver.Dispose(); } catch { }
         }
     }
 }

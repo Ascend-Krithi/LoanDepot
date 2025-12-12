@@ -1,6 +1,6 @@
 using OpenQA.Selenium;
-using System.Linq;
 using AutomationFramework.Core.SelfHealing;
+using System.Linq;
 
 namespace AutomationFramework.Core.Pages
 {
@@ -26,7 +26,9 @@ namespace AutomationFramework.Core.Pages
         {
             var option = GetOptionByText(text);
             if (option != null)
+            {
                 JsClick(option);
+            }
         }
     }
 }

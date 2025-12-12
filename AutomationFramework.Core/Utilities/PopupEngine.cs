@@ -2,7 +2,6 @@ using System;
 using System.Linq;
 using System.Threading;
 using OpenQA.Selenium;
-using System.Collections.Generic;
 
 namespace AutomationFramework.Core.Utilities
 {
@@ -10,48 +9,44 @@ namespace AutomationFramework.Core.Utilities
     {
         private static bool _chatWidgetsCleaned = false;
 
-        private static readonly string[] OverlaySelectors = new[]
-        {
-            "[role='dialog']",
-            ".cdk-overlay-backdrop",
-            ".modal-backdrop",
-            "[aria-modal='true']",
-            "[id*='cookie']",
-            "[class*='cookie']"
-        };
-
-        private static readonly string[] ChatSelectors = new[]
-        {
-            "[id*='chat']",
-            "[class*='chat']"
-        };
-
         public static void CleanPopups(IWebDriver driver)
         {
             try
             {
-                foreach (var selector in OverlaySelectors)
+                // Generic overlays and modals
+                string[] selectors = new[]
                 {
-                    var overlays = driver.FindElements(By.CssSelector(selector));
-                    foreach (var overlay in overlays)
+                    "[role='dialog']",
+                    ".cdk-overlay-backdrop",
+                    ".modal-backdrop",
+                    "[aria-modal='true']",
+                    "[id*='cookie']",
+                    "[class*='cookie']"
+                };
+
+                foreach (var selector in selectors)
+                {
+                    var elements = driver.FindElements(By.CssSelector(selector));
+                    foreach (var el in elements)
                     {
                         try
                         {
-                            var closeButton = overlay.FindElements(By.CssSelector("button, [role='button'], .close, .btn-close")).FirstOrDefault();
-                            if (closeButton != null && closeButton.Displayed && closeButton.Enabled)
+                            var closeBtn = TryFindCloseButton(el);
+                            if (closeBtn != null)
                             {
-                                closeButton.Click();
-                                Thread.Sleep(60);
-                                continue;
+                                closeBtn.Click();
                             }
-                            // Remove via JS
-                            ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].parentNode.removeChild(arguments[0]);", overlay);
-                            Thread.Sleep(60);
+                            else
+                            {
+                                RemoveElementViaJs(driver, el);
+                            }
                         }
                         catch { }
+                        Thread.Sleep(60);
                     }
                 }
 
+                // Chat widgets in iframes (only once per run)
                 if (!_chatWidgetsCleaned)
                 {
                     var iframes = driver.FindElements(By.TagName("iframe"));
@@ -60,24 +55,41 @@ namespace AutomationFramework.Core.Utilities
                         try
                         {
                             driver.SwitchTo().Frame(iframe);
-                            foreach (var selector in ChatSelectors)
+                            var chatEls = driver.FindElements(By.CssSelector("[id*='chat'],[class*='chat']"));
+                            foreach (var chatEl in chatEls)
                             {
-                                var chats = driver.FindElements(By.CssSelector(selector));
-                                foreach (var chat in chats)
-                                {
-                                    ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].parentNode.removeChild(arguments[0]);", chat);
-                                    Thread.Sleep(60);
-                                }
+                                RemoveElementViaJs(driver, chatEl);
                             }
                             driver.SwitchTo().DefaultContent();
                         }
-                        catch
-                        {
-                            try { driver.SwitchTo().DefaultContent(); } catch { }
-                        }
+                        catch { driver.SwitchTo().DefaultContent(); }
+                        Thread.Sleep(60);
                     }
                     _chatWidgetsCleaned = true;
                 }
+            }
+            catch { }
+        }
+
+        private static IWebElement TryFindCloseButton(IWebElement el)
+        {
+            try
+            {
+                var closeBtn = el.FindElements(By.CssSelector("button[aria-label*='close'],button.close,[class*='close'],[data-dismiss='modal']")).FirstOrDefault();
+                return closeBtn;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        private static void RemoveElementViaJs(IWebDriver driver, IWebElement el)
+        {
+            try
+            {
+                var js = (IJavaScriptExecutor)driver;
+                js.ExecuteScript("arguments[0].parentNode.removeChild(arguments[0]);", el);
             }
             catch { }
         }

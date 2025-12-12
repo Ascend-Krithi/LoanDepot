@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Text;
 
 namespace AutomationFramework.Tests.Reporting
 {
@@ -10,33 +11,23 @@ namespace AutomationFramework.Tests.Reporting
             var reportsDir = Path.Combine(AppContext.BaseDirectory, "HtmlReports");
             Directory.CreateDirectory(reportsDir);
 
-            var fileName = $"{featureName}_{scenarioName}_{DateTime.Now:yyyyMMdd_HHmmss}.html";
+            var fileName = $"{featureName}_{scenarioName}_{DateTime.Now:yyyyMMddHHmmss}.html";
             var filePath = Path.Combine(reportsDir, fileName);
 
-            var html = $@"
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset='utf-8'>
-    <title>Test Report</title>
-    <style>
-        body {{ font-family: Arial, sans-serif; }}
-        .passed {{ color: green; }}
-        .failed {{ color: red; }}
-        .section {{ margin-bottom: 1em; }}
-    </style>
-</head>
-<body>
-    <h2>Test Scenario Report</h2>
-    <div class='section'><strong>Feature:</strong> {featureName}</div>
-    <div class='section'><strong>Scenario:</strong> {scenarioName}</div>
-    <div class='section'><strong>Status:</strong> <span class='{(passed ? "passed" : "failed")}'>{(passed ? "Passed" : "Failed")}</span></div>
-    <div class='section'><strong>Timestamp:</strong> {DateTime.Now:yyyy-MM-dd HH:mm:ss}</div>
-    {(passed ? "" : $"<div class='section'><strong>Error:</strong><pre>{System.Net.WebUtility.HtmlEncode(errorMessage)}</pre></div>")}
-</body>
-</html>
-";
-            File.WriteAllText(filePath, html);
+            var sb = new StringBuilder();
+            sb.AppendLine("<html><head><title>Test Report</title></head><body>");
+            sb.AppendLine($"<h2>Feature: {featureName}</h2>");
+            sb.AppendLine($"<h3>Scenario: {scenarioName}</h3>");
+            sb.AppendLine($"<p>Status: <b style='color:{(passed ? "green" : "red")}'>{(passed ? "Passed" : "Failed")}</b></p>");
+            sb.AppendLine($"<p>Timestamp: {DateTime.Now:yyyy-MM-dd HH:mm:ss}</p>");
+            if (!passed && !string.IsNullOrEmpty(errorMessage))
+            {
+                sb.AppendLine("<h4>Error Details:</h4>");
+                sb.AppendLine($"<pre>{System.Net.WebUtility.HtmlEncode(errorMessage)}</pre>");
+            }
+            sb.AppendLine("</body></html>");
+
+            File.WriteAllText(filePath, sb.ToString());
         }
     }
 }

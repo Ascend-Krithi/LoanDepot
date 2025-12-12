@@ -29,18 +29,16 @@ namespace AutomationFramework.Core.SelfHealing
 
             Utilities.Logger.Log($"Element not found: {logicalKey} - {locator}");
             var healedLocator = _analyzer.Heal(locator);
-
             if (!healedLocator.Equals(locator))
             {
                 element = WaitHelper.WaitForElement(_innerDriver, healedLocator, timeoutSeconds);
                 if (element != null)
                     return element;
             }
-
-            throw new NoSuchElementException($"Element not found for logical key '{logicalKey}' using locator {locator}");
+            throw new NoSuchElementException($"Element not found for logicalKey: {logicalKey} using locator: {locator}");
         }
 
-        // IWebDriver implementation (delegation)
+        // IWebDriver implementation - delegate all members
         public string Url { get => _innerDriver.Url; set => _innerDriver.Url = value; }
         public string Title => _innerDriver.Title;
         public string PageSource => _innerDriver.PageSource;
@@ -50,8 +48,8 @@ namespace AutomationFramework.Core.SelfHealing
         public void Close() => _innerDriver.Close();
         public void Dispose()
         {
-            try { _innerDriver.Quit(); } catch { }
-            try { _innerDriver.Dispose(); } catch { }
+            try { _innerDriver.Quit(); }
+            catch { }
         }
         public IWebElement FindElement(By by) => _innerDriver.FindElement(by);
         public ReadOnlyCollection<IWebElement> FindElements(By by) => _innerDriver.FindElements(by);
@@ -60,7 +58,8 @@ namespace AutomationFramework.Core.SelfHealing
         public ITargetLocator SwitchTo() => _innerDriver.SwitchTo();
         public void Quit()
         {
-            try { _innerDriver.Quit(); } catch { }
+            try { _innerDriver.Quit(); }
+            catch { }
         }
     }
 }

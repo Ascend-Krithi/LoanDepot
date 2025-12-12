@@ -1,7 +1,7 @@
 using OpenQA.Selenium;
+using AutomationFramework.Core.SelfHealing;
 using System.Collections.Generic;
 using System.Linq;
-using AutomationFramework.Core.SelfHealing;
 
 namespace AutomationFramework.Core.Pages
 {

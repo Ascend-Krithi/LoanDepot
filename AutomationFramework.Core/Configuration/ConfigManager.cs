@@ -6,9 +6,25 @@ namespace AutomationFramework.Core.Configuration
 {
     public static class ConfigManager
     {
-        private static readonly Lazy<TestSettings> _settings = new Lazy<TestSettings>(LoadSettings);
-
-        public static TestSettings Settings => _settings.Value;
+        private static readonly object _lock = new object();
+        private static TestSettings _settings;
+        public static TestSettings Settings
+        {
+            get
+            {
+                if (_settings == null)
+                {
+                    lock (_lock)
+                    {
+                        if (_settings == null)
+                        {
+                            _settings = LoadSettings();
+                        }
+                    }
+                }
+                return _settings;
+            }
+        }
 
         private static TestSettings LoadSettings()
         {
@@ -25,19 +41,18 @@ namespace AutomationFramework.Core.Configuration
             builder.AddEnvironmentVariables();
 
             var configuration = builder.Build();
-
             var settings = new TestSettings();
             configuration.Bind(settings);
 
             // Decrypt credentials if needed
-            if (settings.Credentials != null && settings.Encryption != null && !string.IsNullOrWhiteSpace(settings.Encryption.Key))
+            if (settings.Credentials != null && !string.IsNullOrEmpty(settings.Encryption?.Key))
             {
                 var key = settings.Encryption.Key;
-                if (!string.IsNullOrWhiteSpace(settings.Credentials.Username))
+                if (!string.IsNullOrEmpty(settings.Credentials.Username))
                 {
                     settings.Credentials.Username = Encryption.EncryptionManager.Decrypt(settings.Credentials.Username, key);
                 }
-                if (!string.IsNullOrWhiteSpace(settings.Credentials.Password))
+                if (!string.IsNullOrEmpty(settings.Credentials.Password))
                 {
                     settings.Credentials.Password = Encryption.EncryptionManager.Decrypt(settings.Credentials.Password, key);
                 }

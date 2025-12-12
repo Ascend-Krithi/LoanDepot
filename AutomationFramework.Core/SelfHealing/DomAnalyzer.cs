@@ -6,7 +6,7 @@ namespace AutomationFramework.Core.SelfHealing
     {
         public By Heal(By originalLocator)
         {
-            // Placeholder for future healing logic
+            // Placeholder for future logic; for now, return original locator
             return originalLocator;
         }
     }

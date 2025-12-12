@@ -8,27 +8,30 @@ namespace AutomationFramework.Core.Utilities
 {
     public static class ExcelReader
     {
-        private static string GetFullPath(string filePathOrName)
+        private static string ResolveFilePath(string filePathOrName)
         {
-            if (Path.IsPathRooted(filePathOrName))
+            if (File.Exists(filePathOrName))
                 return filePathOrName;
 
             var folder = ConfigManager.Settings.TestDataFolder;
             if (string.IsNullOrWhiteSpace(folder))
                 folder = Path.Combine(AppContext.BaseDirectory, "TestData");
+            else if (!Path.IsPathRooted(folder))
+                folder = Path.Combine(AppContext.BaseDirectory, folder);
 
-            return Path.Combine(folder, filePathOrName);
+            var fullPath = Path.Combine(folder, filePathOrName);
+            return fullPath;
         }
 
         public static string GetCell(string filePathOrName, string sheetName, int rowIndex, int colIndex)
         {
-            var fullPath = GetFullPath(filePathOrName);
-            using (var fs = new FileStream(fullPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            var filePath = ResolveFilePath(filePathOrName);
+            using (var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
             {
                 IWorkbook workbook = new XSSFWorkbook(fs);
                 var sheet = workbook.GetSheet(sheetName);
                 if (sheet == null)
-                    throw new ArgumentException($"Sheet '{sheetName}' not found in '{filePathOrName}'.");
+                    throw new ArgumentException($"Sheet '{sheetName}' not found in file '{filePath}'.");
 
                 var row = sheet.GetRow(rowIndex);
                 if (row == null)
@@ -40,14 +43,6 @@ namespace AutomationFramework.Core.Utilities
 
                 return cell.ToString();
             }
-        }
-
-        public static DateTime? GetCellAsDateTime(string filePathOrName, string sheetName, int rowIndex, int colIndex)
-        {
-            var value = GetCell(filePathOrName, sheetName, rowIndex, colIndex);
-            if (DateTime.TryParse(value, out var dt))
-                return dt;
-            return null;
         }
     }
 }
