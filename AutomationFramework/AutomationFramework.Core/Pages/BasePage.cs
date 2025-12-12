@@ -1,28 +1,40 @@
 using OpenQA.Selenium;
-using AutomationFramework.Core.SelfHealing;
 using AutomationFramework.Core.Utilities;
+using AutomationFramework.Core.SelfHealing;
 
 namespace AutomationFramework.Core.Pages
 {
-    public class BasePage
+    public abstract class BasePage
     {
-        protected readonly SelfHealingWebDriver Driver;
+        protected readonly IWebDriver Driver;
+        protected readonly int DefaultTimeout;
 
-        public BasePage(SelfHealingWebDriver driver)
+        protected BasePage(IWebDriver driver)
         {
             Driver = driver;
+            DefaultTimeout = 10;
         }
 
-        protected IWebElement FindElement(string logicalKey, By locator, int timeoutSeconds = 10)
+        protected IWebElement Find(By by)
         {
-            PopupEngine.CleanPopups(Driver.InnerDriver);
-            return Driver.FindElement(logicalKey, locator, timeoutSeconds);
+            return WaitHelper.WaitForElementVisible(Driver, by, DefaultTimeout);
         }
 
-        protected void JsClick(IWebElement element)
+        protected void Click(By by)
         {
-            var js = (IJavaScriptExecutor)Driver.InnerDriver;
-            js.ExecuteScript("arguments[0].click();", element);
+            WaitHelper.WaitForElementClickable(Driver, by, DefaultTimeout).Click();
+        }
+
+        protected void EnterText(By by, string text)
+        {
+            var element = Find(by);
+            element.Clear();
+            element.SendKeys(text);
+        }
+
+        public virtual bool IsLoaded()
+        {
+            return true;
         }
     }
 }

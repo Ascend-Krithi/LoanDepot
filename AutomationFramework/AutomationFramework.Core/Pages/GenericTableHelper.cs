@@ -1,43 +1,37 @@
 using OpenQA.Selenium;
 using System.Collections.Generic;
-using System.Linq;
-using AutomationFramework.Core.SelfHealing;
 
 namespace AutomationFramework.Core.Pages
 {
-    public class GenericTableHelper : BasePage
+    public class GenericTableHelper
     {
-        public const string TableKey = "GenericTable.Table";
-        public const string RowKey = "GenericTable.Row";
-        public const string CellKey = "GenericTable.Cell";
+        private readonly IWebDriver _driver;
+        private readonly By _table;
 
-        private readonly By table = By.CssSelector("table");
-        private readonly By row = By.CssSelector("tr");
-        private readonly By cell = By.CssSelector("td,th");
-
-        public GenericTableHelper(SelfHealingWebDriver driver) : base(driver) { }
-
-        public IWebElement Table => FindElement(TableKey, table);
-
-        public IList<IWebElement> GetRows()
+        public GenericTableHelper(IWebDriver driver, By table)
         {
-            return Table.FindElements(row);
+            _driver = driver;
+            _table = table;
         }
 
-        public IList<IWebElement> GetCells(IWebElement rowElement)
+        public List<Dictionary<string, string>> GetTableData()
         {
-            return rowElement.FindElements(cell);
-        }
+            var tableElement = _driver.FindElement(_table);
+            var headers = tableElement.FindElements(By.TagName("th"));
+            var rows = tableElement.FindElements(By.TagName("tr"));
+            var data = new List<Dictionary<string, string>>();
 
-        public IWebElement GetCell(int rowIndex, int colIndex)
-        {
-            var rows = GetRows();
-            if (rowIndex < 0 || rowIndex >= rows.Count)
-                return null;
-            var cells = GetCells(rows[rowIndex]);
-            if (colIndex < 0 || colIndex >= cells.Count)
-                return null;
-            return cells[colIndex];
+            for (int i = 1; i < rows.Count; i++)
+            {
+                var cells = rows[i].FindElements(By.TagName("td"));
+                var rowDict = new Dictionary<string, string>();
+                for (int j = 0; j < headers.Count && j < cells.Count; j++)
+                {
+                    rowDict[headers[j].Text] = cells[j].Text;
+                }
+                data.Add(rowDict);
+            }
+            return data;
         }
     }
 }

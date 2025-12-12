@@ -1,53 +1,40 @@
-using System;
-using System.IO;
 using NPOI.SS.UserModel;
 using NPOI.XSSF.UserModel;
-using AutomationFramework.Core.Configuration;
+using System.Collections.Generic;
+using System.IO;
 
 namespace AutomationFramework.Core.Utilities
 {
     public static class ExcelReader
     {
-        private static string ResolvePath(string filePathOrName)
+        public static List<Dictionary<string, string>> ReadSheet(string filePath, string sheetName)
         {
-            if (Path.IsPathRooted(filePathOrName))
-                return filePathOrName;
+            var result = new List<Dictionary<string, string>>();
+            using var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read);
+            IWorkbook workbook = new XSSFWorkbook(fs);
+            var sheet = workbook.GetSheet(sheetName);
+            if (sheet == null) return result;
 
-            string folder = ConfigManager.Settings.TestDataFolder;
-            if (string.IsNullOrWhiteSpace(folder))
-                folder = Path.Combine(AppContext.BaseDirectory, "TestData");
-
-            return Path.Combine(folder, filePathOrName);
-        }
-
-        public static string GetCell(string filePathOrName, string sheetName, int rowIndex, int colIndex)
-        {
-            string path = ResolvePath(filePathOrName);
-            using (var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            var headerRow = sheet.GetRow(0);
+            var headers = new List<string>();
+            for (int i = 0; i < headerRow.LastCellNum; i++)
             {
-                IWorkbook workbook = new XSSFWorkbook(fs);
-                var sheet = workbook.GetSheet(sheetName);
-                if (sheet == null)
-                    throw new ArgumentException($"Sheet '{sheetName}' not found in '{filePathOrName}'.");
-
-                var row = sheet.GetRow(rowIndex);
-                if (row == null)
-                    return null;
-
-                var cell = row.GetCell(colIndex);
-                if (cell == null)
-                    return null;
-
-                return cell.ToString();
+                headers.Add(headerRow.GetCell(i).ToString());
             }
-        }
 
-        public static DateTime? GetCellAsDateTime(string filePathOrName, string sheetName, int rowIndex, int colIndex)
-        {
-            string value = GetCell(filePathOrName, sheetName, rowIndex, colIndex);
-            if (DateTime.TryParse(value, out var dt))
-                return dt;
-            return null;
+            for (int i = 1; i <= sheet.LastRowNum; i++)
+            {
+                var row = sheet.GetRow(i);
+                if (row == null) continue;
+                var dict = new Dictionary<string, string>();
+                for (int j = 0; j < headers.Count; j++)
+                {
+                    var cell = row.GetCell(j);
+                    dict[headers[j]] = cell?.ToString() ?? string.Empty;
+                }
+                result.Add(dict);
+            }
+            return result;
         }
     }
 }

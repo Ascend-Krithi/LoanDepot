@@ -1,44 +1,36 @@
 using System;
 using System.IO;
-using Microsoft.Extensions.Configuration;
+using System.Text.Json;
 
 namespace AutomationFramework.Core.Configuration
 {
     public static class ConfigManager
     {
-        private static readonly Lazy<TestSettings> _settings = new Lazy<TestSettings>(LoadSettings);
-        public static TestSettings Settings => _settings.Value;
+        private static readonly string configFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "testsettings.json");
+        private static TestSettings _settings;
 
-        private static TestSettings LoadSettings()
+        public static TestSettings Settings
         {
-            var builder = new ConfigurationBuilder()
-                .SetBasePath(AppContext.BaseDirectory)
-                .AddJsonFile("appsettings.json", optional: false, reloadOnChange: false);
-
-            var env = Environment.GetEnvironmentVariable("TEST_ENVIRONMENT");
-            if (!string.IsNullOrWhiteSpace(env))
+            get
             {
-                builder.AddJsonFile($"appsettings.{env}.json", optional: true, reloadOnChange: false);
+                if (_settings == null)
+                {
+                    LoadSettings();
+                }
+                return _settings;
             }
+        }
 
-            builder.AddEnvironmentVariables();
+        public static void LoadSettings()
+        {
+            if (!File.Exists(configFile))
+                throw new FileNotFoundException($"Configuration file not found: {configFile}");
 
-            var configuration = builder.Build();
-
-            var settings = new TestSettings();
-            configuration.Bind(settings);
-
-            // Decrypt credentials if necessary
-            if (settings.Credentials != null && settings.Encryption != null &&
-                !string.IsNullOrWhiteSpace(settings.Credentials.Username) &&
-                !string.IsNullOrWhiteSpace(settings.Credentials.Password) &&
-                !string.IsNullOrWhiteSpace(settings.Encryption.Key))
+            var json = File.ReadAllText(configFile);
+            _settings = JsonSerializer.Deserialize<TestSettings>(json, new JsonSerializerOptions
             {
-                settings.Credentials.Username = Encryption.EncryptionManager.Decrypt(settings.Credentials.Username, settings.Encryption.Key);
-                settings.Credentials.Password = Encryption.EncryptionManager.Decrypt(settings.Credentials.Password, settings.Encryption.Key);
-            }
-
-            return settings;
+                PropertyNameCaseInsensitive = true
+            });
         }
     }
 }

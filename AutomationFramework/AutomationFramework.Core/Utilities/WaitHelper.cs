@@ -1,39 +1,27 @@
-using System;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Support.UI;
+using System;
 
 namespace AutomationFramework.Core.Utilities
 {
     public static class WaitHelper
     {
-        public static IWebElement WaitForElement(IWebDriver driver, By locator, int timeoutSeconds = 10)
+        public static IWebElement WaitForElementVisible(IWebDriver driver, By by, int timeoutSeconds = 10)
         {
-            try
-            {
-                var wait = new WebDriverWait(new SystemClock(), driver, TimeSpan.FromSeconds(timeoutSeconds), TimeSpan.FromMilliseconds(500));
-                return wait.Until(drv => drv.FindElement(locator));
-            }
-            catch
-            {
-                return null;
-            }
+            var wait = new WebDriverWait(driver, TimeSpan.FromSeconds(timeoutSeconds));
+            return wait.Until(SeleniumExtras.WaitHelpers.ExpectedConditions.ElementIsVisible(by));
         }
 
-        public static IWebElement WaitForElementVisible(IWebDriver driver, By locator, int timeoutSeconds = 10)
+        public static IWebElement WaitForElementClickable(IWebDriver driver, By by, int timeoutSeconds = 10)
         {
-            try
-            {
-                var wait = new WebDriverWait(new SystemClock(), driver, TimeSpan.FromSeconds(timeoutSeconds), TimeSpan.FromMilliseconds(500));
-                return wait.Until(drv =>
-                {
-                    var el = drv.FindElement(locator);
-                    return el.Displayed ? el : null;
-                });
-            }
-            catch
-            {
-                return null;
-            }
+            var wait = new WebDriverWait(driver, TimeSpan.FromSeconds(timeoutSeconds));
+            return wait.Until(SeleniumExtras.WaitHelpers.ExpectedConditions.ElementToBeClickable(by));
+        }
+
+        public static bool WaitForElementInvisible(IWebDriver driver, By by, int timeoutSeconds = 10)
+        {
+            var wait = new WebDriverWait(driver, TimeSpan.FromSeconds(timeoutSeconds));
+            return wait.Until(SeleniumExtras.WaitHelpers.ExpectedConditions.InvisibilityOfElementLocated(by));
         }
     }
 }

@@ -1,20 +1,26 @@
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 
 namespace AutomationFramework.Core.SelfHealing
 {
     public class SelfHealingRepository
     {
-        private readonly ConcurrentDictionary<string, LocatorSnapshot> _snapshots = new();
+        private readonly ConcurrentDictionary<string, LocatorSnapshot> _repository = new();
 
-        public void AddOrUpdate(string logicalKey, LocatorSnapshot snapshot)
+        public void AddOrUpdate(string key, LocatorSnapshot snapshot)
         {
-            _snapshots.AddOrUpdate(logicalKey, snapshot, (k, v) => snapshot);
+            _repository.AddOrUpdate(key, snapshot, (k, v) => snapshot);
         }
 
-        public LocatorSnapshot Get(string logicalKey)
+        public LocatorSnapshot Get(string key)
         {
-            _snapshots.TryGetValue(logicalKey, out var snapshot);
+            _repository.TryGetValue(key, out var snapshot);
             return snapshot;
+        }
+
+        public IEnumerable<LocatorSnapshot> GetAll()
+        {
+            return _repository.Values;
         }
     }
 }

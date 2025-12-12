@@ -1,77 +1,47 @@
 using System;
-using System.IO;
-using BoDi;
 using TechTalk.SpecFlow;
-using AutomationFramework.Core.Configuration;
+using OpenQA.Selenium;
 using AutomationFramework.Core.Drivers;
 using AutomationFramework.Core.SelfHealing;
-using AutomationFramework.Tests.Reporting;
-using OpenQA.Selenium;
+using AutomationFramework.Core.Utilities;
+using AutomationFramework.Core.Configuration;
 
 namespace AutomationFramework.Tests.Hooks
 {
     [Binding]
     public class Hooks
     {
-        private readonly IObjectContainer _container;
-        private readonly ScenarioContext _scenarioContext;
-
-        public Hooks(IObjectContainer container, ScenarioContext scenarioContext)
-        {
-            _container = container;
-            _scenarioContext = scenarioContext;
-        }
+        private static IWebDriver _driver;
+        private static SelfHealingRepository _repository;
+        private static SelfHealingWebDriver _selfHealingDriver;
 
         [BeforeTestRun]
         public static void BeforeTestRun()
         {
-            // Ensure config is loaded
-            var _ = ConfigManager.Settings;
+            ConfigManager.LoadSettings();
         }
 
         [BeforeScenario]
         public void BeforeScenario()
         {
-            var driver = WebDriverFactory.CreateDriver();
-            _container.RegisterInstanceAs<IWebDriver>(driver.InnerDriver);
-            _container.RegisterInstanceAs(driver);
-
-            var baseUrl = ConfigManager.Settings.BaseUrl;
-            if (!string.IsNullOrWhiteSpace(baseUrl))
-            {
-                driver.Navigate().GoToUrl(baseUrl);
-            }
+            _repository = new SelfHealingRepository();
+            _driver = WebDriverFactory.CreateWebDriver();
+            _selfHealingDriver = new SelfHealingWebDriver(_driver, _repository);
+            ScenarioContext.Current["WebDriver"] = _selfHealingDriver;
+            ScenarioContext.Current["SelfHealingRepository"] = _repository;
         }
 
         [AfterScenario]
         public void AfterScenario()
         {
-            var driver = _container.Resolve<SelfHealingWebDriver>();
-            bool failed = _scenarioContext.TestError != null;
-            string featureName = _scenarioContext.ScenarioInfo.FeatureTitle;
-            string scenarioName = _scenarioContext.ScenarioInfo.Title;
-            string errorMessage = failed ? _scenarioContext.TestError?.ToString() : null;
-
-            if (failed)
+            try
             {
-                try
-                {
-                    var takesScreenshot = driver.InnerDriver as ITakesScreenshot;
-                    if (takesScreenshot != null)
-                    {
-                        var screenshot = takesScreenshot.GetScreenshot();
-                        var screenshotsDir = Path.Combine(AppContext.BaseDirectory, "Screenshots");
-                        Directory.CreateDirectory(screenshotsDir);
-                        var fileName = $"{featureName}_{scenarioName}_{DateTime.Now:yyyyMMdd_HHmmss}.png".Replace(" ", "_");
-                        screenshot.SaveAsFile(Path.Combine(screenshotsDir, fileName), ScreenshotImageFormat.Png);
-                    }
-                }
-                catch { }
+                _selfHealingDriver?.Quit();
             }
-
-            HtmlReportGenerator.GenerateReport(featureName, scenarioName, !failed, errorMessage);
-
-            try { driver.Quit(); } catch { }
+            catch (Exception ex)
+            {
+                Logger.LogError("Error quitting driver", ex);
+            }
         }
     }
 }

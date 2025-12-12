@@ -1,67 +1,105 @@
-using System;
 using OpenQA.Selenium;
-using System.Collections.ObjectModel;
+using System;
 using AutomationFramework.Core.Utilities;
 
 namespace AutomationFramework.Core.SelfHealing
 {
-    public class SelfHealingWebDriver : IWebDriver
+    public class SelfHealingWebDriver : IWebDriver, IJavaScriptExecutor, ITakesScreenshot
     {
-        private readonly IWebDriver _innerDriver;
+        private readonly IWebDriver _driver;
         private readonly SelfHealingRepository _repository;
-        private readonly DomAnalyzer _analyzer;
 
-        public IWebDriver InnerDriver => _innerDriver;
-
-        public SelfHealingWebDriver(IWebDriver innerDriver)
+        public SelfHealingWebDriver(IWebDriver driver, SelfHealingRepository repository)
         {
-            _innerDriver = innerDriver ?? throw new ArgumentNullException(nameof(innerDriver));
-            _repository = new SelfHealingRepository();
-            _analyzer = new DomAnalyzer();
+            _driver = driver;
+            _repository = repository;
         }
 
-        public IWebElement FindElement(string logicalKey, By locator, int timeoutSeconds = 10)
+        public string Url { get => _driver.Url; set => _driver.Url = value; }
+        public string Title => _driver.Title;
+        public string PageSource => _driver.PageSource;
+        public string CurrentWindowHandle => _driver.CurrentWindowHandle;
+        public ReadOnlyCollection<string> WindowHandles => _driver.WindowHandles;
+
+        public void Close() => _driver.Close();
+        public void Dispose() => _driver.Dispose();
+        public void Quit() => _driver.Quit();
+        public void Navigate() => _driver.Navigate();
+        public IOptions Manage() => _driver.Manage();
+        public INavigation Navigate() => _driver.Navigate();
+        public ITargetLocator SwitchTo() => _driver.SwitchTo();
+
+        public IWebElement FindElement(By by)
         {
-            _repository.AddOrUpdate(logicalKey, new LocatorSnapshot(logicalKey, locator));
-            var element = WaitHelper.WaitForElement(_innerDriver, locator, timeoutSeconds);
-            if (element != null)
-                return element;
-
-            Utilities.Logger.Log($"Element not found: {logicalKey} ({locator}) - attempting self-heal.");
-            var healedLocator = _analyzer.Heal(locator);
-
-            if (!healedLocator.Equals(locator))
+            try
             {
-                element = WaitHelper.WaitForElement(_innerDriver, healedLocator, timeoutSeconds);
-                if (element != null)
-                    return element;
+                var element = _driver.FindElement(by);
+                SaveSnapshot(by, element);
+                return element;
             }
-
-            throw new NoSuchElementException($"Element not found for logical key '{logicalKey}' using locator '{locator}'.");
+            catch (NoSuchElementException)
+            {
+                var key = by.ToString();
+                var snapshot = _repository.Get(key);
+                if (snapshot != null)
+                {
+                    var healedBy = DomAnalyzer.FindSimilarElement(_driver, snapshot);
+                    if (healedBy != null)
+                    {
+                        Logger.Log($"Self-healing: Found alternative locator for {key}: {healedBy}");
+                        var element = _driver.FindElement(healedBy);
+                        SaveSnapshot(healedBy, element);
+                        return element;
+                    }
+                }
+                throw;
+            }
         }
 
-        // IWebDriver implementation (delegation)
-        public string Url { get => _innerDriver.Url; set => _innerDriver.Url = value; }
-        public string Title => _innerDriver.Title;
-        public string PageSource => _innerDriver.PageSource;
-        public string CurrentWindowHandle => _innerDriver.CurrentWindowHandle;
-        public ReadOnlyCollection<string> WindowHandles => _innerDriver.WindowHandles;
-
-        public void Close() => _innerDriver.Close();
-        public void Quit()
+        public ReadOnlyCollection<IWebElement> FindElements(By by)
         {
-            try { _innerDriver.Quit(); } catch { }
+            try
+            {
+                var elements = _driver.FindElements(by);
+                if (elements.Count > 0)
+                {
+                    SaveSnapshot(by, elements[0]);
+                }
+                return elements;
+            }
+            catch
+            {
+                return new ReadOnlyCollection<IWebElement>(new List<IWebElement>());
+            }
         }
-        public IOptions Manage() => _innerDriver.Manage();
-        public INavigation Navigate() => _innerDriver.Navigate();
-        public ITargetLocator SwitchTo() => _innerDriver.SwitchTo();
 
-        public IWebElement FindElement(By by) => _innerDriver.FindElement(by);
-        public ReadOnlyCollection<IWebElement> FindElements(By by) => _innerDriver.FindElements(by);
-
-        public void Dispose()
+        private void SaveSnapshot(By by, IWebElement element)
         {
-            try { _innerDriver.Dispose(); } catch { }
+            try
+            {
+                var outerHtml = element.GetAttribute("outerHTML");
+                var innerText = element.Text;
+                var snapshot = new LocatorSnapshot(by.ToString(), by, outerHtml, innerText);
+                _repository.AddOrUpdate(by.ToString(), snapshot);
+            }
+            catch { }
+        }
+
+        // IJavaScriptExecutor
+        public object ExecuteScript(string script, params object[] args)
+        {
+            return ((IJavaScriptExecutor)_driver).ExecuteScript(script, args);
+        }
+
+        public object ExecuteAsyncScript(string script, params object[] args)
+        {
+            return ((IJavaScriptExecutor)_driver).ExecuteAsyncScript(script, args);
+        }
+
+        // ITakesScreenshot
+        public Screenshot GetScreenshot()
+        {
+            return ((ITakesScreenshot)_driver).GetScreenshot();
         }
     }
 }

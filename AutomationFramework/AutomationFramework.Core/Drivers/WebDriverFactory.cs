@@ -1,39 +1,46 @@
 using System;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
-using OpenQA.Selenium.Edge;
 using OpenQA.Selenium.Firefox;
+using OpenQA.Selenium.Edge;
 using AutomationFramework.Core.Configuration;
-using AutomationFramework.Core.SelfHealing;
 
 namespace AutomationFramework.Core.Drivers
 {
     public static class WebDriverFactory
     {
-        public static SelfHealingWebDriver CreateDriver()
+        public static IWebDriver CreateWebDriver()
         {
-            string browser = ConfigManager.Settings.Browser?.ToLowerInvariant() ?? "chrome";
-            IWebDriver driver;
+            var browser = ConfigManager.Settings.Browser?.ToLowerInvariant() ?? "chrome";
+            var headless = ConfigManager.Settings.Headless;
 
             switch (browser)
             {
                 case "chrome":
-                    driver = new ChromeDriver();
-                    break;
-                case "edge":
-                    driver = new EdgeDriver();
-                    break;
+                    var chromeOptions = new ChromeOptions();
+                    if (headless) chromeOptions.AddArgument("--headless=new");
+                    chromeOptions.AddArgument("--start-maximized");
+                    chromeOptions.AddArgument("--lang=" + ConfigManager.Settings.Language);
+                    return new ChromeDriver(ChromeDriverService.CreateDefaultService(), chromeOptions);
+
                 case "firefox":
-                    driver = new FirefoxDriver();
-                    break;
+                    var firefoxOptions = new FirefoxOptions();
+                    if (headless) firefoxOptions.AddArgument("--headless");
+                    firefoxOptions.AddArgument("--width=1920");
+                    firefoxOptions.AddArgument("--height=1080");
+                    firefoxOptions.SetPreference("intl.accept_languages", ConfigManager.Settings.Language);
+                    return new FirefoxDriver(FirefoxDriverService.CreateDefaultService(), firefoxOptions);
+
+                case "edge":
+                    var edgeOptions = new EdgeOptions();
+                    if (headless) edgeOptions.AddArgument("headless");
+                    edgeOptions.AddArgument("start-maximized");
+                    edgeOptions.AddArgument("--lang=" + ConfigManager.Settings.Language);
+                    return new EdgeDriver(EdgeDriverService.CreateDefaultService(), edgeOptions);
+
                 default:
-                    throw new ArgumentException($"Unsupported browser: {browser}");
+                    throw new NotSupportedException($"Browser not supported: {browser}");
             }
-
-            driver.Manage().Window.Maximize();
-            driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(5);
-
-            return new SelfHealingWebDriver(driver);
         }
     }
 }

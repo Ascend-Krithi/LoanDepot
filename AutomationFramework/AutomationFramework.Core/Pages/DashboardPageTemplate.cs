@@ -1,22 +1,16 @@
 using OpenQA.Selenium;
-using AutomationFramework.Core.SelfHealing;
 
 namespace AutomationFramework.Core.Pages
 {
     public class DashboardPageTemplate : BasePage
     {
-        public const string HeaderKey = "DashboardPage.Header";
-        public const string TableKey = "DashboardPage.Table";
-        public const string DropdownKey = "DashboardPage.Dropdown";
+        public DashboardPageTemplate(IWebDriver driver) : base(driver) { }
 
-        private readonly By header = By.CssSelector("header,h1,h2");
-        private readonly By table = By.CssSelector("table");
-        private readonly By dropdown = By.CssSelector("select, [role='listbox']");
+        public By WelcomeBanner => By.CssSelector(".dashboard-welcome");
 
-        public DashboardPageTemplate(SelfHealingWebDriver driver) : base(driver) { }
-
-        public IWebElement Header => FindElement(HeaderKey, header);
-        public IWebElement Table => FindElement(TableKey, table);
-        public IWebElement Dropdown => FindElement(DropdownKey, dropdown);
+        public override bool IsLoaded()
+        {
+            return Driver.FindElement(WelcomeBanner).Displayed;
+        }
     }
 }

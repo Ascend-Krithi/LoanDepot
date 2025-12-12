@@ -6,27 +6,37 @@ namespace AutomationFramework.Tests.Reporting
 {
     public static class HtmlReportGenerator
     {
-        public static void GenerateReport(string featureName, string scenarioName, bool passed, string errorMessage)
+        private static readonly string reportPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "TestReport.html");
+        private static readonly object _lock = new();
+
+        public static void InitializeReport()
         {
-            var reportsDir = Path.Combine(AppContext.BaseDirectory, "HtmlReports");
-            Directory.CreateDirectory(reportsDir);
-
-            var fileName = $"{featureName}_{scenarioName}_{DateTime.Now:yyyyMMdd_HHmmss}.html".Replace(" ", "_");
-            var filePath = Path.Combine(reportsDir, fileName);
-
-            var sb = new StringBuilder();
-            sb.AppendLine("<html><head><title>Test Report</title></head><body>");
-            sb.AppendLine($"<h2>Feature: {featureName}</h2>");
-            sb.AppendLine($"<h3>Scenario: {scenarioName}</h3>");
-            sb.AppendLine($"<p>Status: <b style='color:{(passed ? "green" : "red")}'>{(passed ? "Passed" : "Failed")}</b></p>");
-            sb.AppendLine($"<p>Timestamp: {DateTime.Now:yyyy-MM-dd HH:mm:ss}</p>");
-            if (!passed && !string.IsNullOrWhiteSpace(errorMessage))
+            lock (_lock)
             {
-                sb.AppendLine("<pre style='color:red;'>" + System.Net.WebUtility.HtmlEncode(errorMessage) + "</pre>");
+                var sb = new StringBuilder();
+                sb.AppendLine("<html><head><title>Automation Test Report</title></head><body>");
+                sb.AppendLine("<h1>Automation Test Report</h1>");
+                sb.AppendLine("<table border='1'><tr><th>Scenario</th><th>Status</th><th>Message</th></tr>");
+                File.WriteAllText(reportPath, sb.ToString());
             }
-            sb.AppendLine("</body></html>");
+        }
 
-            File.WriteAllText(filePath, sb.ToString());
+        public static void AddScenarioResult(string scenario, string status, string message)
+        {
+            lock (_lock)
+            {
+                var sb = new StringBuilder();
+                sb.AppendLine($"<tr><td>{scenario}</td><td>{status}</td><td>{message}</td></tr>");
+                File.AppendAllText(reportPath, sb.ToString());
+            }
+        }
+
+        public static void FinalizeReport()
+        {
+            lock (_lock)
+            {
+                File.AppendAllText(reportPath, "</table></body></html>");
+            }
         }
     }
 }
