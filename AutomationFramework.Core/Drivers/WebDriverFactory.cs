@@ -12,22 +12,18 @@ namespace AutomationFramework.Core.Drivers
     {
         public static SelfHealingWebDriver CreateDriver()
         {
-            string browser = ConfigManager.Settings.Browser?.ToLowerInvariant() ?? "chrome";
+            var browser = ConfigManager.Settings.Browser?.ToLowerInvariant() ?? "chrome";
             IWebDriver driver;
-
             switch (browser)
             {
                 case "chrome":
-                    var chromeOptions = new ChromeOptions();
-                    driver = new ChromeDriver(chromeOptions);
+                    driver = new ChromeDriver();
                     break;
                 case "edge":
-                    var edgeOptions = new EdgeOptions();
-                    driver = new EdgeDriver(edgeOptions);
+                    driver = new EdgeDriver();
                     break;
                 case "firefox":
-                    var firefoxOptions = new FirefoxOptions();
-                    driver = new FirefoxDriver(firefoxOptions);
+                    driver = new FirefoxDriver();
                     break;
                 default:
                     throw new ArgumentException($"Unsupported browser: {browser}");

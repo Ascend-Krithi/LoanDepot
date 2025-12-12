@@ -4,10 +4,10 @@ namespace AutomationFramework.Core.SelfHealing
 {
     public class DomAnalyzer
     {
-        public By Heal(By originalLocator)
+        public By Heal(By locator)
         {
-            // For now, just return the original locator.
-            return originalLocator;
+            // For now, just return the original locator (future enhancement point)
+            return locator;
         }
     }
 }

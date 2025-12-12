@@ -2,10 +2,10 @@ using System;
 using System.IO;
 using BoDi;
 using TechTalk.SpecFlow;
+using OpenQA.Selenium;
 using AutomationFramework.Core.Configuration;
 using AutomationFramework.Core.Drivers;
 using AutomationFramework.Core.SelfHealing;
-using OpenQA.Selenium;
 using AutomationFramework.Tests.Reporting;
 
 namespace AutomationFramework.Tests.Hooks
@@ -15,6 +15,7 @@ namespace AutomationFramework.Tests.Hooks
     {
         private readonly IObjectContainer _container;
         private readonly ScenarioContext _scenarioContext;
+        private SelfHealingWebDriver _driver;
 
         public Hooks(IObjectContainer container, ScenarioContext scenarioContext)
         {
@@ -25,55 +26,55 @@ namespace AutomationFramework.Tests.Hooks
         [BeforeTestRun]
         public static void BeforeTestRun()
         {
-            // Ensure configuration is loaded
+            // Ensure config is loaded
             var _ = ConfigManager.Settings;
         }
 
         [BeforeScenario]
         public void BeforeScenario()
         {
-            var driver = WebDriverFactory.CreateDriver();
-            _container.RegisterInstanceAs<IWebDriver>(driver.InnerDriver);
-            _container.RegisterInstanceAs(driver);
+            _driver = WebDriverFactory.CreateDriver();
+            _container.RegisterInstanceAs<IWebDriver>(_driver.InnerDriver);
+            _container.RegisterInstanceAs<SelfHealingWebDriver>(_driver);
 
             var baseUrl = ConfigManager.Settings.BaseUrl;
             if (!string.IsNullOrWhiteSpace(baseUrl))
             {
-                driver.Navigate().GoToUrl(baseUrl);
+                _driver.Url = baseUrl;
             }
         }
 
         [AfterScenario]
         public void AfterScenario()
         {
-            var driver = _container.Resolve<SelfHealingWebDriver>();
-            bool failed = _scenarioContext.TestError != null;
-            string featureName = _scenarioContext.ScenarioInfo.FeatureTitle;
-            string scenarioName = _scenarioContext.ScenarioInfo.Title;
-            string errorMessage = failed ? _scenarioContext.TestError?.ToString() : null;
+            bool passed = _scenarioContext.TestError == null;
+            string featureName = _scenarioContext.ScenarioInfo?.FeatureTitle ?? "UnknownFeature";
+            string scenarioName = _scenarioContext.ScenarioInfo?.Title ?? "UnknownScenario";
+            string errorMessage = _scenarioContext.TestError?.ToString();
 
-            if (failed)
+            // Screenshot on failure
+            if (!passed)
             {
                 try
                 {
-                    var takesScreenshot = driver.InnerDriver as ITakesScreenshot;
-                    if (takesScreenshot != null)
+                    var screenshotDriver = _driver.InnerDriver as ITakesScreenshot;
+                    if (screenshotDriver != null)
                     {
-                        var screenshot = takesScreenshot.GetScreenshot();
-                        var screenshotsDir = Path.Combine(AppContext.BaseDirectory, "Screenshots");
-                        Directory.CreateDirectory(screenshotsDir);
-                        var fileName = $"{featureName}_{scenarioName}_{DateTime.Now:yyyyMMdd_HHmmss}.png".Replace(" ", "_");
-                        var filePath = Path.Combine(screenshotsDir, fileName);
-                        screenshot.SaveAsFile(filePath, ScreenshotImageFormat.Png);
+                        var screenshot = screenshotDriver.GetScreenshot();
+                        var dir = Path.Combine(AppContext.BaseDirectory, "Screenshots");
+                        Directory.CreateDirectory(dir);
+                        var file = Path.Combine(dir, $"{featureName}_{scenarioName}_{DateTime.Now:yyyyMMddHHmmssfff}.png");
+                        screenshot.SaveAsFile(file, ScreenshotImageFormat.Png);
                     }
                 }
                 catch { }
             }
 
-            HtmlReportGenerator.GenerateReport(featureName, scenarioName, !failed, errorMessage);
+            // HTML report
+            HtmlReportGenerator.GenerateReport(featureName, scenarioName, passed, errorMessage);
 
-            try { driver.Quit(); } catch { }
-            try { driver.Dispose(); } catch { }
+            // Dispose driver
+            try { _driver?.Quit(); } catch { }
         }
     }
 }

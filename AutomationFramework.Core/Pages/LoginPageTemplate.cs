@@ -1,4 +1,5 @@
 using OpenQA.Selenium;
+using AutomationFramework.Core.SelfHealing;
 
 namespace AutomationFramework.Core.Pages
 {
@@ -17,14 +18,5 @@ namespace AutomationFramework.Core.Pages
         public IWebElement UsernameInput => FindElement(UsernameInputKey, _usernameInput);
         public IWebElement PasswordInput => FindElement(PasswordInputKey, _passwordInput);
         public IWebElement SubmitButton => FindElement(SubmitButtonKey, _submitButton);
-
-        public void Login(string username, string password)
-        {
-            UsernameInput.Clear();
-            UsernameInput.SendKeys(username);
-            PasswordInput.Clear();
-            PasswordInput.SendKeys(password);
-            JsClick(SubmitButton);
-        }
     }
 }
