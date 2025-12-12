@@ -6,44 +6,60 @@ namespace AutomationFramework.Core.Configuration
 {
     public static class ConfigManager
     {
-        private static IConfigurationRoot configuration;
-        private static TestSettings settings;
+        private static IConfigurationRoot _configuration;
+        private static TestSettings _settings;
+        private static readonly object _lock = new object();
+
         public static TestSettings Settings
         {
             get
             {
-                if (settings == null)
+                if (_settings == null)
                 {
-                    LoadConfiguration();
+                    lock (_lock)
+                    {
+                        if (_settings == null)
+                        {
+                            LoadConfiguration();
+                        }
+                    }
                 }
-                return settings;
+                return _settings;
             }
         }
 
         private static void LoadConfiguration()
         {
+            var basePath = AppContext.BaseDirectory;
+            var env = Environment.GetEnvironmentVariable("TEST_ENVIRONMENT");
             var builder = new ConfigurationBuilder()
-                .SetBasePath(AppContext.BaseDirectory)
+                .SetBasePath(basePath)
                 .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
 
-            var env = Environment.GetEnvironmentVariable("TEST_ENVIRONMENT");
-            if (!string.IsNullOrEmpty(env))
+            if (!string.IsNullOrWhiteSpace(env))
             {
                 builder.AddJsonFile($"appsettings.{env}.json", optional: true, reloadOnChange: true);
             }
 
             builder.AddEnvironmentVariables();
-            configuration = builder.Build();
 
-            settings = new TestSettings();
-            configuration.Bind(settings);
+            _configuration = builder.Build();
 
-            if (settings.Credentials != null && settings.Encryption != null && 
-                !string.IsNullOrEmpty(settings.Credentials.Username) && 
-                !string.IsNullOrEmpty(settings.Encryption.Key))
+            _settings = new TestSettings();
+            _configuration.Bind(_settings);
+
+            // Decrypt credentials if needed
+            if (_settings.Credentials != null &&
+                !string.IsNullOrEmpty(_settings.Credentials.Username) &&
+                !string.IsNullOrEmpty(_settings.Encryption?.Key))
             {
-                settings.Credentials.Username = Encryption.EncryptionManager.Decrypt(settings.Credentials.Username, settings.Encryption.Key);
-                settings.Credentials.Password = Encryption.EncryptionManager.Decrypt(settings.Credentials.Password, settings.Encryption.Key);
+                _settings.Credentials.Username = Encryption.EncryptionManager.Decrypt(_settings.Credentials.Username, _settings.Encryption.Key);
+            }
+            if (_settings.Credentials != null &&
+                !string.IsNullOrEmpty(_settings.Credentials.Password) &&
+                !string.IsNullOrEmpty(_settings.Encryption?.Key))
+            {
+                _settings.Credentials.Password = Encryption.EncryptionManager.Decrypt(_settings.Credentials.Password, _settings.Encryption.Key);
             }
         }
     }

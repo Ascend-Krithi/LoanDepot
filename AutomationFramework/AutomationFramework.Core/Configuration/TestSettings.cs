@@ -8,16 +8,16 @@ namespace AutomationFramework.Core.Configuration
         public string TestDataFolder { get; set; }
         public Credentials Credentials { get; set; }
         public Encryption Encryption { get; set; }
+    }
 
-        public class Credentials
-        {
-            public string Username { get; set; }
-            public string Password { get; set; }
-        }
+    public class Credentials
+    {
+        public string Username { get; set; }
+        public string Password { get; set; }
+    }
 
-        public class Encryption
-        {
-            public string Key { get; set; }
-        }
+    public class Encryption
+    {
+        public string Key { get; set; }
     }
 }
