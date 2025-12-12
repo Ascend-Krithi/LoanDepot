@@ -1,7 +1,7 @@
-using OpenQA.Selenium;
-using AutomationFramework.Core.SelfHealing;
 using System.Collections.Generic;
 using System.Linq;
+using OpenQA.Selenium;
+using AutomationFramework.Core.SelfHealing;
 
 namespace AutomationFramework.Core.Pages
 {
@@ -11,22 +11,22 @@ namespace AutomationFramework.Core.Pages
         public const string RowKey = "GenericTable.Row";
         public const string CellKey = "GenericTable.Cell";
 
-        private readonly By _table = By.CssSelector("table");
-        private readonly By _row = By.CssSelector("tr");
-        private readonly By _cell = By.CssSelector("td,th");
+        private readonly By table = By.CssSelector("table");
+        private readonly By row = By.CssSelector("tr");
+        private readonly By cell = By.CssSelector("td, th");
 
         public GenericTableHelper(SelfHealingWebDriver driver) : base(driver) { }
 
-        public IWebElement Table => FindElement(TableKey, _table);
+        public IWebElement Table => FindElement(TableKey, table);
 
         public IList<IWebElement> GetRows()
         {
-            return Table.FindElements(_row);
+            return Table.FindElements(row);
         }
 
-        public IList<IWebElement> GetCells(IWebElement row)
+        public IList<IWebElement> GetCells(IWebElement rowElement)
         {
-            return row.FindElements(_cell);
+            return rowElement.FindElements(cell);
         }
 
         public IWebElement GetCell(int rowIndex, int colIndex)

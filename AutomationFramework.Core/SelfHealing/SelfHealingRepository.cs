@@ -4,7 +4,7 @@ namespace AutomationFramework.Core.SelfHealing
 {
     public class SelfHealingRepository
     {
-        private readonly ConcurrentDictionary<string, LocatorSnapshot> _snapshots = new ConcurrentDictionary<string, LocatorSnapshot>();
+        private readonly ConcurrentDictionary<string, LocatorSnapshot> _snapshots = new();
 
         public void AddOrUpdate(string logicalKey, LocatorSnapshot snapshot)
         {

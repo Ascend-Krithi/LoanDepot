@@ -9,14 +9,14 @@ namespace AutomationFramework.Core.Pages
         public const string TableKey = "DashboardPage.Table";
         public const string DropdownKey = "DashboardPage.Dropdown";
 
-        private readonly By _header = By.CssSelector("header, .header, [role='banner']");
-        private readonly By _table = By.CssSelector("table");
-        private readonly By _dropdown = By.CssSelector("select, .dropdown");
+        private readonly By header = By.CssSelector("header, h1, h2, .dashboard-header");
+        private readonly By table = By.CssSelector("table");
+        private readonly By dropdown = By.CssSelector("select, .dropdown, [role='listbox']");
 
         public DashboardPageTemplate(SelfHealingWebDriver driver) : base(driver) { }
 
-        public IWebElement Header => FindElement(HeaderKey, _header);
-        public IWebElement Table => FindElement(TableKey, _table);
-        public IWebElement Dropdown => FindElement(DropdownKey, _dropdown);
+        public IWebElement Header => FindElement(HeaderKey, header);
+        public IWebElement Table => FindElement(TableKey, table);
+        public IWebElement Dropdown => FindElement(DropdownKey, dropdown);
     }
 }

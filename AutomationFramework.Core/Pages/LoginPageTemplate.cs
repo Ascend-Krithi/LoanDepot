@@ -9,15 +9,15 @@ namespace AutomationFramework.Core.Pages
         public const string PasswordInputKey = "LoginPage.PasswordInput";
         public const string SubmitButtonKey = "LoginPage.SubmitButton";
 
-        private readonly By _usernameInput = By.CssSelector("input[type='text'],input[type='email']");
-        private readonly By _passwordInput = By.CssSelector("input[type='password']");
-        private readonly By _submitButton = By.CssSelector("button[type='submit'],input[type='submit']");
+        private readonly By usernameInput = By.CssSelector("input[type='text'], input[type='email'], input[name*='user'], input[name*='email']");
+        private readonly By passwordInput = By.CssSelector("input[type='password'], input[name*='pass']");
+        private readonly By submitButton = By.CssSelector("button[type='submit'], input[type='submit'], button[name*='login']");
 
         public LoginPageTemplate(SelfHealingWebDriver driver) : base(driver) { }
 
-        public IWebElement UsernameInput => FindElement(UsernameInputKey, _usernameInput);
-        public IWebElement PasswordInput => FindElement(PasswordInputKey, _passwordInput);
-        public IWebElement SubmitButton => FindElement(SubmitButtonKey, _submitButton);
+        public IWebElement UsernameInput => FindElement(UsernameInputKey, usernameInput);
+        public IWebElement PasswordInput => FindElement(PasswordInputKey, passwordInput);
+        public IWebElement SubmitButton => FindElement(SubmitButtonKey, submitButton);
 
         public void Login(string username, string password)
         {

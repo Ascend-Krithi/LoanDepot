@@ -16,22 +16,23 @@ namespace AutomationFramework.Core.Utilities
             var folder = ConfigManager.Settings.TestDataFolder;
             if (string.IsNullOrWhiteSpace(folder))
                 folder = Path.Combine(AppContext.BaseDirectory, "TestData");
-            else if (!Path.IsPathRooted(folder))
-                folder = Path.Combine(AppContext.BaseDirectory, folder);
 
             var fullPath = Path.Combine(folder, filePathOrName);
+            if (!File.Exists(fullPath))
+                throw new FileNotFoundException($"Excel file not found: {fullPath}");
+
             return fullPath;
         }
 
         public static string GetCell(string filePathOrName, string sheetName, int rowIndex, int colIndex)
         {
-            var filePath = ResolveFilePath(filePathOrName);
-            using (var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            var path = ResolveFilePath(filePathOrName);
+            using (var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
             {
                 IWorkbook workbook = new XSSFWorkbook(fs);
                 var sheet = workbook.GetSheet(sheetName);
                 if (sheet == null)
-                    throw new ArgumentException($"Sheet '{sheetName}' not found in file '{filePath}'.");
+                    throw new ArgumentException($"Sheet '{sheetName}' not found in file '{filePathOrName}'.");
 
                 var row = sheet.GetRow(rowIndex);
                 if (row == null)
@@ -43,6 +44,14 @@ namespace AutomationFramework.Core.Utilities
 
                 return cell.ToString();
             }
+        }
+
+        public static DateTime? GetCellAsDateTime(string filePathOrName, string sheetName, int rowIndex, int colIndex)
+        {
+            var value = GetCell(filePathOrName, sheetName, rowIndex, colIndex);
+            if (DateTime.TryParse(value, out var dt))
+                return dt;
+            return null;
         }
     }
 }

@@ -8,88 +8,106 @@ namespace AutomationFramework.Core.Utilities
     public static class PopupEngine
     {
         private static bool _chatWidgetsCleaned = false;
+        private static readonly object _lock = new();
+
+        private static readonly string[] OverlaySelectors = new[]
+        {
+            "[role='dialog']",
+            ".cdk-overlay-backdrop",
+            ".modal-backdrop",
+            "[aria-modal='true']",
+            "[id*='cookie']",
+            "[class*='cookie']"
+        };
+
+        private static readonly string[] ChatSelectors = new[]
+        {
+            "[id*='chat']",
+            "[class*='chat']"
+        };
 
         public static void CleanPopups(IWebDriver driver)
         {
             try
             {
-                // Generic overlays and modals
-                string[] selectors = new[]
+                foreach (var selector in OverlaySelectors)
                 {
-                    "[role='dialog']",
-                    ".cdk-overlay-backdrop",
-                    ".modal-backdrop",
-                    "[aria-modal='true']",
-                    "[id*='cookie']",
-                    "[class*='cookie']"
-                };
-
-                foreach (var selector in selectors)
-                {
-                    var elements = driver.FindElements(By.CssSelector(selector));
-                    foreach (var el in elements)
+                    var overlays = driver.FindElements(By.CssSelector(selector));
+                    foreach (var overlay in overlays)
                     {
                         try
                         {
-                            var closeBtn = TryFindCloseButton(el);
-                            if (closeBtn != null)
+                            var closeButtons = overlay.FindElements(By.CssSelector("button, [role='button'], .close, [aria-label*='close']"));
+                            if (closeButtons.Any())
                             {
-                                closeBtn.Click();
+                                foreach (var btn in closeButtons)
+                                {
+                                    try
+                                    {
+                                        if (btn.Displayed && btn.Enabled)
+                                        {
+                                            btn.Click();
+                                            Thread.Sleep(60);
+                                            break;
+                                        }
+                                    }
+                                    catch { }
+                                }
                             }
                             else
                             {
-                                RemoveElementViaJs(driver, el);
+                                var js = (IJavaScriptExecutor)driver;
+                                js.ExecuteScript("arguments[0].parentNode.removeChild(arguments[0]);", overlay);
+                                Thread.Sleep(60);
                             }
                         }
                         catch { }
-                        Thread.Sleep(60);
                     }
                 }
 
-                // Chat widgets in iframes (only once per run)
-                if (!_chatWidgetsCleaned)
-                {
-                    var iframes = driver.FindElements(By.TagName("iframe"));
-                    foreach (var iframe in iframes)
-                    {
-                        try
-                        {
-                            driver.SwitchTo().Frame(iframe);
-                            var chatEls = driver.FindElements(By.CssSelector("[id*='chat'],[class*='chat']"));
-                            foreach (var chatEl in chatEls)
-                            {
-                                RemoveElementViaJs(driver, chatEl);
-                            }
-                            driver.SwitchTo().DefaultContent();
-                        }
-                        catch { driver.SwitchTo().DefaultContent(); }
-                        Thread.Sleep(60);
-                    }
-                    _chatWidgetsCleaned = true;
-                }
+                CleanChatWidgets(driver);
             }
             catch { }
         }
 
-        private static IWebElement TryFindCloseButton(IWebElement el)
+        private static void CleanChatWidgets(IWebDriver driver)
         {
-            try
+            lock (_lock)
             {
-                var closeBtn = el.FindElements(By.CssSelector("button[aria-label*='close'],button.close,[class*='close'],[data-dismiss='modal']")).FirstOrDefault();
-                return closeBtn;
+                if (_chatWidgetsCleaned)
+                    return;
+                _chatWidgetsCleaned = true;
             }
-            catch
-            {
-                return null;
-            }
-        }
 
-        private static void RemoveElementViaJs(IWebDriver driver, IWebElement el)
-        {
             try
             {
-                var js = (IJavaScriptExecutor)driver;
-                js.ExecuteScript("arguments[0].parentNode.removeChild(arguments[0]);", el);
+                var iframes = driver.FindElements(By.TagName("iframe"));
+                foreach (var iframe in iframes)
+                {
+                    try
+                    {
+                        driver.SwitchTo().Frame(iframe);
+                        foreach (var selector in ChatSelectors)
+                        {
+                            var chats = driver.FindElements(By.CssSelector(selector));
+                            foreach (var chat in chats)
+                            {
+                                try
+                                {
+                                    var js = (IJavaScriptExecutor)driver;
+                                    js.ExecuteScript("arguments[0].parentNode.removeChild(arguments[0]);", chat);
+                                    Thread.Sleep(60);
+                                }
+                                catch { }
+                            }
+                        }
+                        driver.SwitchTo().DefaultContent();
+                    }
+                    catch
+                    {
+                        driver.SwitchTo().DefaultContent();
+                    }
+                }
             }
             catch { }
         }

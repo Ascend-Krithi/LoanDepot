@@ -22,14 +22,14 @@ namespace AutomationFramework.Tests.Hooks
             _scenarioContext = scenarioContext;
         }
 
-        [BeforeTestRun]
+        [BeforeTestRun(Order = 0)]
         public static void BeforeTestRun()
         {
             // Ensure configuration is loaded
             var _ = ConfigManager.Settings;
         }
 
-        [BeforeScenario]
+        [BeforeScenario(Order = 0)]
         public void BeforeScenario()
         {
             var driver = WebDriverFactory.CreateDriver();
@@ -39,20 +39,21 @@ namespace AutomationFramework.Tests.Hooks
             var baseUrl = ConfigManager.Settings.BaseUrl;
             if (!string.IsNullOrWhiteSpace(baseUrl))
             {
-                driver.Url = baseUrl;
+                driver.Navigate().GoToUrl(baseUrl);
             }
         }
 
-        [AfterScenario]
+        [AfterScenario(Order = 100)]
         public void AfterScenario()
         {
             var driver = _container.Resolve<SelfHealingWebDriver>();
-            bool failed = _scenarioContext.TestError != null;
+            bool passed = !_scenarioContext.TestError.HasValue;
             string featureName = _scenarioContext.ScenarioInfo.FeatureTitle;
             string scenarioName = _scenarioContext.ScenarioInfo.Title;
-            string errorMessage = failed ? _scenarioContext.TestError?.ToString() : null;
+            string errorMessage = _scenarioContext.TestError?.Message;
 
-            if (failed)
+            // Screenshot on failure
+            if (!passed)
             {
                 try
                 {
@@ -62,16 +63,17 @@ namespace AutomationFramework.Tests.Hooks
                         var screenshot = takesScreenshot.GetScreenshot();
                         var screenshotsDir = Path.Combine(AppContext.BaseDirectory, "Screenshots");
                         Directory.CreateDirectory(screenshotsDir);
-                        var filePath = Path.Combine(screenshotsDir, $"{featureName}_{scenarioName}_{DateTime.Now:yyyyMMddHHmmss}.png");
+                        var fileName = $"{featureName}_{scenarioName}_{DateTime.Now:yyyyMMdd_HHmmss}.png".Replace(" ", "_");
+                        var filePath = Path.Combine(screenshotsDir, fileName);
                         screenshot.SaveAsFile(filePath, ScreenshotImageFormat.Png);
                     }
                 }
                 catch { }
             }
 
-            HtmlReportGenerator.GenerateReport(featureName, scenarioName, !failed, errorMessage);
+            HtmlReportGenerator.GenerateReport(featureName, scenarioName, passed, errorMessage);
 
-            try { driver.Dispose(); } catch { }
+            try { driver.Quit(); } catch { }
         }
     }
 }

@@ -1,6 +1,6 @@
+using System.Linq;
 using OpenQA.Selenium;
 using AutomationFramework.Core.SelfHealing;
-using System.Linq;
 
 namespace AutomationFramework.Core.Pages
 {
@@ -9,26 +9,24 @@ namespace AutomationFramework.Core.Pages
         public const string DropdownKey = "GenericDropdown.Dropdown";
         public const string OptionKey = "GenericDropdown.Option";
 
-        private readonly By _dropdown = By.CssSelector("select, .dropdown");
-        private readonly By _option = By.CssSelector("option, .dropdown-item");
+        private readonly By dropdown = By.CssSelector("select, .dropdown, [role='listbox']");
+        private readonly By option = By.CssSelector("option, [role='option'], .dropdown-item");
 
         public GenericDropdownComponent(SelfHealingWebDriver driver) : base(driver) { }
 
-        public IWebElement Dropdown => FindElement(DropdownKey, _dropdown);
+        public IWebElement Dropdown => FindElement(DropdownKey, dropdown);
 
         public IWebElement GetOptionByText(string text)
         {
-            var options = Dropdown.FindElements(_option);
-            return options.FirstOrDefault(o => o.Text.Trim() == text);
+            var options = Dropdown.FindElements(option);
+            return options.FirstOrDefault(o => o.Text.Trim().Equals(text.Trim(), System.StringComparison.OrdinalIgnoreCase));
         }
 
         public void SelectByText(string text)
         {
-            var option = GetOptionByText(text);
-            if (option != null)
-            {
-                JsClick(option);
-            }
+            var opt = GetOptionByText(text);
+            if (opt != null)
+                JsClick(opt);
         }
     }
 }
