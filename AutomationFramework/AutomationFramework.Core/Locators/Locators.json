@@ -1,0 +1,10 @@
+{
+  "LoginPage.Username": { "by": "id", "value": "user-name" },
+  "LoginPage.Password": { "by": "id", "value": "password" },
+  "LoginPage.LoginButton": { "by": "id", "value": "login-button" },
+  "LoginPage.ErrorMessage": { "by": "css", "value": "h3[data-test='error']" },
+  "DashboardPage.Title": { "by": "css", "value": ".title" },
+  "DashboardPage.MenuButton": { "by": "id", "value": "react-burger-menu-btn" },
+  "DashboardPage.UsersLink": { "by": "id", "value": "inventory_sidebar_link" },
+  "UsersPage.Title": { "by": "css", "value": ".title" }
+}
