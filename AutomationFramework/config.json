@@ -1,6 +1,0 @@
-{
-  "BaseUrl": "https://demo-app.test",
-  "Browser": "chrome",
-  "EncryptedUsername": "ENCRYPTED_USERNAME_HERE",
-  "EncryptedPassword": "ENCRYPTED_PASSWORD_HERE"
-}

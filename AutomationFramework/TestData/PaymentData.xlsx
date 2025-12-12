@@ -1,3 +1,0 @@
-// This is a binary Excel file. Please create an Excel file with the following columns in Sheet1:
-// TestCaseId | Username | Password | Amount | ExpectedMessage
-// TC_001     | testuser | testpass | 500    | Payment successful
