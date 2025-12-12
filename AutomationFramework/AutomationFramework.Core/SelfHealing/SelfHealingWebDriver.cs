@@ -1,135 +1,86 @@
 using OpenQA.Selenium;
-using OpenQA.Selenium.Internal;
 using System.Collections.ObjectModel;
-using System.Linq;
 using AutomationFramework.Core.Utilities;
 
 namespace AutomationFramework.Core.SelfHealing
 {
-    public class SelfHealingWebDriver : IWebDriver, IWrapsDriver, IJavaScriptExecutor
+    public class SelfHealingWebDriver : IWebDriver, IJavaScriptExecutor, IDisposable
     {
         private readonly IWebDriver _driver;
-        private readonly SelfHealingRepository _repository;
-        private readonly DomAnalyzer _analyzer;
+        private readonly DomAnalyzer _domAnalyzer;
 
-        public SelfHealingWebDriver(IWebDriver driver, SelfHealingRepository repository)
+        public SelfHealingWebDriver(IWebDriver driver)
         {
             _driver = driver;
-            _repository = repository;
-            _analyzer = new DomAnalyzer(driver); // The real driver is passed to the analyzer
+            _domAnalyzer = new DomAnalyzer(driver);
         }
 
-        public IWebDriver WrappedDriver => _driver;
-
-        public string Url
+        // Custom FindElement with self-healing logic
+        public IWebElement FindElement(string logicalKey, By locator)
         {
-            get => _driver.Url;
-            set => _driver.Url = value;
+            SelfHealingRepository.StoreLocator(logicalKey, locator);
+            try
+            {
+                return _driver.FindElement(locator);
+            }
+            catch (NoSuchElementException)
+            {
+                Logger.Log($"Element '{logicalKey}' with locator '{locator}' not found. Attempting to heal.");
+                var healedLocator = _domAnalyzer.AttemptToHeal(locator);
+
+                if (healedLocator != null)
+                {
+                    Logger.Log($"Healing successful. New locator for '{logicalKey}' is '{healedLocator}'.");
+                    SelfHealingRepository.UpdateLocator(logicalKey, healedLocator);
+                    try
+                    {
+                        return _driver.FindElement(healedLocator);
+                    }
+                    catch (NoSuchElementException ex)
+                    {
+                        Logger.Log($"Finding element '{logicalKey}' failed even after healing.");
+                        throw new NoSuchElementException($"Element with logical key '{logicalKey}' could not be found, even after attempting to heal.", ex);
+                    }
+                }
+
+                Logger.Log($"Healing failed for element '{logicalKey}'.");
+                throw; // Re-throw original exception if healing fails
+            }
         }
 
+        #region IWebDriver Implementation (delegating to wrapped driver)
+
+        public IWebElement FindElement(By by)
+        {
+            // This standard method is discouraged. Use the logical key version for self-healing.
+            // It's provided for compatibility with Selenium internals (e.g., WebDriverWait).
+            return _driver.FindElement(by);
+        }
+
+        public ReadOnlyCollection<IWebElement> FindElements(By by) => _driver.FindElements(by);
+        public void Close() => _driver.Close();
+        public void Quit() => _driver.Quit();
+        public IOptions Manage() => _driver.Manage();
+        public INavigation Navigate() => _driver.Navigate();
+        public ITargetLocator SwitchTo() => _driver.SwitchTo();
+        public string Url { get => _driver.Url; set => _driver.Url = value; }
         public string Title => _driver.Title;
         public string PageSource => _driver.PageSource;
         public string CurrentWindowHandle => _driver.CurrentWindowHandle;
         public ReadOnlyCollection<string> WindowHandles => _driver.WindowHandles;
-
-        public void Close() => _driver.Close();
-        public void Quit()
-        {
-            _driver.Quit();
-            _repository.SaveRepository();
-        }
-
-        public IOptions Manage() => _driver.Manage();
-        public INavigation Navigate() => _driver.Navigate();
-        public ITargetLocator SwitchTo() => _driver.SwitchTo();
-
-        public IWebElement FindElement(By by)
-        {
-            try
-            {
-                return _driver.FindElement(by);
-            }
-            catch (NoSuchElementException)
-            {
-                Logger.Log($"Locator '{by}' failed. Attempting self-healing.");
-                _repository.RecordFailure(by);
-                var snapshot = _repository.Get(by);
-
-                // Try healed locator first if it exists
-                if (!string.IsNullOrEmpty(snapshot?.HealedLocator))
-                {
-                    try
-                    {
-                        var healedBy = ConvertStringToBy(snapshot.HealedLocator);
-                        Logger.Log($"Trying previously healed locator: '{healedBy}'");
-                        return _driver.FindElement(healedBy);
-                    }
-                    catch (NoSuchElementException)
-                    {
-                        Logger.Log($"Healed locator '{snapshot.HealedLocator}' also failed.");
-                    }
-                }
-
-                // If no healed locator or it failed, try to find a new one
-                // This part is complex. For a robust solution, we'd need a reference to the 'intended' element.
-                // Since we can't get the stale element, we'll search the DOM for candidates.
-                // This is a simplified approach. A better one would involve capturing element snapshots before interaction.
-                // For this implementation, we will log the failure and re-throw.
-                // A more advanced implementation would be needed for true on-the-fly healing without a reference element.
-                Logger.Log("Could not find a reference element to analyze for healing. Re-throwing original exception.");
-                throw;
-            }
-            catch (StaleElementReferenceException)
-            {
-                Logger.Log($"Stale element with locator '{by}'. Attempting self-healing.");
-                // In a real scenario, you might have the stale element reference here to pass to the analyzer.
-                // Since we don't, we'll try to re-find it with the original locator.
-                // This handles cases where the element just needs to be re-fetched.
-                return _driver.FindElement(by);
-            }
-        }
-
-        public ReadOnlyCollection<IWebElement> FindElements(By by)
-        {
-            // Self-healing is typically more complex for FindElements and often not implemented.
-            // We will just pass through to the original driver.
-            return _driver.FindElements(by);
-        }
-
         public void Dispose()
         {
             _driver.Dispose();
-            _repository.SaveRepository();
+            GC.SuppressFinalize(this);
         }
 
-        public object ExecuteScript(string script, params object[] args)
-        {
-            return ((IJavaScriptExecutor)_driver).ExecuteScript(script, args);
-        }
+        #endregion
 
-        public object ExecuteAsyncScript(string script, params object[] args)
-        {
-            return ((IJavaScriptExecutor)_driver).ExecuteAsyncScript(script, args);
-        }
+        #region IJavaScriptExecutor Implementation
 
-        private By ConvertStringToBy(string byString)
-        {
-            var parts = byString.Split(new[] { ": " }, 2, StringSplitOptions.None);
-            var type = parts[0].Replace("By.", "");
-            var value = parts[1];
+        public object? ExecuteScript(string script, params object[] args) => ((IJavaScriptExecutor)_driver).ExecuteScript(script, args);
+        public object? ExecuteAsyncScript(string script, params object[] args) => ((IJavaScriptExecutor)_driver).ExecuteAsyncScript(script, args);
 
-            return type.ToLower() switch
-            {
-                "id" => By.Id(value),
-                "name" => By.Name(value),
-                "classname" => By.ClassName(value),
-                "cssselector" => By.CssSelector(value),
-                "linktext" => By.LinkText(value),
-                "partiallinktext" => By.PartialLinkText(value),
-                "tagname" => By.TagName(value),
-                "xpath" => By.XPath(value),
-                _ => throw new ArgumentException($"Unknown locator type: {type}")
-            };
-        }
+        #endregion
     }
 }

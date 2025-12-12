@@ -1,30 +1,25 @@
+using AutomationFramework.Core.SelfHealing;
 using OpenQA.Selenium;
 
 namespace AutomationFramework.Core.Pages
 {
     public class DashboardPageTemplate : BasePage
     {
-        public DashboardPageTemplate(IWebDriver driver) : base(driver)
-        {
-            Locators["HeaderTitle"] = By.CssSelector("h1.dashboard-title");
-            Locators["UserProfileMenu"] = By.Id("user-profile-menu");
-            Locators["LogoutButton"] = By.CssSelector("a[href='/logout']");
-        }
+        public DashboardPageTemplate(SelfHealingWebDriver driver) : base(driver) { }
+
+        private IWebElement HeaderTitle => FindElement("DashboardPage.HeaderTitle", By.CssSelector(".header-title"));
+        private IWebElement UserProfileMenu => FindElement("DashboardPage.UserProfileMenu", By.Id("user-profile-menu"));
+        private IWebElement LogoutButton => FindElement("DashboardPage.LogoutButton", By.LinkText("Logout"));
 
         public string GetHeaderTitle()
         {
-            return GetText("HeaderTitle");
-        }
-
-        public bool IsUserProfileMenuVisible()
-        {
-            return GetElement("UserProfileMenu").Displayed;
+            return HeaderTitle.Text;
         }
 
         public void Logout()
         {
-            Click("UserProfileMenu");
-            Click("LogoutButton");
+            UserProfileMenu.Click();
+            LogoutButton.Click();
         }
     }
 }

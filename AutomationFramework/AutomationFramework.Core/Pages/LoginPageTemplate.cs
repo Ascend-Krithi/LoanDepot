@@ -1,39 +1,41 @@
+using AutomationFramework.Core.SelfHealing;
 using OpenQA.Selenium;
 
 namespace AutomationFramework.Core.Pages
 {
     public class LoginPageTemplate : BasePage
     {
-        public LoginPageTemplate(IWebDriver driver) : base(driver)
-        {
-            // In a real project, these might be loaded from a JSON/XML file
-            Locators["UsernameField"] = By.Id("username");
-            Locators["PasswordField"] = By.Id("password");
-            Locators["LoginButton"] = By.CssSelector("button[type='submit']");
-            Locators["ErrorMessage"] = By.Id("error-message");
-        }
+        public LoginPageTemplate(SelfHealingWebDriver driver) : base(driver) { }
+
+        // Locators using logical keys
+        private IWebElement UsernameInput => FindElement("LoginPage.UsernameInput", By.Id("username"));
+        private IWebElement PasswordInput => FindElement("LoginPage.PasswordInput", By.Id("password"));
+        private IWebElement LoginButton => FindElement("LoginPage.LoginButton", By.CssSelector("button[type='submit']"));
+        private IWebElement ErrorMessage => FindElement("LoginPage.ErrorMessage", By.ClassName("error-message"));
 
         public void EnterUsername(string username)
         {
-            SendKeys("UsernameField", username);
+            UsernameInput.Clear();
+            UsernameInput.SendKeys(username);
         }
 
         public void EnterPassword(string password)
         {
-            SendKeys("PasswordField", password);
+            PasswordInput.Clear();
+            PasswordInput.SendKeys(password);
         }
 
         public void ClickLogin()
         {
-            Click("LoginButton");
+            LoginButton.Click();
         }
 
         public string GetErrorMessage()
         {
-            return GetText("ErrorMessage");
+            return ErrorMessage.Text;
         }
 
-        public void Login(string username, string password)
+        public void LoginAs(string username, string password)
         {
             EnterUsername(username);
             EnterPassword(password);

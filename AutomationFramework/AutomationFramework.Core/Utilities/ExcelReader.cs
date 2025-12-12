@@ -1,40 +1,49 @@
-using System.Collections.Generic;
+using NPOI.SS.UserModel;
+using NPOI.XSSF.UserModel;
 using System.Data;
-using System.IO;
-using ExcelDataReader;
 
 namespace AutomationFramework.Core.Utilities
 {
-    public class ExcelReader
+    public static class ExcelReader
     {
-        public static IEnumerable<object[]> ReadData(string filePath, string sheetName)
+        public static DataTable ReadSheet(string filePath, string sheetName)
         {
-            System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
-
-            using (var stream = File.Open(filePath, FileMode.Open, FileAccess.Read))
+            var table = new DataTable(sheetName);
+            using (var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read))
             {
-                using (var reader = ExcelReaderFactory.CreateReader(stream))
+                IWorkbook workbook = new XSSFWorkbook(stream);
+                ISheet sheet = workbook.GetSheet(sheetName);
+
+                if (sheet == null)
                 {
-                    var result = reader.AsDataSet(new ExcelDataSetConfiguration()
-                    {
-                        ConfigureDataTable = (_) => new ExcelDataTableConfiguration()
-                        {
-                            UseHeaderRow = true
-                        }
-                    });
+                    throw new ArgumentException($"Sheet '{sheetName}' not found in '{filePath}'.");
+                }
 
-                    DataTable table = result.Tables[sheetName];
-                    if (table == null)
-                    {
-                        throw new KeyNotFoundException($"Sheet '{sheetName}' not found in the Excel file.");
-                    }
+                IRow headerRow = sheet.GetRow(0);
+                if (headerRow == null) return table;
 
-                    foreach (DataRow row in table.Rows)
+                // Create columns
+                foreach (ICell headerCell in headerRow)
+                {
+                    table.Columns.Add(headerCell.ToString());
+                }
+
+                // Read data rows
+                for (int i = (sheet.FirstRowNum + 1); i <= sheet.LastRowNum; i++)
+                {
+                    IRow? row = sheet.GetRow(i);
+                    if (row == null) continue;
+
+                    DataRow dataRow = table.NewRow();
+                    for (int j = 0; j < headerRow.LastCellNum; j++)
                     {
-                        yield return new object[] { row };
+                        ICell? cell = row.GetCell(j);
+                        dataRow[j] = cell?.ToString() ?? string.Empty;
                     }
+                    table.Rows.Add(dataRow);
                 }
             }
+            return table;
         }
     }
 }

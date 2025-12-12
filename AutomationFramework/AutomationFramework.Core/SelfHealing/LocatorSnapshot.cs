@@ -1,17 +1,16 @@
-using System.Collections.Generic;
+using OpenQA.Selenium;
 
 namespace AutomationFramework.Core.SelfHealing
 {
     public class LocatorSnapshot
     {
-        public string OriginalLocator { get; set; }
-        public List<string> AlternativeLocators { get; set; } = new List<string>();
-        public string HealedLocator { get; set; }
-        public int FailureCount { get; set; }
+        public string LogicalKey { get; }
+        public By Locator { get; set; }
 
-        public LocatorSnapshot(string originalLocator)
+        public LocatorSnapshot(string logicalKey, By locator)
         {
-            OriginalLocator = originalLocator;
+            LogicalKey = logicalKey;
+            Locator = locator;
         }
     }
 }

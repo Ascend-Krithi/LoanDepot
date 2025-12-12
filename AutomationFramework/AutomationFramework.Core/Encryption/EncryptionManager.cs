@@ -1,100 +1,88 @@
-using System;
-using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 
 namespace AutomationFramework.Core.Encryption
 {
-    public class EncryptionManager
+    public static class EncryptionManager
     {
-        private readonly byte[] _key;
-        private readonly byte[] _iv;
+        private static byte[]? _key;
+        private const int IvSize = 16; // 128 bits for AES
+        private const int KeySize = 32; // 256 bits for AES
+        private const string EncryptedPrefix = "ENCRYPTED:";
 
-        public EncryptionManager(string base64Key, string base64Iv)
+        public static void Initialize(string base64Key)
         {
-            if (string.IsNullOrEmpty(base64Key) || string.IsNullOrEmpty(base64Iv))
+            if (string.IsNullOrWhiteSpace(base64Key))
             {
-                throw new ArgumentException("Key and IV must be provided.");
+                throw new ArgumentException("Encryption key cannot be null or empty.", nameof(base64Key));
             }
             _key = Convert.FromBase64String(base64Key);
-            _iv = Convert.FromBase64String(base64Iv);
-
-            if (_key.Length != 16 && _key.Length != 24 && _key.Length != 32)
+            if (_key.Length != KeySize)
             {
-                throw new ArgumentException("Invalid key size. Key must be 128, 192, or 256 bits.");
-            }
-            if (_iv.Length != 16)
-            {
-                throw new ArgumentException("Invalid IV size. IV must be 128 bits.");
+                throw new ArgumentException($"Encryption key must be {KeySize} bytes long.", nameof(base64Key));
             }
         }
 
-        public string Encrypt(string plainText)
+        public static string Encrypt(string plainText)
         {
-            if (string.IsNullOrEmpty(plainText))
-                return plainText;
+            if (_key == null) throw new InvalidOperationException("EncryptionManager is not initialized.");
 
-            using (var aes = Aes.Create())
+            using var aes = Aes.Create();
+            aes.Key = _key;
+            aes.Mode = CipherMode.CBC;
+            aes.Padding = PaddingMode.PKCS7;
+            aes.GenerateIV();
+            var iv = aes.IV;
+
+            using var encryptor = aes.CreateEncryptor(aes.Key, iv);
+            using var ms = new MemoryStream();
+            
+            // Prepend IV to the stream
+            ms.Write(iv, 0, iv.Length);
+            
+            using (var cs = new CryptoStream(ms, encryptor, CryptoStreamMode.Write))
             {
-                aes.Key = _key;
-                aes.IV = _iv;
-                aes.Mode = CipherMode.CBC;
-                aes.Padding = PaddingMode.PKCS7;
-
-                ICryptoTransform encryptor = aes.CreateEncryptor(aes.Key, aes.IV);
-
-                using (var msEncrypt = new MemoryStream())
-                {
-                    using (var csEncrypt = new CryptoStream(msEncrypt, encryptor, CryptoStreamMode.Write))
-                    {
-                        using (var swEncrypt = new StreamWriter(csEncrypt))
-                        {
-                            swEncrypt.Write(plainText);
-                        }
-                        byte[] encrypted = msEncrypt.ToArray();
-                        // Prepend IV to the ciphertext for use in decryption
-                        byte[] result = new byte[_iv.Length + encrypted.Length];
-                        Buffer.BlockCopy(_iv, 0, result, 0, _iv.Length);
-                        Buffer.BlockCopy(encrypted, 0, result, _iv.Length, encrypted.Length);
-                        return Convert.ToBase64String(result);
-                    }
-                }
+                using var sw = new StreamWriter(cs);
+                sw.Write(plainText);
             }
+            
+            var encryptedBytes = ms.ToArray();
+            return EncryptedPrefix + Convert.ToBase64String(encryptedBytes);
         }
 
-        public string Decrypt(string cipherText)
+        public static string Decrypt(string cipherText)
         {
-            if (string.IsNullOrEmpty(cipherText))
+            if (string.IsNullOrWhiteSpace(cipherText) || !cipherText.StartsWith(EncryptedPrefix))
+            {
+                // Return as-is if not encrypted or empty
                 return cipherText;
-
-            byte[] fullCipher = Convert.FromBase64String(cipherText);
-
-            byte[] iv = new byte[16];
-            byte[] cipher = new byte[fullCipher.Length - 16];
-
-            Buffer.BlockCopy(fullCipher, 0, iv, 0, iv.Length);
-            Buffer.BlockCopy(fullCipher, iv.Length, cipher, 0, cipher.Length);
-
-            using (var aes = Aes.Create())
-            {
-                aes.Key = _key;
-                aes.IV = iv;
-                aes.Mode = CipherMode.CBC;
-                aes.Padding = PaddingMode.PKCS7;
-
-                ICryptoTransform decryptor = aes.CreateDecryptor(aes.Key, aes.IV);
-
-                using (var msDecrypt = new MemoryStream(cipher))
-                {
-                    using (var csDecrypt = new CryptoStream(msDecrypt, decryptor, CryptoStreamMode.Read))
-                    {
-                        using (var srDecrypt = new StreamReader(csDecrypt))
-                        {
-                            return srDecrypt.ReadToEnd();
-                        }
-                    }
-                }
             }
+            
+            if (_key == null) throw new InvalidOperationException("EncryptionManager is not initialized. Cannot decrypt value.");
+
+            var fullCipher = Convert.FromBase64String(cipherText.Substring(EncryptedPrefix.Length));
+
+            using var aes = Aes.Create();
+            aes.Key = _key;
+            aes.Mode = CipherMode.CBC;
+            aes.Padding = PaddingMode.PKCS7;
+
+            // Extract IV from the beginning of the cipher text
+            var iv = new byte[IvSize];
+            Array.Copy(fullCipher, 0, iv, 0, iv.Length);
+            aes.IV = iv;
+
+            using var decryptor = aes.CreateDecryptor(aes.Key, aes.IV);
+            using var ms = new MemoryStream();
+            
+            // Write the actual ciphertext (without IV) to the memory stream
+            ms.Write(fullCipher, IvSize, fullCipher.Length - IvSize);
+            ms.Position = 0; // Reset stream position for reading
+
+            using var cs = new CryptoStream(ms, decryptor, CryptoStreamMode.Read);
+            using var sr = new StreamReader(cs);
+            
+            return sr.ReadToEnd();
         }
     }
 }

@@ -1,60 +1,38 @@
+using AutomationFramework.Core.SelfHealing;
 using OpenQA.Selenium;
-using OpenQA.Selenium.Support.UI;
 
 namespace AutomationFramework.Core.Pages
 {
     public class GenericDropdownComponent
     {
-        private readonly IWebElement _dropdownElement;
-        private readonly SelectElement _selectElement;
+        private readonly IWebElement _dropdownTrigger;
+        private readonly SelfHealingWebDriver _driver;
 
-        public GenericDropdownComponent(IWebElement dropdownElement)
+        public GenericDropdownComponent(SelfHealingWebDriver driver, IWebElement dropdownTrigger)
         {
-            _dropdownElement = dropdownElement;
-            // Check if it's a standard <select> element
-            if (dropdownElement.TagName.ToLower() == "select")
-            {
-                _selectElement = new SelectElement(_dropdownElement);
-            }
+            _driver = driver;
+            _dropdownTrigger = dropdownTrigger;
         }
 
         public void SelectByText(string text)
         {
-            if (_selectElement != null)
-            {
-                _selectElement.SelectByText(text);
-            }
-            else
-            {
-                // Handle custom dropdowns (e.g., div/ul/li based)
-                _dropdownElement.Click(); // Open the dropdown
-                var option = _dropdownElement.FindElement(By.XPath($"//li[normalize-space()='{text}'] | //div[normalize-space()='{text}']"));
-                option.Click();
-            }
+            _dropdownTrigger.Click();
+            // This assumes dropdown options appear as siblings or in a related container
+            var option = _driver.FindElement(By.XPath($"//div[contains(@class, 'dropdown-menu')]//a[text()='{text}']"));
+            option.Click();
         }
 
-        public void SelectByValue(string value)
+        public void SelectByIndex(int index)
         {
-            if (_selectElement != null)
+            _dropdownTrigger.Click();
+            var options = _driver.FindElements(By.CssSelector(".dropdown-menu a, .dropdown-menu li"));
+            if (index < options.Count)
             {
-                _selectElement.SelectByValue(value);
+                options[index].Click();
             }
             else
             {
-                throw new NotSupportedException("SelectByValue is not supported for custom dropdowns in this generic component.");
-            }
-        }
-
-        public string GetSelectedOptionText()
-        {
-            if (_selectElement != null)
-            {
-                return _selectElement.SelectedOption.Text;
-            }
-            else
-            {
-                // For custom dropdowns, the selected value might be in the main element's text
-                return _dropdownElement.Text;
+                throw new ArgumentOutOfRangeException(nameof(index), "Index is out of range for dropdown options.");
             }
         }
     }

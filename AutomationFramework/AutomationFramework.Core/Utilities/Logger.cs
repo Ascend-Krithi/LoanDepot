@@ -1,23 +1,29 @@
-using System;
-
 namespace AutomationFramework.Core.Utilities
 {
     public static class Logger
     {
-        public static void Log(string message)
+        private static string? _logFilePath;
+        private static readonly object s_lock = new();
+
+        public static void Initialize(string logDirectory = "Logs")
         {
-            string timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
-            Console.WriteLine($"[{timestamp}] [INFO] {message}");
+            if (!Directory.Exists(logDirectory))
+            {
+                Directory.CreateDirectory(logDirectory);
+            }
+            _logFilePath = Path.Combine(logDirectory, $"log_{DateTime.Now:yyyyMMdd_HHmmss}.txt");
         }
 
-        public static void LogError(string message, Exception ex = null)
+        public static void Log(string message)
         {
-            string timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
-            Console.WriteLine($"[{timestamp}] [ERROR] {message}");
-            if (ex != null)
+            if (_logFilePath == null)
             {
-                Console.WriteLine($"Exception: {ex.Message}");
-                Console.WriteLine($"StackTrace: {ex.StackTrace}");
+                Initialize();
+            }
+
+            lock (s_lock)
+            {
+                File.AppendAllText(_logFilePath!, $"{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff} - {message}{Environment.NewLine}");
             }
         }
     }

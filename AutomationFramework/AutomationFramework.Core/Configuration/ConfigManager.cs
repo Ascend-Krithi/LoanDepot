@@ -1,32 +1,48 @@
+using AutomationFramework.Core.Encryption;
 using Microsoft.Extensions.Configuration;
-using System.IO;
 
 namespace AutomationFramework.Core.Configuration
 {
     public static class ConfigManager
     {
-        private static readonly IConfigurationRoot _configuration;
+        private static readonly Lazy<IConfiguration> s_configuration = new(BuildConfiguration);
+        private static readonly Lazy<TestSettings> s_testSettings = new(BindTestSettings);
 
-        static ConfigManager()
+        public static IConfiguration Configuration => s_configuration.Value;
+        public static TestSettings TestSettings => s_testSettings.Value;
+
+        private static IConfiguration BuildConfiguration()
         {
-            var builder = new ConfigurationBuilder()
-                .SetBasePath(Directory.GetCurrentDirectory())
+            var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Development";
+
+            var config = new ConfigurationBuilder()
+                .SetBasePath(AppContext.BaseDirectory)
                 .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-                .AddEnvironmentVariables();
+                .AddJsonFile($"appsettings.{environment}.json", optional: true, reloadOnChange: true)
+                .AddEnvironmentVariables()
+                .Build();
 
-            _configuration = builder.Build();
+            return config;
         }
 
-        public static TestSettings GetTestSettings()
+        private static TestSettings BindTestSettings()
         {
-            var testSettings = new TestSettings();
-            _configuration.GetSection("TestSettings").Bind(testSettings);
-            return testSettings;
-        }
+            var settings = new TestSettings();
+            Configuration.GetSection("TestSettings").Bind(settings);
 
-        public static string GetConnectionString(string name)
-        {
-            return _configuration.GetConnectionString(name);
+            // Initialize EncryptionManager with the key from settings
+            if (!string.IsNullOrEmpty(settings.Encryption?.Key))
+            {
+                EncryptionManager.Initialize(settings.Encryption.Key);
+            }
+
+            // Decrypt credentials
+            foreach (var user in settings.Credentials.Values)
+            {
+                user.Password = EncryptionManager.Decrypt(user.Password);
+            }
+
+            return settings;
         }
     }
 }

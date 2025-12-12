@@ -1,88 +1,97 @@
 using OpenQA.Selenium;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace AutomationFramework.Core.Utilities
 {
     public class PopupEngine
     {
         private readonly IWebDriver _driver;
-        private readonly IJavaScriptExecutor _js;
+        private readonly IJavaScriptExecutor _jsExecutor;
 
-        // Common selectors for popups/modals/overlays
-        private readonly List<string> _popupSelectors = new List<string>
+        // Universal selectors for common popups/modals/overlays
+        private static readonly By[] PopupSelectors =
         {
-            "div[role='dialog']",
-            "div.modal",
-            "div.overlay",
-            "div.popup-container",
-            "div[id*='popup']",
-            "div[class*='modal']",
-            "div[aria-modal='true']"
+            By.CssSelector("[role='dialog']"),
+            By.CssSelector(".modal, .Modal, .popup, .Popup"),
+            By.CssSelector("[id*='modal'], [id*='popup']"),
+            By.CssSelector("div[class*='overlay']"),
         };
 
-        // Common selectors for close buttons within popups
-        private readonly List<string> _closeButtonSelectors = new List<string>
+        private static readonly By[] CloseButtonSelectors =
         {
-            "button[aria-label*='close' i]",
-            "button[aria-label*='dismiss' i]",
-            "button.close",
-            "button.btn-close",
-            "span.close",
-            "i.close-icon",
-            "[class*='close']"
+            By.CssSelector("[aria-label*='close'], [aria-label*='Close']"),
+            By.CssSelector("button[class*='close'], button[class*='Close']"),
+            By.CssSelector("span[class*='close'], span[class*='Close']"),
+            By.CssSelector("i[class*='close'], i[class*='Close']"),
+        };
+
+        // Selectors for chat widgets often found in iframes
+        private static readonly By[] ChatFrameSelectors =
+        {
+            By.CssSelector("iframe[id*='chat'], iframe[title*='chat']"),
         };
 
         public PopupEngine(IWebDriver driver)
         {
             _driver = driver;
-            _js = (IJavaScriptExecutor)driver;
+            _jsExecutor = (IJavaScriptExecutor)driver;
         }
 
-        public void DismissPopups()
+        public void HandlePopups()
         {
-            // This script finds visible popups and their close buttons
-            const string script = @"
-                const popupSelectors = arguments[0];
-                const closeButtonSelectors = arguments[1];
-                let closedSomething = false;
+            HandleChatWidgets();
+            HandleOverlaysAndModals();
+        }
 
-                for (const pSelector of popupSelectors) {
-                    const popups = document.querySelectorAll(pSelector);
-                    for (const popup of popups) {
-                        // Check if the popup is visible
-                        const style = window.getComputedStyle(popup);
-                        if (style.display !== 'none' && style.visibility !== 'hidden' && parseFloat(style.opacity) > 0) {
-                            for (const cSelector of closeButtonSelectors) {
-                                const closeButton = popup.querySelector(cSelector);
-                                if (closeButton) {
-                                    closeButton.click();
-                                    closedSomething = true;
-                                    // Wait a bit for the popup to disappear before continuing
-                                    await new Promise(r => setTimeout(r, 500));
-                                    break; // Assume one close button is enough
-                                }
-                            }
-                        }
+        private void HandleOverlaysAndModals()
+        {
+            foreach (var selector in PopupSelectors)
+            {
+                var popups = _driver.FindElements(selector);
+                foreach (var popup in popups.Where(p => p.Displayed))
+                {
+                    TryClosePopup(popup);
+                }
+            }
+        }
+
+        private void TryClosePopup(IWebElement popup)
+        {
+            foreach (var closeSelector in CloseButtonSelectors)
+            {
+                try
+                {
+                    var closeButton = popup.FindElement(closeSelector);
+                    if (closeButton.Displayed && closeButton.Enabled)
+                    {
+                        Logger.Log($"Closing popup with button: {closeSelector}");
+                        _jsExecutor.ExecuteScript("arguments[0].click();", closeButton);
+                        // Wait a moment for the popup to disappear
+                        Thread.Sleep(500); 
+                        return; // Assume one close action is enough
                     }
                 }
-                return closedSomething;
-            ";
+                catch (NoSuchElementException)
+                {
+                    // Ignore if close button is not found
+                }
+                catch (Exception ex)
+                {
+                    Logger.Log($"Error trying to close popup: {ex.Message}");
+                }
+            }
+        }
 
-            try
+        private void HandleChatWidgets()
+        {
+            foreach (var frameSelector in ChatFrameSelectors)
             {
-                // Temporarily reduce implicit wait to avoid long waits for non-existent elements
-                _driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(1);
-                _js.ExecuteAsyncScript(script, _popupSelectors, _closeButtonSelectors);
-            }
-            catch (System.Exception ex)
-            {
-                Logger.Log($"PopupEngine encountered an error: {ex.Message}");
-            }
-            finally
-            {
-                // Restore implicit wait to its default (0)
-                _driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(0);
+                var frames = _driver.FindElements(frameSelector);
+                if (frames.Any(f => f.Displayed))
+                {
+                    var frame = frames.First(f => f.Displayed);
+                    Logger.Log($"Hiding chat widget in iframe: {frameSelector}");
+                    _jsExecutor.ExecuteScript("arguments[0].style.display='none';", frame);
+                }
             }
         }
     }

@@ -1,63 +1,45 @@
+using AutomationFramework.Core.Configuration;
+using AutomationFramework.Core.SelfHealing;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium.Edge;
 using OpenQA.Selenium.Firefox;
-using AutomationFramework.Core.Configuration;
-using AutomationFramework.Core.SelfHealing;
 
 namespace AutomationFramework.Core.Drivers
 {
     public class WebDriverFactory
     {
-        public IWebDriver Create(TestSettings settings)
+        public SelfHealingWebDriver Create()
         {
+            var browser = ConfigManager.TestSettings.Browser;
             IWebDriver driver;
 
-            switch (settings.Browser.ToLower())
+            switch (browser.ToLowerInvariant())
             {
                 case "chrome":
                     var chromeOptions = new ChromeOptions();
-                    if (settings.Headless)
-                    {
-                        chromeOptions.AddArgument("--headless");
-                        chromeOptions.AddArgument("--window-size=1920,1080");
-                    }
+                    chromeOptions.AddArgument("--start-maximized");
                     driver = new ChromeDriver(chromeOptions);
                     break;
-
                 case "firefox":
                     var firefoxOptions = new FirefoxOptions();
-                    if (settings.Headless)
-                    {
-                        firefoxOptions.AddArgument("--headless");
-                    }
+                    // Maximizing in Firefox requires a different approach after geckodriver changes
+                    // driver.Manage().Window.Maximize() is the standard way
                     driver = new FirefoxDriver(firefoxOptions);
                     break;
-
                 case "edge":
                     var edgeOptions = new EdgeOptions();
-                    if (settings.Headless)
-                    {
-                        edgeOptions.AddArgument("headless");
-                        edgeOptions.AddArgument("disable-gpu");
-                    }
+                    edgeOptions.AddArgument("--start-maximized");
                     driver = new EdgeDriver(edgeOptions);
                     break;
-
                 default:
-                    throw new ArgumentException($"Browser not supported: {settings.Browser}");
+                    throw new ArgumentException($"Browser '{browser}' is not supported.");
             }
 
             driver.Manage().Window.Maximize();
-            driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(0); // Disable implicit wait for explicit waits
+            driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(2); // Small implicit wait
 
-            if (settings.EnableSelfHealing)
-            {
-                var repository = new SelfHealingRepository(settings.SelfHealingRepositoryPath);
-                return new SelfHealingWebDriver(driver, repository);
-            }
-
-            return driver;
+            return new SelfHealingWebDriver(driver);
         }
     }
 }
