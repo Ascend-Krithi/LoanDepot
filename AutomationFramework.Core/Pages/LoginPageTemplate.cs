@@ -1,3 +1,4 @@
+// AutomationFramework.Core/Pages/LoginPageTemplate.cs
 using AutomationFramework.Core.SelfHealing;
 using OpenQA.Selenium;
 
@@ -11,8 +12,8 @@ namespace AutomationFramework.Core.Pages
         private const string SubmitButtonKey = "LoginPage.SubmitButton";
 
         // Locators
-        private readonly By _usernameInput = By.CssSelector("input[type='text'], input[type='email'], input[name*='user']");
-        private readonly By _passwordInput = By.CssSelector("input[type='password'], input[name*='pass']");
+        private readonly By _usernameInput = By.CssSelector("input[type='email'], input[name*='user'], input[id*='user']");
+        private readonly By _passwordInput = By.CssSelector("input[type='password'], input[name*='pass'], input[id*='pass']");
         private readonly By _submitButton = By.CssSelector("button[type='submit'], input[type='submit']");
 
         public LoginPageTemplate(SelfHealingWebDriver driver) : base(driver) { }

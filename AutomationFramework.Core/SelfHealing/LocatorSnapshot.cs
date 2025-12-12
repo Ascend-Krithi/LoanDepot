@@ -1,3 +1,4 @@
+// AutomationFramework.Core/SelfHealing/LocatorSnapshot.cs
 using OpenQA.Selenium;
 
 namespace AutomationFramework.Core.SelfHealing

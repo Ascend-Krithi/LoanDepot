@@ -1,3 +1,4 @@
+// AutomationFramework.Core/Drivers/WebDriverFactory.cs
 using AutomationFramework.Core.Configuration;
 using AutomationFramework.Core.SelfHealing;
 using OpenQA.Selenium;
@@ -12,23 +13,19 @@ namespace AutomationFramework.Core.Drivers
     {
         public static SelfHealingWebDriver CreateDriver()
         {
-            var browser = ConfigManager.Settings.Browser;
             IWebDriver driver;
+            string browser = ConfigManager.Settings.Browser.ToLowerInvariant();
 
-            switch (browser.ToLowerInvariant())
+            switch (browser)
             {
                 case "chrome":
-                    var chromeOptions = new ChromeOptions();
-                    // Selenium Manager handles driver download automatically
-                    driver = new ChromeDriver(chromeOptions);
-                    break;
-                case "edge":
-                    var edgeOptions = new EdgeOptions();
-                    driver = new EdgeDriver(edgeOptions);
+                    driver = new ChromeDriver();
                     break;
                 case "firefox":
-                    var firefoxOptions = new FirefoxOptions();
-                    driver = new FirefoxDriver(firefoxOptions);
+                    driver = new FirefoxDriver();
+                    break;
+                case "edge":
+                    driver = new EdgeDriver();
                     break;
                 default:
                     throw new NotSupportedException($"Browser '{browser}' is not supported.");

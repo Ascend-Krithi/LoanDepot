@@ -1,30 +1,38 @@
+// AutomationFramework.Core/Pages/GenericTableHelper.cs
 using AutomationFramework.Core.SelfHealing;
 using OpenQA.Selenium;
-using System.Collections.ObjectModel;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace AutomationFramework.Core.Pages
 {
     public class GenericTableHelper : BasePage
     {
-        private readonly IWebElement _tableElement;
+        private readonly By _tableLocator;
+        private readonly string _tableKey;
 
-        public GenericTableHelper(SelfHealingWebDriver driver, By tableLocator) : base(driver)
+        public GenericTableHelper(SelfHealingWebDriver driver, By tableLocator, string tableKey) : base(driver)
         {
-            _tableElement = FindElement("GenericTable.TableElement", tableLocator);
+            _tableLocator = tableLocator;
+            _tableKey = tableKey;
         }
 
-        public ReadOnlyCollection<IWebElement> GetRows()
+        private IWebElement TableElement => FindElement(_tableKey, _tableLocator);
+
+        public IReadOnlyCollection<IWebElement> GetRows()
         {
-            return _tableElement.FindElements(By.TagName("tr"));
+            return TableElement.FindElements(By.TagName("tr"));
+        }
+
+        public IWebElement? GetRow(int rowIndex)
+        {
+            return GetRows().ElementAtOrDefault(rowIndex);
         }
 
         public IWebElement? GetCell(int rowIndex, int colIndex)
         {
-            var rows = GetRows();
-            if (rowIndex >= rows.Count) return null;
-
-            var cells = rows[rowIndex].FindElements(By.TagName("td"));
-            return colIndex < cells.Count ? cells[colIndex] : null;
+            var row = GetRow(rowIndex);
+            return row?.FindElements(By.TagName("td")).ElementAtOrDefault(colIndex);
         }
     }
 }

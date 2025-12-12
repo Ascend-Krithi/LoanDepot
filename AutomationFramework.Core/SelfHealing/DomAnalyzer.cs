@@ -1,22 +1,20 @@
+// AutomationFramework.Core/SelfHealing/DomAnalyzer.cs
 using OpenQA.Selenium;
 
 namespace AutomationFramework.Core.SelfHealing
 {
     public class DomAnalyzer
     {
-        /// <summary>
-        /// Analyzes the DOM to find an alternative locator for a failed element.
-        /// For now, this is a placeholder and returns the original locator.
-        /// Future enhancements could include strategies like finding elements by text,
-        /// analyzing nearby elements, or using attribute-based fallbacks.
-        /// </summary>
-        /// <param name="originalLocator">The locator that failed.</param>
-        /// <returns>A potentially healed locator. Must not return null.</returns>
-        public By Heal(By originalLocator)
+        // For now, this is a placeholder. In a real-world scenario, this would
+        // analyze the DOM to find alternative locators for a broken one.
+        public By Heal(By brokenLocator)
         {
-            // Placeholder implementation. In a real scenario, this would involve
-            // complex logic to analyze the DOM and suggest a new locator.
-            return originalLocator;
+            // Placeholder implementation: returns the original locator.
+            // Future enhancements could include strategies like:
+            // - Finding elements with similar attributes.
+            // - Using JS to find elements near the original location.
+            // - Checking for common framework changes (e.g., ID suffixes).
+            return brokenLocator;
         }
     }
 }

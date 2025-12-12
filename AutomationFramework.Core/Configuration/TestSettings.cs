@@ -1,3 +1,4 @@
+// AutomationFramework.Core/Configuration/TestSettings.cs
 namespace AutomationFramework.Core.Configuration
 {
     public class TestSettings
@@ -6,8 +7,8 @@ namespace AutomationFramework.Core.Configuration
         public string BaseUrl { get; set; } = string.Empty;
         public string Browser { get; set; } = "Chrome";
         public string TestDataFolder { get; set; } = "TestData";
-        public Credentials Credentials { get; set; } = new();
-        public Encryption Encryption { get; set; } = new();
+        public Credentials? Credentials { get; set; }
+        public Encryption? Encryption { get; set; }
     }
 
     public class Credentials

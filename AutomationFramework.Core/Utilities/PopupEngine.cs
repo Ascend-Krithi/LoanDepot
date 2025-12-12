@@ -1,6 +1,6 @@
+// AutomationFramework.Core/Utilities/PopupEngine.cs
 using OpenQA.Selenium;
 using System;
-using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading;
 
@@ -27,109 +27,82 @@ namespace AutomationFramework.Core.Utilities
             "button:contains('OK')"
         };
 
-        private static readonly string[] ChatIframeSelectors =
+        private static readonly string[] ChatWidgetSelectors =
         {
-            "iframe[id*='chat']",
-            "iframe[title*='chat']"
+            "[id*='chat']",
+            "[class*='chat']",
+            "[title*='chat']"
         };
 
-        private static bool _chatWidgetHandled = false;
+        private static bool _chatWidgetCleaned = false;
 
         public static void CleanPopups(IWebDriver driver)
         {
-            HandleOverlays(driver);
-            if (!_chatWidgetHandled)
-            {
-                HandleChatWidgets(driver);
-                _chatWidgetHandled = true;
-            }
-        }
-
-        private static void HandleOverlays(IWebDriver driver)
-        {
             var jsExecutor = (IJavaScriptExecutor)driver;
+
+            // Clean generic popups
             foreach (var selector in PopupSelectors)
             {
-                try
+                var elements = driver.FindElements(B.CssSelector(selector));
+                foreach (var element in elements.Where(e => e.Displayed))
                 {
-                    var elements = driver.FindElements(By.CssSelector(selector));
-                    foreach (var element in elements)
+                    try
                     {
-                        if (!element.Displayed) continue;
+                        // Try to find and click a close button first
+                        var closeButton = CloseButtonSelectors
+                            .Select(sel => element.FindElements(By.CssSelector(sel)).FirstOrDefault())
+                            .FirstOrDefault(btn => btn != null && btn.Displayed);
 
-                        Logger.Log($"PopupEngine: Found potential overlay with selector '{selector}'.");
-                        bool closed = TryClickCloseButton(element);
-                        if (!closed)
+                        if (closeButton != null)
                         {
-                            Logger.Log($"PopupEngine: Could not find a close button. Removing element via JS.");
+                            closeButton.Click();
+                            Thread.Sleep(80); // Small delay for UI to update
+                        }
+                        else
+                        {
+                            // If no close button, remove via JS
                             jsExecutor.ExecuteScript("arguments[0].parentNode.removeChild(arguments[0]);", element);
-                            Thread.Sleep(80); // Small delay to allow DOM to settle
                         }
                     }
-                }
-                catch (Exception ex)
-                {
-                    Logger.Log($"PopupEngine: Error handling selector '{selector}': {ex.Message}");
-                }
-            }
-        }
-
-        private static bool TryClickCloseButton(IWebElement popupElement)
-        {
-            foreach (var selector in CloseButtonSelectors)
-            {
-                try
-                {
-                    var closeButton = popupElement.FindElement(By.CssSelector(selector));
-                    if (closeButton.Displayed && closeButton.Enabled)
+                    catch (Exception ex) when (ex is StaleElementReferenceException || ex is ElementNotInteractableException)
                     {
-                        closeButton.Click();
-                        Logger.Log($"PopupEngine: Clicked close button with selector '{selector}'.");
-                        Thread.Sleep(80); // Small delay
-                        return true;
+                        // Ignore if element is gone or not interactable
                     }
                 }
-                catch (NoSuchElementException)
-                {
-                    // Ignore, button not found
-                }
             }
-            return false;
+
+            // Clean chat widgets in iframes (once per run)
+            if (!_chatWidgetCleaned)
+            {
+                CleanChatWidgetsInFrames(driver, jsExecutor);
+                _chatWidgetCleaned = true;
+            }
         }
 
-        private static void HandleChatWidgets(IWebDriver driver)
+        private static void CleanChatWidgetsInFrames(IWebDriver driver, IJavaScriptExecutor jsExecutor)
         {
-            var jsExecutor = (IJavaScriptExecutor)driver;
-            ReadOnlyCollection<IWebElement> iframes;
-            try
-            {
-                iframes = driver.FindElements(By.TagName("iframe"));
-            }
-            catch { return; }
-
-
-            foreach (var iframe in iframes)
+            var iframes = driver.FindElements(By.TagName("iframe"));
+            foreach (var frame in iframes)
             {
                 try
                 {
-                    driver.SwitchTo().Frame(iframe);
-                    foreach (var selector in ChatIframeSelectors)
+                    driver.SwitchTo().Frame(frame);
+                    foreach (var selector in ChatWidgetSelectors)
                     {
                         var chatElements = driver.FindElements(By.CssSelector(selector));
-                        if (chatElements.Any())
+                        foreach (var chatElement in chatElements.Where(e => e.Displayed))
                         {
-                            Logger.Log($"PopupEngine: Found and removed chat widget in iframe.");
-                            jsExecutor.ExecuteScript("arguments[0].parentNode.removeChild(arguments[0]);", iframe);
-                            driver.SwitchTo().DefaultContent();
-                            return; // Assume one chat widget
+                            jsExecutor.ExecuteScript("arguments[0].parentNode.removeChild(arguments[0]);", chatElement);
                         }
                     }
-                    driver.SwitchTo().DefaultContent();
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
-                    Logger.Log($"PopupEngine: Error handling iframe for chat widget: {ex.Message}");
-                    driver.SwitchTo().DefaultContent(); // Ensure we switch back
+                    // Ignore exceptions (e.g., frame detached)
+                }
+                finally
+                {
+                    driver.SwitchTo().DefaultContent();
                 }
             }
         }

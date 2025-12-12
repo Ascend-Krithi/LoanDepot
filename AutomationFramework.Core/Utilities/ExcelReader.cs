@@ -1,3 +1,4 @@
+// AutomationFramework.Core/Utilities/ExcelReader.cs
 using AutomationFramework.Core.Configuration;
 using NPOI.SS.UserModel;
 using NPOI.XSSF.UserModel;
@@ -10,37 +11,41 @@ namespace AutomationFramework.Core.Utilities
     {
         private static string GetFullFilePath(string fileName)
         {
-            var testDataFolder = ConfigManager.Settings.TestDataFolder ?? "TestData";
-            var baseDirectory = AppContext.BaseDirectory;
-            var filePath = Path.Combine(baseDirectory, testDataFolder, fileName);
-
-            if (!File.Exists(filePath))
+            if (Path.IsPathRooted(fileName))
             {
-                throw new FileNotFoundException($"Excel file not found at path: {filePath}");
+                return fileName;
             }
-            return filePath;
+
+            var testDataFolder = ConfigManager.Settings.TestDataFolder ?? "TestData";
+            var basePath = AppContext.BaseDirectory;
+            return Path.Combine(basePath, testDataFolder, fileName);
         }
 
         public static string GetCell(string fileName, string sheetName, int rowIndex, int colIndex)
         {
-            var filePath = GetFullFilePath(fileName);
-            IWorkbook workbook;
-
-            using (var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read))
+            var fullPath = GetFullFilePath(fileName);
+            if (!File.Exists(fullPath))
             {
-                workbook = new XSSFWorkbook(fileStream);
+                throw new FileNotFoundException($"Excel file not found at path: {fullPath}");
             }
 
-            var sheet = workbook.GetSheet(sheetName);
-            if (sheet == null)
+            using (var fileStream = new FileStream(fullPath, FileMode.Open, FileAccess.Read))
             {
-                throw new ArgumentException($"Sheet '{sheetName}' not found in file '{fileName}'.");
+                IWorkbook workbook = new XSSFWorkbook(fileStream);
+                ISheet sheet = workbook.GetSheet(sheetName);
+                if (sheet == null)
+                {
+                    throw new ArgumentException($"Sheet '{sheetName}' not found in file '{fileName}'.");
+                }
+
+                IRow row = sheet.GetRow(rowIndex);
+                if (row == null) return string.Empty;
+
+                ICell cell = row.GetCell(colIndex);
+                if (cell == null) return string.Empty;
+
+                return cell.ToString() ?? string.Empty;
             }
-
-            var row = sheet.GetRow(rowIndex);
-            var cell = row?.GetCell(colIndex);
-
-            return cell?.ToString() ?? string.Empty;
         }
     }
 }

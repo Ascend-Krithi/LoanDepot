@@ -1,3 +1,4 @@
+// AutomationFramework.Core/Pages/GenericModalComponent.cs
 using AutomationFramework.Core.SelfHealing;
 using OpenQA.Selenium;
 
@@ -11,7 +12,7 @@ namespace AutomationFramework.Core.Pages
 
         // Locators
         private readonly By _modalContainer = By.CssSelector(".modal-content, [role='dialog']");
-        private readonly By _closeButton = By.CssSelector(".modal-header .close, button[aria-label*='close']");
+        private readonly By _closeButton = By.CssSelector(".btn-close, .close, [aria-label*='close']");
 
         public GenericModalComponent(SelfHealingWebDriver driver) : base(driver) { }
 

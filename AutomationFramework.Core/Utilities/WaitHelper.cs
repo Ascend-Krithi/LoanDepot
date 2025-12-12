@@ -1,3 +1,4 @@
+// AutomationFramework.Core/Utilities/WaitHelper.cs
 using OpenQA.Selenium;
 using OpenQA.Selenium.Support.UI;
 using System;
@@ -15,17 +16,10 @@ namespace AutomationFramework.Core.Utilities
             }
             catch (WebDriverTimeoutException)
             {
-                Logger.Log($"Timeout: Element with locator '{locator}' was not found within {timeoutSeconds} seconds.");
                 return null;
             }
             catch (NoSuchElementException)
             {
-                Logger.Log($"Not Found: Element with locator '{locator}' could not be found.");
-                return null;
-            }
-            catch (Exception ex)
-            {
-                Logger.Log($"An unexpected error occurred in WaitForElement for locator '{locator}': {ex.Message}");
                 return null;
             }
         }
@@ -38,17 +32,15 @@ namespace AutomationFramework.Core.Utilities
                 return wait.Until(d =>
                 {
                     var element = d.FindElement(locator);
-                    return element.Displayed ? element : null;
+                    return (element != null && element.Displayed) ? element : null;
                 });
             }
             catch (WebDriverTimeoutException)
             {
-                Logger.Log($"Timeout: Element with locator '{locator}' was not visible within {timeoutSeconds} seconds.");
                 return null;
             }
-            catch (Exception ex)
+            catch (NoSuchElementException)
             {
-                Logger.Log($"An unexpected error occurred in WaitForElementVisible for locator '{locator}': {ex.Message}");
                 return null;
             }
         }

@@ -1,3 +1,4 @@
+// AutomationFramework.Core/Pages/BasePage.cs
 using AutomationFramework.Core.SelfHealing;
 using AutomationFramework.Core.Utilities;
 using OpenQA.Selenium;

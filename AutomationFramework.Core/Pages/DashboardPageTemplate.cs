@@ -1,3 +1,4 @@
+// AutomationFramework.Core/Pages/DashboardPageTemplate.cs
 using AutomationFramework.Core.SelfHealing;
 using OpenQA.Selenium;
 
@@ -11,8 +12,8 @@ namespace AutomationFramework.Core.Pages
         private const string FilterDropdownKey = "DashboardPage.FilterDropdown";
 
         // Locators
-        private readonly By _header = By.CssSelector("h1, h2, .page-title, [role='heading']");
-        private readonly By _mainTable = By.TagName("table");
+        private readonly By _header = By.CssSelector("header, .main-header, #header");
+        private readonly By _mainTable = By.CssSelector("table, .data-grid, [role='grid']");
         private readonly By _filterDropdown = By.CssSelector("select[name*='filter'], select[id*='filter']");
 
         public DashboardPageTemplate(SelfHealingWebDriver driver) : base(driver) { }
