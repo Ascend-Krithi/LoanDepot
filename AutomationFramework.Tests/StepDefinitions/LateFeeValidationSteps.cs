@@ -1,174 +1,124 @@
-using System;
-using TechTalk.SpecFlow;
+using AutomationFramework.Core.Configuration;
 using AutomationFramework.Core.Drivers;
 using AutomationFramework.Core.Pages;
-using AutomationFramework.Core.Configuration;
 using AutomationFramework.Core.Utilities;
-using NUnit.Framework;
-using System.Collections.Generic;
-using System.Globalization;
+using AutomationFramework.Core.Models;
+using TechTalk.SpecFlow;
+using Xunit;
 
 namespace AutomationFramework.Tests.StepDefinitions
 {
     [Binding]
     public class LateFeeValidationSteps
     {
-        private readonly ScenarioContext _scenarioContext;
-        private static SelfHealingWebDriver _driver;
-        private static LoginPage _loginPage;
-        private static MFAPage _mfaPage;
-        private static OtpPage _otpPage;
-        private static DashboardPage _dashboardPage;
-        private static MakePaymentPage _makePaymentPage;
+        private readonly SelfHealingWebDriver _driver;
+        private readonly LoginPage _loginPage;
+        private readonly MFAPage _mfaPage;
+        private readonly OtpPage _otpPage;
+        private readonly DashboardPage _dashboardPage;
+        private readonly MakePaymentPage _makePaymentPage;
+        private PaymentScenario _scenario;
 
-        // Test data
-        private string _loanNumber;
-        private string _paymentDate;
-        private string _state;
-        private bool _expectedLateFee;
-
-        public LateFeeValidationSteps(ScenarioContext scenarioContext)
+        public LateFeeValidationSteps(SelfHealingWebDriver driver,
+                                      LoginPage loginPage,
+                                      MFAPage mfaPage,
+                                      OtpPage otpPage,
+                                      DashboardPage dashboardPage,
+                                      MakePaymentPage makePaymentPage)
         {
-            _scenarioContext = scenarioContext;
-        }
-
-        [BeforeScenario]
-        public void BeforeScenario()
-        {
-            _driver = WebDriverFactory.CreateDriver();
-            _loginPage = new LoginPage(_driver);
-            _mfaPage = new MFAPage(_driver);
-            _otpPage = new OtpPage(_driver);
-            _dashboardPage = new DashboardPage(_driver);
-            _makePaymentPage = new MakePaymentPage(_driver);
-        }
-
-        [AfterScenario]
-        public void AfterScenario()
-        {
-            try
-            {
-                if (_driver != null)
-                {
-                    _driver.Quit();
-                }
-            }
-            catch { }
+            _driver = driver;
+            _loginPage = loginPage;
+            _mfaPage = mfaPage;
+            _otpPage = otpPage;
+            _dashboardPage = dashboardPage;
+            _makePaymentPage = makePaymentPage;
         }
 
         [Given(@"I launch the customer servicing application")]
         public void GivenILaunchTheCustomerServicingApplication()
         {
-            var url = ConfigManager.Settings.BaseUrl;
-            _driver.Navigate().GoToUrl(url);
+            _driver.Navigate().GoToUrl(ConfigManager.Settings.BaseUrl);
             _loginPage.WaitForPageReady();
         }
 
-        [When(@"I log in with valid customer credentials")]
-        public void WhenILogInWithValidCustomerCredentials()
+        [Given(@"I log in with valid credentials")]
+        public void GivenILogInWithValidCredentials()
         {
-            var username = ConfigManager.Settings.Credentials.Username;
-            var password = ConfigManager.Settings.Credentials.Password;
-            _loginPage.EnterUsername(username);
-            _loginPage.EnterPassword(password);
+            _loginPage.EnterUsername(ConfigManager.Settings.Credentials.Username);
+            _loginPage.EnterPassword(ConfigManager.Settings.Credentials.Password);
             _loginPage.ClickSubmit();
+            _mfaPage.WaitForPageReady();
         }
 
-        [When(@"I complete MFA verification")]
-        public void WhenICompleteMFAVerification()
+        [Given(@"I complete MFA verification")]
+        public void GivenICompleteMFAVerification()
         {
-            _mfaPage.WaitForPageReady();
-            var mfaEmail = ConfigManager.Settings.Credentials.Username;
-            _mfaPage.EnterEmail(mfaEmail);
+            _mfaPage.EnterEmail(ConfigManager.Settings.Credentials.Username);
             _mfaPage.ClickRequestEmailCode();
-
             _otpPage.WaitForPageReady();
-            var otpCode = Environment.GetEnvironmentVariable("OTP_CODE") ?? "000000"; // fallback stub
-            _otpPage.EnterCode(otpCode);
+            var otp = Environment.GetEnvironmentVariable("OTP_CODE") ?? ConfigManager.Settings.Encryption?.Key ?? "123456";
+            _otpPage.EnterCode(otp);
             _otpPage.ClickVerify();
         }
 
-        [When(@"I navigate to the dashboard")]
-        public void WhenINavigateToTheDashboard()
+        [Given(@"I navigate to the dashboard")]
+        public void GivenINavigateToTheDashboard()
         {
             _dashboardPage.WaitForPageReady();
         }
 
-        [When(@"I dismiss any pop-ups if present")]
-        public void WhenIDismissAnyPopUpsIfPresent()
+        [Given(@"I close any pop-ups if present")]
+        public void GivenICloseAnyPopUpsIfPresent()
         {
-            // Popups are handled by PopupEngine in BasePage automatically
+            AutomationFramework.Core.Utilities.PopupEngine.DismissPopups(_driver.InnerDriver);
         }
 
-        [When(@"I select the loan account ""(.*)"")]
-        public void WhenISelectTheLoanAccount(string loanNumber)
+        [Given(@"I select the loan account ""(.*)""")]
+        public void GivenISelectTheLoanAccount(string loanNumber)
         {
             _dashboardPage.OpenLoanDropdown();
             _dashboardPage.SelectLoanAccount(loanNumber);
         }
 
-        [When(@"I click Make a Payment")]
-        public void WhenIClickMakeAPayment()
+        [Given(@"I click Make a Payment")]
+        public void GivenIClickMakeAPayment()
         {
             _dashboardPage.ClickMakePayment();
         }
 
-        [When(@"I continue past any scheduled payment popup if present")]
-        public void WhenIContinuePastAnyScheduledPaymentPopupIfPresent()
+        [Given(@"I handle scheduled payment popup if present")]
+        public void GivenIHandleScheduledPaymentPopupIfPresent()
         {
-            // If scheduled payment modal appears, click Continue
+            // If scheduled payment modal appears, click continue
             try
             {
+                _makePaymentPage.WaitForPageReady();
                 _makePaymentPage.ClickContinue();
             }
-            catch
-            {
-                // Modal not present, continue
-            }
+            catch { /* Modal not present, continue */ }
         }
 
-        [When(@"I open the payment date picker")]
-        public void WhenIOpenThePaymentDatePicker()
+        [Given(@"I open the payment date picker")]
+        public void GivenIOpenThePaymentDatePicker()
         {
-            _makePaymentPage.WaitForPageReady();
             _makePaymentPage.OpenDatePicker();
         }
 
-        [When(@"I select the payment date ""(.*)"")]
-        public void WhenISelectThePaymentDate(string paymentDate)
+        [Given(@"I select the payment date ""(.*)""")]
+        public void GivenISelectThePaymentDate(string paymentDate)
         {
-            // Parse date for calendar selection
-            DateTime dt = DateTime.ParseExact(paymentDate, "yyyy-MM-dd", CultureInfo.InvariantCulture);
-            _makePaymentPage.SelectCalendarYear(dt.Year.ToString());
-            _makePaymentPage.SelectCalendarMonth(dt.ToString("MMM", CultureInfo.InvariantCulture));
-            _makePaymentPage.SelectCalendarDay(dt.Day.ToString());
+            // Assume paymentDate is in yyyy-MM-dd format
+            var date = DateTime.Parse(paymentDate);
+            _makePaymentPage.SelectCalendarYear(date.Year.ToString());
+            _makePaymentPage.SelectCalendarMonth(date.ToString("MMMM"));
+            _makePaymentPage.SelectCalendarDay(date.Day.ToString());
         }
 
-        [Then(@"no late fee message should be displayed")]
-        public void ThenNoLateFeeMessageShouldBeDisplayed()
+        [Then(@"the late fee message should be (.*)")]
+        public void ThenTheLateFeeMessageShouldBe(bool expectedLateFee)
         {
-            bool isLateFeeDisplayed = _makePaymentPage.IsLateFeeMessageDisplayed();
-            Assert.IsFalse(isLateFeeDisplayed, "Late fee message should NOT be displayed for payment less than 15 days past due.");
-        }
-
-        [Scope(Tag = "TestCaseId=TC01")]
-        [BeforeScenario]
-        public void LoadTestData()
-        {
-            // Read test data from Excel
-            var data = ExcelReader.ReadSheet("TestData.xlsx", "Sheet1");
-            var headers = data[0];
-            foreach (var row in data)
-            {
-                if (row.Count > 0 && row[0] == "TC01")
-                {
-                    _loanNumber = row[headers.IndexOf("LoanNumber")];
-                    _paymentDate = row[headers.IndexOf("PaymentDate")];
-                    _state = row[headers.IndexOf("State")];
-                    _expectedLateFee = bool.Parse(row[headers.IndexOf("ExpectedLateFee")]);
-                    break;
-                }
-            }
+            var actualLateFee = _makePaymentPage.IsLateFeeMessageDisplayed();
+            Assert.Equal(expectedLateFee, actualLateFee);
         }
     }
 }
