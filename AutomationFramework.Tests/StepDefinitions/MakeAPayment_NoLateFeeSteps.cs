@@ -1,0 +1,124 @@
+using TechTalk.SpecFlow;
+using AutomationFramework.Core.Pages;
+using AutomationFramework.Core.Utilities;
+using AutomationFramework.Core.Models;
+using FluentAssertions;
+using System;
+using AutomationFramework.Core.Configuration;
+
+namespace AutomationFramework.Tests.StepDefinitions
+{
+    [Binding]
+    public class MakeAPayment_NoLateFeeSteps
+    {
+        private readonly LoginPage _loginPage;
+        private readonly MFAPage _mfaPage;
+        private readonly OtpPage _otpPage;
+        private readonly DashboardPage _dashboardPage;
+        private readonly MakePaymentPage _makePaymentPage;
+        private readonly ScenarioContext _scenarioContext;
+
+        public MakeAPayment_NoLateFeeSteps(
+            LoginPage loginPage,
+            MFAPage mfaPage,
+            OtpPage otpPage,
+            DashboardPage dashboardPage,
+            MakePaymentPage makePaymentPage,
+            ScenarioContext scenarioContext)
+        {
+            _loginPage = loginPage;
+            _mfaPage = mfaPage;
+            _otpPage = otpPage;
+            _dashboardPage = dashboardPage;
+            _makePaymentPage = makePaymentPage;
+            _scenarioContext = scenarioContext;
+        }
+
+        [Given(@"I launch the customer servicing application")]
+        public void GivenILaunchTheCustomerServicingApplication()
+        {
+            var url = ConfigManager.Settings.BaseUrl;
+            _loginPage.Driver.Navigate().GoToUrl(url);
+            _loginPage.WaitForPageReady();
+        }
+
+        [Given(@"I log in with valid customer credentials")]
+        public void GivenILogInWithValidCustomerCredentials()
+        {
+            var credentials = ConfigManager.Settings.Credentials;
+            _loginPage.EnterUsername(credentials.Username);
+            _loginPage.EnterPassword(credentials.Password);
+            _loginPage.ClickSubmit();
+        }
+
+        [Given(@"I complete MFA verification")]
+        public void GivenICompleteMFAVerification()
+        {
+            _mfaPage.WaitForPageReady();
+            var credentials = ConfigManager.Settings.Credentials;
+            _mfaPage.EnterEmail(credentials.Username);
+            _mfaPage.ClickRequestEmailCode();
+
+            _otpPage.WaitForPageReady();
+            var otp = TestDataHelper.GetOtp();
+            _otpPage.EnterCode(otp);
+            _otpPage.ClickVerify();
+        }
+
+        [Given(@"I am on the dashboard page")]
+        public void GivenIAmOnTheDashboardPage()
+        {
+            _dashboardPage.WaitForPageReady();
+        }
+
+        [Given(@"I dismiss any pop-ups")]
+        public void GivenIDismissAnyPopUps()
+        {
+            AutomationFramework.Core.Utilities.PopupEngine.DismissPopups(_dashboardPage.Driver.InnerDriver);
+        }
+
+        [When(@"I select the applicable loan account from test data")]
+        public void WhenISelectTheApplicableLoanAccountFromTestData()
+        {
+            var paymentData = ExcelReader.GetTestData<PaymentScenario>("HAP-700 TS-001 TC-001");
+            _scenarioContext["PaymentScenario"] = paymentData;
+            _dashboardPage.OpenLoanDropdown();
+            _dashboardPage.SelectLoanAccount(paymentData.LoanAccount);
+        }
+
+        [When(@"I click Make a Payment")]
+        public void WhenIClickMakeAPayment()
+        {
+            _dashboardPage.ClickMakePayment();
+        }
+
+        [When(@"I continue past the scheduled payment popup if it appears")]
+        public void WhenIContinuePastTheScheduledPaymentPopupIfItAppears()
+        {
+            _makePaymentPage.WaitForPageReady();
+            _makePaymentPage.ClickContinue();
+        }
+
+        [When(@"I open the payment date picker")]
+        public void WhenIOpenThePaymentDatePicker()
+        {
+            _makePaymentPage.OpenDatePicker();
+        }
+
+        [When(@"I select the payment date from test data")]
+        public void WhenISelectThePaymentDateFromTestData()
+        {
+            var paymentData = (PaymentScenario)_scenarioContext["PaymentScenario"];
+            var date = DateTime.Parse(paymentData.PaymentDate);
+            _makePaymentPage.SelectCalendarYear(date.Year.ToString());
+            _makePaymentPage.SelectCalendarMonth(date.ToString("MMMM"));
+            _makePaymentPage.SelectCalendarDay(date.Day.ToString());
+        }
+
+        [Then(@"no late fee message should be displayed")]
+        public void ThenNoLateFeeMessageShouldBeDisplayed()
+        {
+            _makePaymentPage.IsLateFeeMessageDisplayed().Should().BeFalse("No late fee message should be displayed for payment date < 15 days past due");
+        }
+    }
+}

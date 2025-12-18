@@ -51,7 +51,18 @@ namespace AutomationFramework.Core.Pages
 
         public void ClickContinue()
         {
-            FindElement("Payment.Continue", Continue).Click();
+            try
+            {
+                var modal = FindElement("Payment.ScheduledPaymentModal", ScheduledPaymentModal, 3);
+                if (modal != null && modal.Displayed)
+                {
+                    FindElement("Payment.Continue", Continue).Click();
+                }
+            }
+            catch
+            {
+                // Modal not present, nothing to do
+            }
         }
 
         public bool IsLateFeeMessageDisplayed()
