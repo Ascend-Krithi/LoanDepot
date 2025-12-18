@@ -4,7 +4,7 @@ using AutomationFramework.Core.Utilities;
 using AutomationFramework.Core.Models;
 using FluentAssertions;
 using System;
-using AutomationFramework.Core.Configuration;
+using System.Globalization;
 
 namespace AutomationFramework.Tests.StepDefinitions
 {
@@ -37,7 +37,7 @@ namespace AutomationFramework.Tests.StepDefinitions
         [Given(@"I launch the customer servicing application")]
         public void GivenILaunchTheCustomerServicingApplication()
         {
-            var url = ConfigManager.Settings.BaseUrl;
+            var url = Core.Configuration.ConfigManager.Settings.BaseUrl;
             _loginPage.Driver.Navigate().GoToUrl(url);
             _loginPage.WaitForPageReady();
         }
@@ -51,29 +51,28 @@ namespace AutomationFramework.Tests.StepDefinitions
         [Given(@"I log in with valid customer credentials")]
         public void GivenILogInWithValidCustomerCredentials()
         {
-            var creds = ConfigManager.Settings.Credentials;
+            var creds = Core.Configuration.ConfigManager.Settings.Credentials;
             _loginPage.EnterUsername(creds.Username);
             _loginPage.EnterPassword(creds.Password);
             _loginPage.ClickSubmit();
-            _mfaPage.WaitForPageReady();
         }
 
         [Given(@"I complete MFA verification")]
         public void GivenICompleteMFAVerification()
         {
-            // For demo, use email from config or test data, and static OTP from helper
-            var creds = ConfigManager.Settings.Credentials;
+            _mfaPage.WaitForPageReady();
+            var creds = Core.Configuration.ConfigManager.Settings.Credentials;
             _mfaPage.EnterEmail(creds.Username);
             _mfaPage.ClickRequestEmailCode();
+
             _otpPage.WaitForPageReady();
             var otp = TestDataHelper.GetOtp();
             _otpPage.EnterCode(otp);
             _otpPage.ClickVerify();
-            _dashboardPage.WaitForPageReady();
         }
 
-        [Given(@"I am on the dashboard")]
-        public void GivenIAmOnTheDashboard()
+        [Given(@"I am redirected to the dashboard")]
+        public void GivenIAmRedirectedToTheDashboard()
         {
             _dashboardPage.WaitForPageReady();
         }
@@ -84,13 +83,13 @@ namespace AutomationFramework.Tests.StepDefinitions
             PopupEngine.DismissPopups(_dashboardPage.Driver.InnerDriver);
         }
 
-        [When(@"I select the applicable loan account from test data ""(.*)""")]
-        public void WhenISelectTheApplicableLoanAccountFromTestData(string testCaseId)
+        [Given(@"I select the applicable loan account")]
+        public void GivenISelectTheApplicableLoanAccount()
         {
-            var data = ExcelReader.GetTestData<PaymentScenario>(testCaseId);
-            _scenarioContext["PaymentScenario"] = data;
+            var testData = ExcelReader.GetTestData<PaymentScenario>("TC01");
+            _scenarioContext["PaymentScenario"] = testData;
             _dashboardPage.OpenLoanDropdown();
-            _dashboardPage.SelectLoanAccount(data.LoanAccount);
+            _dashboardPage.SelectLoanAccount(testData.LoanAccount);
         }
 
         [When(@"I click Make a Payment")]
@@ -120,20 +119,19 @@ namespace AutomationFramework.Tests.StepDefinitions
             _makePaymentPage.OpenDatePicker();
         }
 
-        [When(@"I select the payment date from test data ""(.*)""")]
-        public void WhenISelectThePaymentDateFromTestData(string testCaseId)
+        [When(@"I select the payment date ""(.*)""")]
+        public void WhenISelectThePaymentDate(string paymentDate)
         {
-            var data = (PaymentScenario)_scenarioContext["PaymentScenario"];
-            var date = DateTime.Parse(data.PaymentDate);
+            DateTime date = DateTime.Parse(paymentDate, CultureInfo.InvariantCulture);
             _makePaymentPage.SelectCalendarYear(date.Year.ToString());
-            _makePaymentPage.SelectCalendarMonth(date.ToString("MMMM"));
+            _makePaymentPage.SelectCalendarMonth(date.ToString("MMM", CultureInfo.InvariantCulture));
             _makePaymentPage.SelectCalendarDay(date.Day.ToString());
         }
 
         [Then(@"no late fee message should be displayed")]
         public void ThenNoLateFeeMessageShouldBeDisplayed()
         {
-            _makePaymentPage.IsLateFeeMessageDisplayed().Should().BeFalse("No late fee message should be shown for this payment date.");
+            _makePaymentPage.IsLateFeeMessageDisplayed().Should().BeFalse("No late fee message should be displayed for payment date less than 15 days past due.");
         }
     }
 }
