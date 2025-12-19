@@ -1,4 +1,3 @@
-using System;
 using TechTalk.SpecFlow;
 using AutomationFramework.Core.Pages;
 using AutomationFramework.Core.Utilities;
@@ -50,19 +49,20 @@ namespace AutomationFramework.Tests.StepDefinitions
         [Given(@"I log in with valid customer credentials")]
         public void GivenILogInWithValidCustomerCredentials()
         {
-            var creds = Core.Configuration.ConfigManager.Settings.Credentials;
-            _loginPage.EnterUsername(creds.Username);
-            _loginPage.EnterPassword(creds.Password);
+            var credentials = Core.Configuration.ConfigManager.Settings.Credentials;
+            _loginPage.EnterUsername(credentials.Username);
+            _loginPage.EnterPassword(credentials.Password);
             _loginPage.ClickSubmit();
-            _mfaPage.WaitForPageReady();
         }
 
         [Given(@"I complete MFA verification")]
         public void GivenICompleteMFAVerification()
         {
-            // For demo, select first email and request code
-            _mfaPage.EnterEmail(Core.Configuration.ConfigManager.Settings.Credentials.Username);
+            _mfaPage.WaitForPageReady();
+            var credentials = Core.Configuration.ConfigManager.Settings.Credentials;
+            _mfaPage.EnterEmail(credentials.Username);
             _mfaPage.ClickRequestEmailCode();
+
             _otpPage.WaitForPageReady();
             var otp = TestDataHelper.GetOtp();
             _otpPage.EnterCode(otp);
@@ -78,16 +78,16 @@ namespace AutomationFramework.Tests.StepDefinitions
         [Given(@"I dismiss any pop-ups")]
         public void GivenIDismissAnyPopUps()
         {
-            Core.Utilities.PopupEngine.DismissPopups(_dashboardPage.Driver.InnerDriver);
+            PopupEngine.DismissPopups(_dashboardPage.Driver.InnerDriver);
         }
 
-        [When(@"I select the applicable loan account from test data ""(.*)""")]
-        public void WhenISelectTheApplicableLoanAccountFromTestData(string testCaseId)
+        [When(@"I select the applicable loan account from test data")]
+        public void WhenISelectTheApplicableLoanAccountFromTestData()
         {
-            var data = ExcelReader.GetTestData<PaymentScenario>(testCaseId);
-            _scenarioContext["PaymentScenario"] = data;
+            var paymentData = ExcelReader.GetTestData<PaymentScenario>("HAP-700 TS-001 TC-001");
+            _scenarioContext["PaymentScenario"] = paymentData;
             _dashboardPage.OpenLoanDropdown();
-            _dashboardPage.SelectLoanAccount(data.LoanAccount);
+            _dashboardPage.SelectLoanAccount(paymentData.LoanAccount);
         }
 
         [When(@"I click Make a Payment")]
@@ -106,7 +106,7 @@ namespace AutomationFramework.Tests.StepDefinitions
             }
             catch
             {
-                // Continue button not present, ignore
+                // Popup may not appear; ignore if not present
             }
         }
 
@@ -116,11 +116,11 @@ namespace AutomationFramework.Tests.StepDefinitions
             _makePaymentPage.OpenDatePicker();
         }
 
-        [When(@"I select the payment date from test data ""(.*)""")]
-        public void WhenISelectThePaymentDateFromTestData(string testCaseId)
+        [When(@"I select the payment date from test data")]
+        public void WhenISelectThePaymentDateFromTestData()
         {
-            var data = (PaymentScenario)_scenarioContext["PaymentScenario"];
-            var date = DateTime.Parse(data.PaymentDate);
+            var paymentData = (PaymentScenario)_scenarioContext["PaymentScenario"];
+            var date = DateTime.Parse(paymentData.PaymentDate);
             _makePaymentPage.SelectCalendarYear(date.Year.ToString());
             _makePaymentPage.SelectCalendarMonth(date.ToString("MMMM"));
             _makePaymentPage.SelectCalendarDay(date.Day.ToString());
@@ -129,7 +129,7 @@ namespace AutomationFramework.Tests.StepDefinitions
         [Then(@"no late fee message should be displayed")]
         public void ThenNoLateFeeMessageShouldBeDisplayed()
         {
-            _makePaymentPage.IsLateFeeMessageDisplayed().Should().BeFalse("No late fee message should be displayed for payment date <15 days past due");
+            _makePaymentPage.IsLateFeeMessageDisplayed().Should().BeFalse("No late fee message should be displayed for payment date <15 days past due.");
         }
     }
 }
