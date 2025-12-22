@@ -1,47 +1,48 @@
 using OpenQA.Selenium;
 using WebAutomation.Core.Pages;
-using WebAutomation.Core.Locators;
+using System.Threading;
 
 namespace WebAutomation.Tests.Pages
 {
     public class DashboardPage : BasePage
     {
-        private readonly LocatorRepository _locators;
+        public DashboardPage(IWebDriver driver) : base(driver) { }
 
-        public DashboardPage(IWebDriver driver) : base(driver)
+        public void WaitForDashboardReady()
         {
-            _locators = new LocatorRepository("Locators/Locators.txt");
+            Wait.UntilVisible(By.CssSelector("header"));
         }
 
         public void DismissPopupsIfPresent()
         {
             // Contact Update popup
-            if (Popup.IsPresent(_locators.GetBy("Dashboard.ContactPopup")))
+            Popup.HandleIfPresent(By.XPath("//button[normalize-space()='Update Later']"));
+            // Chatbot iframe
+            try
             {
-                Popup.HandleIfPresent(_locators.GetBy("Dashboard.ContactUpdateLater"));
-                Popup.HandleIfPresent(_locators.GetBy("Dashboard.ContactContinue"));
+                var iframe = Driver.FindElements(By.Id("servisbot-messenger-iframe-roundel"));
+                if (iframe.Count > 0)
+                {
+                    ((IJavaScriptExecutor)Driver).ExecuteScript("arguments[0].style.display='none';", iframe[0]);
+                }
             }
-            // Chatbot iframe handled by framework utilities
+            catch { }
         }
 
         public void SelectLoanAccount(string loanNumber)
         {
-            Wait.UntilVisible(_locators.GetBy("Dashboard.PageReady"));
-            Driver.FindElement(_locators.GetBy("Dashboard.LoanSelector.Button")).Click();
-            Wait.UntilVisible(_locators.GetBy("Dashboard.LoanCard.ByAccount", loanNumber)).Click();
+            Wait.UntilClickable(By.CssSelector("button[logaction='Open Loan Selection Window']")).Click();
+            Wait.UntilClickable(By.XPath($"//p[contains(normalize-space(.),'Account - {loanNumber}')]")).Click();
         }
 
         public void ClickMakePayment()
         {
-            Wait.UntilClickable(_locators.GetBy("Dashboard.MakePayment.Button")).Click();
+            Wait.UntilClickable(By.CssSelector("p.make-payment")).Click();
         }
 
-        public void ContinueScheduledPaymentIfPresent()
+        public void HandleScheduledPaymentPopupIfPresent()
         {
-            if (Popup.IsPresent(_locators.GetBy("Dashboard.ContactPopup")))
-            {
-                Popup.HandleIfPresent(_locators.GetBy("Dashboard.ContactContinue"));
-            }
+            Popup.HandleIfPresent(By.XPath("//button[normalize-space()='Continue']"));
         }
     }
 }

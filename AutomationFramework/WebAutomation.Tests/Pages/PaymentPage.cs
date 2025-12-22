@@ -1,34 +1,35 @@
 using OpenQA.Selenium;
 using WebAutomation.Core.Pages;
-using WebAutomation.Core.Locators;
-using WebAutomation.Core.Utilities;
 
 namespace WebAutomation.Tests.Pages
 {
     public class PaymentPage : BasePage
     {
-        private readonly LocatorRepository _locators;
-        private readonly DatePickerHelper _datePickerHelper;
+        public PaymentPage(IWebDriver driver) : base(driver) { }
 
-        public PaymentPage(IWebDriver driver) : base(driver)
+        public void WaitForPaymentPageReady()
         {
-            _locators = new LocatorRepository("Locators/Locators.txt");
-            _datePickerHelper = new DatePickerHelper(driver);
+            Wait.UntilVisible(By.CssSelector("span:contains('Make a Payment')"));
         }
 
         public void OpenDatePicker()
         {
-            Wait.UntilClickable(_locators.GetBy("Payment.DatePicker.Toggle")).Click();
+            Wait.UntilClickable(By.CssSelector("mat-datepicker-toggle button")).Click();
         }
 
         public void SelectPaymentDate(string paymentDate)
         {
-            _datePickerHelper.SelectDate(paymentDate);
+            // Assumes MM/dd/yyyy format
+            var dt = System.DateTime.Parse(paymentDate);
+            Wait.UntilClickable(By.CssSelector("button.mat-calendar-period-button")).Click();
+            Wait.UntilClickable(By.XPath($"//div[contains(@class,'mat-calendar-body-cell-content') and text()='{dt.Year}']")).Click();
+            Wait.UntilClickable(By.XPath($"//div[contains(@class,'mat-calendar-body-cell-content') and text()='{dt:MMM}']")).Click();
+            Wait.UntilClickable(By.XPath($"//div[contains(@class,'mat-calendar-body-cell-content') and text()='{dt.Day}']")).Click();
         }
 
         public bool IsLateFeeMessageDisplayed()
         {
-            return Popup.IsPresent(_locators.GetBy("Payment.LateFee.Message"));
+            return Driver.FindElements(By.Id("latefeeInfoMsg1")).Count > 0;
         }
     }
 }

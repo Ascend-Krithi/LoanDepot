@@ -1,23 +1,17 @@
 using OpenQA.Selenium;
 using WebAutomation.Core.Pages;
-using WebAutomation.Core.Locators;
 
 namespace WebAutomation.Tests.Pages
 {
     public class MfaPage : BasePage
     {
-        private readonly LocatorRepository _locators;
+        public MfaPage(IWebDriver driver) : base(driver) { }
 
-        public MfaPage(IWebDriver driver) : base(driver)
+        public void SelectEmailAndSendCode()
         {
-            _locators = new LocatorRepository("Locators/Locators.txt");
-        }
-
-        public void CompleteMfa()
-        {
-            Wait.UntilVisible(_locators.GetBy("Mfa.Dialog"));
-            Driver.FindElement(_locators.GetBy("Mfa.EmailMethod.Select")).Click();
-            Driver.FindElement(_locators.GetBy("Mfa.SendCode.Button")).Click();
+            Wait.UntilVisible(By.CssSelector("mat-select[formcontrolname='email']")).Click();
+            Wait.UntilClickable(By.CssSelector("mat-option")).Click();
+            Wait.UntilClickable(By.XPath("//button[.//span[normalize-space()='Receive Code Via Email']]")).Click();
         }
     }
 }
