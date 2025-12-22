@@ -1,0 +1,19 @@
+# General
+.vs/
+bin/
+obj/
+*.user
+*.suo
+
+# Rider
+.idea/
+
+# Test results
+TestResults/
+*.trx
+
+# SpecFlow
+*.feature.cs
+
+# User-specific
+appsettings.Development.json

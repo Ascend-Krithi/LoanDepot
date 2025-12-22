@@ -1,49 +1,15 @@
 using OpenQA.Selenium;
 using WebAutomation.Core.Pages;
-using WebAutomation.Core.Locators;
 
 namespace WebAutomation.Tests.Pages
 {
     public class DashboardPage : BasePage
     {
-        private readonly LocatorRepository _locators;
+        public DashboardPage(IWebDriver driver) : base(driver) { }
 
-        public DashboardPage(IWebDriver driver) : base(driver)
+        public bool IsOnDashboard()
         {
-            _locators = new LocatorRepository("Locators/Locators.txt");
-        }
-
-        public void WaitForDashboardToLoad()
-        {
-            Wait.UntilVisible(_locators.GetBy("Dashboard.PageReady"));
-        }
-
-        public void DismissPopupsIfPresent()
-        {
-            // Contact Update Popup
-            if (Popup.IsPresent(_locators.GetBy("Dashboard.ContactPopup")))
-            {
-                if (Popup.IsPresent(_locators.GetBy("Dashboard.ContactUpdateLater")))
-                {
-                    Popup.HandleIfPresent(_locators.GetBy("Dashboard.ContactUpdateLater"));
-                }
-                else if (Popup.IsPresent(_locators.GetBy("Dashboard.ContactContinue")))
-                {
-                    Popup.HandleIfPresent(_locators.GetBy("Dashboard.ContactContinue"));
-                }
-            }
-            // Chatbot iframe handled by framework
-        }
-
-        public void SelectLoanAccount(string loanNumber)
-        {
-            Wait.UntilClickable(_locators.GetBy("Dashboard.LoanSelector.Button")).Click();
-            Wait.UntilClickable(_locators.GetBy("Dashboard.LoanCard.ByAccount", loanNumber)).Click();
-        }
-
-        public void ClickMakePayment()
-        {
-            Wait.UntilClickable(_locators.GetBy("Dashboard.MakePayment.Button")).Click();
+            return Wait.UntilPresent(By.CssSelector("h1.dashboard-title"));
         }
     }
 }
