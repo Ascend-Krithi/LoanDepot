@@ -15,7 +15,10 @@ namespace WebAutomation.Tests.Pages
 
         public void ContinueScheduledPaymentIfPresent()
         {
-            Popup.HandleIfPresent(_locators.GetBy("Dashboard.ContactContinue"));
+            if (Popup.IsPresent(_locators.GetBy("Dashboard.ContactPopup")))
+            {
+                Popup.HandleIfPresent(_locators.GetBy("Dashboard.ContactContinue"));
+            }
         }
 
         public void OpenDatePicker()
@@ -25,13 +28,13 @@ namespace WebAutomation.Tests.Pages
 
         public void SelectPaymentDate(string paymentDate)
         {
-            var dt = DateTime.Parse(paymentDate);
-            Wait.UntilClickable(_locators.GetBy("Payment.Calendar.Day", dt.Day.ToString())).Click();
+            var day = int.Parse(paymentDate.Split('-')[2]);
+            Wait.UntilClickable(_locators.GetBy("Payment.Calendar.Day", day.ToString())).Click();
         }
 
         public bool IsLateFeeMessageDisplayed()
         {
-            return Wait.UntilPresent(_locators.GetBy("Payment.LateFee.Message"), 3);
+            return Popup.IsPresent(_locators.GetBy("Payment.LateFee.Message"));
         }
     }
 }

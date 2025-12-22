@@ -1,6 +1,7 @@
 using OpenQA.Selenium;
 using WebAutomation.Core.Pages;
 using WebAutomation.Core.Locators;
+using WebAutomation.Core.Configuration;
 
 namespace WebAutomation.Tests.Pages
 {
@@ -13,11 +14,12 @@ namespace WebAutomation.Tests.Pages
             _locators = new LocatorRepository("Locators/Locators.txt");
         }
 
-        public void SelectEmailMethodAndSendCode()
+        public void CompleteMfa()
         {
-            Wait.UntilVisible(_locators.GetBy("Mfa.Dialog"));
             Wait.UntilClickable(_locators.GetBy("Mfa.EmailMethod.Select")).Click();
             Wait.UntilClickable(_locators.GetBy("Mfa.SendCode.Button")).Click();
+            Wait.UntilVisible(_locators.GetBy("Otp.Code.Input")).SendKeys(ConfigManager.Settings.StaticOtp);
+            Wait.UntilClickable(_locators.GetBy("Otp.Verify.Button")).Click();
         }
     }
 }

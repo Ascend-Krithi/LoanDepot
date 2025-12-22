@@ -20,8 +20,19 @@ namespace WebAutomation.Tests.Pages
 
         public void DismissPopupsIfPresent()
         {
-            Popup.HandleIfPresent(_locators.GetBy("Dashboard.ContactUpdateLater"));
-            Popup.HandleIfPresent(_locators.GetBy("Dashboard.ContactContinue"));
+            // Contact Update Popup
+            if (Popup.IsPresent(_locators.GetBy("Dashboard.ContactPopup")))
+            {
+                if (Popup.IsPresent(_locators.GetBy("Dashboard.ContactUpdateLater")))
+                {
+                    Popup.HandleIfPresent(_locators.GetBy("Dashboard.ContactUpdateLater"));
+                }
+                else if (Popup.IsPresent(_locators.GetBy("Dashboard.ContactContinue")))
+                {
+                    Popup.HandleIfPresent(_locators.GetBy("Dashboard.ContactContinue"));
+                }
+            }
+            // Chatbot iframe handled by framework
         }
 
         public void SelectLoanAccount(string loanNumber)

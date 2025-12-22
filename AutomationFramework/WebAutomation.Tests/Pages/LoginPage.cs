@@ -16,10 +16,10 @@ namespace WebAutomation.Tests.Pages
 
         public void LoginWithDefaultCredentials()
         {
-            var creds = CredentialProvider.GetDefaultCredentials();
-            Wait.UntilVisible(_locators.GetBy("Login.Username")).SendKeys(creds.Username);
-            Wait.UntilVisible(_locators.GetBy("Login.Password")).SendKeys(creds.Password);
-            Wait.UntilClickable(_locators.GetBy("Login.Submit.Button")).Click();
+            var (username, password) = CredentialProvider.GetDefaultCredentials();
+            Driver.FindElement(_locators.GetBy("Login.Username")).SendKeys(username);
+            Driver.FindElement(_locators.GetBy("Login.Password")).SendKeys(password);
+            Driver.FindElement(_locators.GetBy("Login.Submit.Button")).Click();
         }
     }
 }

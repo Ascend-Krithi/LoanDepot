@@ -1,8 +1,9 @@
-using TechTalk.SpecFlow;
 using NUnit.Framework;
+using TechTalk.SpecFlow;
 using OpenQA.Selenium;
-using WebAutomation.Core.Utilities;
 using WebAutomation.Tests.Pages;
+using WebAutomation.Core.Utilities;
+using System.Collections.Generic;
 
 namespace WebAutomation.Tests.StepDefinitions
 {
@@ -10,15 +11,13 @@ namespace WebAutomation.Tests.StepDefinitions
     public class LateFeeSteps
     {
         private readonly ScenarioContext _scenarioContext;
+        private readonly string _excelPath = "TestData/LateFee.xlsx";
+        private Dictionary<string, string> _testData;
         private IWebDriver _driver;
-        private SmartWait _wait;
-        private PopupHandler _popup;
         private LoginPage _loginPage;
         private MfaPage _mfaPage;
-        private OtpPage _otpPage;
         private DashboardPage _dashboardPage;
         private PaymentPage _paymentPage;
-        private Dictionary<string, string> _testData;
 
         public LateFeeSteps(ScenarioContext scenarioContext)
         {
@@ -29,17 +28,17 @@ namespace WebAutomation.Tests.StepDefinitions
         public void GivenTheUserLaunchesTheCustomerServicingApplication()
         {
             _driver = _scenarioContext.Get<IWebDriver>("driver");
-            _wait = _scenarioContext.Get<SmartWait>("wait");
-            _popup = _scenarioContext.Get<PopupHandler>("popup");
             _loginPage = new LoginPage(_driver);
             _mfaPage = new MfaPage(_driver);
-            _otpPage = new OtpPage(_driver);
             _dashboardPage = new DashboardPage(_driver);
             _paymentPage = new PaymentPage(_driver);
+
+            var baseUrl = WebAutomation.Core.Configuration.ConfigManager.Settings.BaseUrl;
+            _driver.Navigate().GoToUrl(baseUrl);
         }
 
-        [Given(@"logs in using valid customer credentials")]
-        public void GivenLogsInUsingValidCustomerCredentials()
+        [Given(@"logs in with valid credentials")]
+        public void GivenLogsInWithValidCredentials()
         {
             _loginPage.LoginWithDefaultCredentials();
         }
@@ -47,8 +46,7 @@ namespace WebAutomation.Tests.StepDefinitions
         [Given(@"completes MFA verification")]
         public void GivenCompletesMFAVerification()
         {
-            _mfaPage.SelectEmailMethodAndSendCode();
-            _otpPage.EnterStaticOtpAndVerify();
+            _mfaPage.CompleteMfa();
         }
 
         [Given(@"navigates to the dashboard")]
@@ -58,7 +56,7 @@ namespace WebAutomation.Tests.StepDefinitions
         }
 
         [Given(@"dismisses any pop-ups if present")]
-        public void GivenDismissesAnyPopUpsIfPresent()
+        public void GivenDismissesAnyPopupsIfPresent()
         {
             _dashboardPage.DismissPopupsIfPresent();
         }
@@ -69,26 +67,26 @@ namespace WebAutomation.Tests.StepDefinitions
             _dashboardPage.SelectLoanAccount(loanNumber);
         }
 
-        [Given(@"clicks Make a Payment")]
-        public void GivenClicksMakeAPayment()
+        [When(@"the user clicks Make a Payment")]
+        public void WhenTheUserClicksMakeAPayment()
         {
             _dashboardPage.ClickMakePayment();
         }
 
-        [Given(@"continues past scheduled payment popup if present")]
-        public void GivenContinuesPastScheduledPaymentPopupIfPresent()
+        [When(@"continues past the scheduled payment popup if it appears")]
+        public void WhenContinuesPastTheScheduledPaymentPopupIfItAppears()
         {
             _paymentPage.ContinueScheduledPaymentIfPresent();
         }
 
-        [Given(@"opens the payment date picker")]
-        public void GivenOpensThePaymentDatePicker()
+        [When(@"opens the payment date picker")]
+        public void WhenOpensThePaymentDatePicker()
         {
             _paymentPage.OpenDatePicker();
         }
 
-        [Given(@"selects the payment date ""(.*)""")]
-        public void GivenSelectsThePaymentDate(string paymentDate)
+        [When(@"selects the payment date ""(.*)""")]
+        public void WhenSelectsThePaymentDate(string paymentDate)
         {
             _paymentPage.SelectPaymentDate(paymentDate);
         }
@@ -97,6 +95,17 @@ namespace WebAutomation.Tests.StepDefinitions
         public void ThenNoLateFeeMessageIsDisplayed()
         {
             Assert.False(_paymentPage.IsLateFeeMessageDisplayed(), "Late fee message should not be displayed.");
+        }
+
+        [BeforeScenario]
+        public void BeforeScenario()
+        {
+            // Get TestCaseId from SpecFlow context
+            var testCaseId = _scenarioContext.ScenarioInfo.Arguments["TestCaseId"].ToString();
+            _testData = ExcelReader.GetRow(_excelPath, "Sheet1", "TestCaseId", testCaseId);
+
+            _scenarioContext["LoanNumber"] = _testData["LoanNumber"];
+            _scenarioContext["PaymentDate"] = _testData["PaymentDate"];
         }
     }
 }
