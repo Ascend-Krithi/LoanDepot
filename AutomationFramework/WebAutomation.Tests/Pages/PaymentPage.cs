@@ -1,64 +1,37 @@
 using OpenQA.Selenium;
-using WebAutomation.Core.Utilities;
-using System;
-using System.Globalization;
-using System.Threading;
+using WebAutomation.Core.Pages;
+using WebAutomation.Core.Locators;
 
 namespace WebAutomation.Tests.Pages
 {
-    public class PaymentPage
+    public class PaymentPage : BasePage
     {
-        private readonly IWebDriver _driver;
-        private readonly SmartWait _wait;
+        private readonly LocatorRepository _locators;
 
-        public PaymentPage(IWebDriver driver)
+        public PaymentPage(IWebDriver driver) : base(driver)
         {
-            _driver = driver;
-            _wait = new SmartWait(driver);
+            _locators = new LocatorRepository("Locators/Locators.txt");
         }
 
-        public bool IsPageReady()
+        public void ContinueScheduledPaymentIfPresent()
         {
-            // Note: :contains is not supported in CSS, so use XPath for text match
-            return _wait.UntilPresent(By.XPath("//span[contains(text(),'Make a Payment')]"), 10);
+            Popup.HandleIfPresent(_locators.GetBy("Dashboard.ContactContinue"));
         }
 
         public void OpenDatePicker()
         {
-            _wait.UntilClickable(By.CssSelector("mat-datepicker-toggle button")).Click();
-            _wait.WaitForOverlay();
+            Wait.UntilClickable(_locators.GetBy("Payment.DatePicker.Toggle")).Click();
         }
 
-        public bool IsDatePickerOpen()
+        public void SelectPaymentDate(string paymentDate)
         {
-            return _wait.UntilPresent(By.CssSelector("mat-datepicker-content"), 5);
-        }
-
-        public void SelectPaymentDate(string date)
-        {
-            var dt = DateTime.ParseExact(date, "yyyy-MM-dd", CultureInfo.InvariantCulture);
-            var day = dt.Day.ToString();
-            _wait.UntilClickable(By.XPath($"//div[contains(@class,'mat-calendar-body-cell-content') and normalize-space(text())='{day}']")).Click();
-            _wait.WaitForOverlayToClose();
-        }
-
-        public string GetSelectedPaymentDate()
-        {
-            var input = _driver.FindElement(By.CssSelector("input[formcontrolname='paymentDate']"));
-            return input.GetAttribute("value");
+            var dt = DateTime.Parse(paymentDate);
+            Wait.UntilClickable(_locators.GetBy("Payment.Calendar.Day", dt.Day.ToString())).Click();
         }
 
         public bool IsLateFeeMessageDisplayed()
         {
-            try
-            {
-                var el = _driver.FindElement(By.Id("latefeeInfoMsg1"));
-                return el.Displayed;
-            }
-            catch (NoSuchElementException)
-            {
-                return false;
-            }
+            return Wait.UntilPresent(_locators.GetBy("Payment.LateFee.Message"), 3);
         }
     }
 }

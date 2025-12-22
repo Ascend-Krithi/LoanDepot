@@ -1,73 +1,38 @@
 using OpenQA.Selenium;
-using WebAutomation.Core.Utilities;
-using System.Threading;
+using WebAutomation.Core.Pages;
+using WebAutomation.Core.Locators;
 
 namespace WebAutomation.Tests.Pages
 {
-    public class DashboardPage
+    public class DashboardPage : BasePage
     {
-        private readonly IWebDriver _driver;
-        private readonly SmartWait _wait;
+        private readonly LocatorRepository _locators;
 
-        public DashboardPage(IWebDriver driver)
+        public DashboardPage(IWebDriver driver) : base(driver)
         {
-            _driver = driver;
-            _wait = new SmartWait(driver);
+            _locators = new LocatorRepository("Locators/Locators.txt");
         }
 
-        public bool IsPageReady()
+        public void WaitForDashboardToLoad()
         {
-            return _wait.UntilPresent(By.CssSelector("header"), 10);
+            Wait.UntilVisible(_locators.GetBy("Dashboard.PageReady"));
         }
 
-        public void DismissContactUpdatePopup()
+        public void DismissPopupsIfPresent()
         {
-            if (_wait.UntilPresent(By.CssSelector("mat-dialog-container"), 3))
-            {
-                if (_wait.UntilPresent(By.XPath("//button[normalize-space()='Update Later']"), 2))
-                {
-                    _wait.UntilClickable(By.XPath("//button[normalize-space()='Update Later']")).Click();
-                }
-                else if (_wait.UntilPresent(By.XPath("//button[normalize-space()='Continue']"), 2))
-                {
-                    _wait.UntilClickable(By.XPath("//button[normalize-space()='Continue']")).Click();
-                }
-            }
-        }
-
-        public void DismissChatbotIframe()
-        {
-            try
-            {
-                var iframe = _driver.FindElement(By.Id("servisbot-messenger-iframe-roundel"));
-                ((IJavaScriptExecutor)_driver).ExecuteScript("arguments[0].style.display='none';", iframe);
-            }
-            catch { /* Ignore if not present */ }
+            Popup.HandleIfPresent(_locators.GetBy("Dashboard.ContactUpdateLater"));
+            Popup.HandleIfPresent(_locators.GetBy("Dashboard.ContactContinue"));
         }
 
         public void SelectLoanAccount(string loanNumber)
         {
-            _wait.UntilClickable(By.CssSelector("button[logaction='Open Loan Selection Window']")).Click();
-            _wait.UntilClickable(By.XPath($"//p[contains(normalize-space(.),'Account - {loanNumber}')]")).Click();
-            Thread.Sleep(1000); // Allow loan details to load
-        }
-
-        public bool IsLoanDetailsLoaded(string loanNumber)
-        {
-            return _wait.UntilPresent(By.XPath($"//p[contains(normalize-space(.),'Account - {loanNumber}')]"), 10);
+            Wait.UntilClickable(_locators.GetBy("Dashboard.LoanSelector.Button")).Click();
+            Wait.UntilClickable(_locators.GetBy("Dashboard.LoanCard.ByAccount", loanNumber)).Click();
         }
 
         public void ClickMakePayment()
         {
-            _wait.UntilClickable(By.CssSelector("p.make-payment")).Click();
-        }
-
-        public void ContinueScheduledPaymentPopupIfPresent()
-        {
-            if (_wait.UntilPresent(By.XPath("//button[normalize-space()='Continue']"), 3))
-            {
-                _wait.UntilClickable(By.XPath("//button[normalize-space()='Continue']")).Click();
-            }
+            Wait.UntilClickable(_locators.GetBy("Dashboard.MakePayment.Button")).Click();
         }
     }
 }
