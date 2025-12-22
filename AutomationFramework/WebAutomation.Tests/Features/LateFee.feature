@@ -1,18 +1,22 @@
 Feature: Late Fee Message Validation
 
-  Scenario Outline: Validate late fee message for payment date
+  As a customer servicing user
+  I want to verify that no late fee message is displayed when payment date is less than 15 days past due
+  So that customers are not incorrectly warned about late fees
+
+  Scenario Outline: No late fee message is displayed for payment date < 15 days past due
     Given the customer servicing application is launched
-    And I log in as a valid customer
-    And I complete MFA verification
-    And I am on the dashboard
-    And I dismiss any pop-ups if present
-    And I select the applicable loan account
-    And I click Make a Payment
-    And I handle scheduled payment popup if present
-    And I open the payment date picker
-    And I select the payment date "<PaymentDate>"
+    And the user logs in with valid credentials
+    And the user completes MFA verification
+    And the dashboard is loaded
+    And all pop-ups are dismissed
+    And the user selects the applicable loan account
+    When the user clicks Make a Payment
+    And the user continues past any scheduled payment popup
+    And the user opens the payment date picker
+    And the user selects the payment date from test data
     Then no late fee message is displayed
 
     Examples:
-      | TestCaseId                                 | LoanNumber | PaymentDate | State |
-      | Test Case HAP-700 TS-001 TC-001            | 3616       | 2025-12-20  | TX   |
+      | TestCaseId                | LoanNumber | PaymentDate  | ExpectedLateFee |
+      | HAP-700 TS-001 TC-001     | 3616       | 2025-12-20   | False           |

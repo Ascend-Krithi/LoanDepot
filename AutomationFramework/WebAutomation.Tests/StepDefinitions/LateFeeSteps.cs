@@ -1,9 +1,10 @@
-using TechTalk.SpecFlow;
-using WebAutomation.Core.Utilities;
-using WebAutomation.Tests.Pages;
-using OpenQA.Selenium;
+using System;
 using System.Collections.Generic;
-using FluentAssertions;
+using NUnit.Framework;
+using TechTalk.SpecFlow;
+using OpenQA.Selenium;
+using WebAutomation.Tests.Pages;
+using WebAutomation.Core.Utilities;
 
 namespace WebAutomation.Tests.StepDefinitions
 {
@@ -11,11 +12,10 @@ namespace WebAutomation.Tests.StepDefinitions
     public class LateFeeSteps
     {
         private readonly ScenarioContext _scenarioContext;
-        private Dictionary<string, string> _testData;
         private IWebDriver _driver;
+        private Dictionary<string, string> _testData;
         private LoginPage _loginPage;
         private MfaPage _mfaPage;
-        private OtpPage _otpPage;
         private DashboardPage _dashboardPage;
         private PaymentPage _paymentPage;
 
@@ -28,81 +28,93 @@ namespace WebAutomation.Tests.StepDefinitions
         public void GivenTheCustomerServicingApplicationIsLaunched()
         {
             _driver = _scenarioContext.Get<IWebDriver>("driver");
-            _driver.Navigate().GoToUrl("https://servicing-qa1.loandepotdev.works");
             _loginPage = new LoginPage(_driver);
-        }
-
-        [Given(@"I log in as a valid customer")]
-        public void GivenILogInAsAValidCustomer()
-        {
-            _loginPage.LoginWithDefaultCredentials();
             _mfaPage = new MfaPage(_driver);
-        }
-
-        [Given(@"I complete MFA verification")]
-        public void GivenICompleteMFAVerification()
-        {
-            _mfaPage.SelectEmailAndSendCode();
-            _otpPage = new OtpPage(_driver);
-            _otpPage.EnterOtpAndVerify();
-        }
-
-        [Given(@"I am on the dashboard")]
-        public void GivenIAmOnTheDashboard()
-        {
             _dashboardPage = new DashboardPage(_driver);
-            _dashboardPage.WaitForDashboardReady();
-        }
+            _paymentPage = new PaymentPage(_driver);
 
-        [Given(@"I dismiss any pop-ups if present")]
-        public void GivenIDismissAnyPopUpsIfPresent()
-        {
-            _dashboardPage.DismissPopupsIfPresent();
-        }
-
-        [Given(@"I select the applicable loan account")]
-        public void GivenISelectTheApplicableLoanAccount()
-        {
             // Read test data for this scenario
+            var featureTitle = _scenarioContext.ScenarioInfo.Title;
+            var testCaseId = _scenarioContext.ScenarioInfo.Arguments["TestCaseId"].ToString();
             _testData = ExcelReader.GetRow(
-                filePath: "LateFee/LateFee.xlsx",
+                filePath: "TestData/LateFee/LateFee.xlsx",
                 sheetName: "Sheet1",
                 keyColumn: "TestCaseId",
-                keyValue: "Test Case HAP-700 TS-001 TC-001"
+                keyValue: testCaseId
             );
-            _dashboardPage.SelectLoanAccount(_testData["LoanNumber"]);
+
+            _loginPage.NavigateToLogin();
+            Assert.True(_loginPage.IsPageReady(), "Login page did not load successfully.");
         }
 
-        [Given(@"I click Make a Payment")]
-        public void GivenIClickMakeAPayment()
+        [Given(@"the user logs in with valid credentials")]
+        public void GivenTheUserLogsInWithValidCredentials()
+        {
+            _loginPage.Login();
+            Assert.True(_mfaPage.IsPageReady(), "MFA page did not load after login.");
+        }
+
+        [Given(@"the user completes MFA verification")]
+        public void GivenTheUserCompletesMFAVerification()
+        {
+            _mfaPage.SelectEmailAndSendCode();
+            _mfaPage.EnterOtpAndVerify();
+            Assert.True(_dashboardPage.IsPageReady(), "Dashboard did not load after MFA.");
+        }
+
+        [Given(@"the dashboard is loaded")]
+        public void GivenTheDashboardIsLoaded()
+        {
+            Assert.True(_dashboardPage.IsPageReady(), "Dashboard page is not ready.");
+        }
+
+        [Given(@"all pop-ups are dismissed")]
+        public void GivenAllPopupsAreDismissed()
+        {
+            _dashboardPage.DismissContactUpdatePopup();
+            _dashboardPage.DismissChatbotIframe();
+        }
+
+        [Given(@"the user selects the applicable loan account")]
+        public void GivenTheUserSelectsTheApplicableLoanAccount()
+        {
+            var loanNumber = _testData["LoanNumber"];
+            _dashboardPage.SelectLoanAccount(loanNumber);
+            Assert.True(_dashboardPage.IsLoanDetailsLoaded(loanNumber), "Loan details did not load.");
+        }
+
+        [When(@"the user clicks Make a Payment")]
+        public void WhenTheUserClicksMakeAPayment()
         {
             _dashboardPage.ClickMakePayment();
         }
 
-        [Given(@"I handle scheduled payment popup if present")]
-        public void GivenIHandleScheduledPaymentPopupIfPresent()
+        [When(@"the user continues past any scheduled payment popup")]
+        public void WhenTheUserContinuesPastAnyScheduledPaymentPopup()
         {
-            _dashboardPage.HandleScheduledPaymentPopupIfPresent();
-            _paymentPage = new PaymentPage(_driver);
-            _paymentPage.WaitForPaymentPageReady();
+            _dashboardPage.ContinueScheduledPaymentPopupIfPresent();
+            Assert.True(_paymentPage.IsPageReady(), "Payment page did not load.");
         }
 
-        [Given(@"I open the payment date picker")]
-        public void GivenIOpenThePaymentDatePicker()
+        [When(@"the user opens the payment date picker")]
+        public void WhenTheUserOpensThePaymentDatePicker()
         {
             _paymentPage.OpenDatePicker();
+            Assert.True(_paymentPage.IsDatePickerOpen(), "Date picker did not open.");
         }
 
-        [Given(@"I select the payment date ""(.*)""")]
-        public void GivenISelectThePaymentDate(string paymentDate)
+        [When(@"the user selects the payment date from test data")]
+        public void WhenTheUserSelectsThePaymentDateFromTestData()
         {
+            var paymentDate = _testData["PaymentDate"];
             _paymentPage.SelectPaymentDate(paymentDate);
+            Assert.AreEqual(paymentDate, _paymentPage.GetSelectedPaymentDate(), "Selected payment date does not match.");
         }
 
         [Then(@"no late fee message is displayed")]
         public void ThenNoLateFeeMessageIsDisplayed()
         {
-            _paymentPage.IsLateFeeMessageDisplayed().Should().BeFalse();
+            Assert.False(_paymentPage.IsLateFeeMessageDisplayed(), "Late fee message was displayed but should not be.");
         }
     }
 }

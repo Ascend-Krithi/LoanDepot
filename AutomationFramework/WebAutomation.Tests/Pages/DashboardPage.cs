@@ -1,48 +1,73 @@
 using OpenQA.Selenium;
-using WebAutomation.Core.Pages;
+using WebAutomation.Core.Utilities;
 using System.Threading;
 
 namespace WebAutomation.Tests.Pages
 {
-    public class DashboardPage : BasePage
+    public class DashboardPage
     {
-        public DashboardPage(IWebDriver driver) : base(driver) { }
+        private readonly IWebDriver _driver;
+        private readonly SmartWait _wait;
 
-        public void WaitForDashboardReady()
+        public DashboardPage(IWebDriver driver)
         {
-            Wait.UntilVisible(By.CssSelector("header"));
+            _driver = driver;
+            _wait = new SmartWait(driver);
         }
 
-        public void DismissPopupsIfPresent()
+        public bool IsPageReady()
         {
-            // Contact Update popup
-            Popup.HandleIfPresent(By.XPath("//button[normalize-space()='Update Later']"));
-            // Chatbot iframe
-            try
+            return _wait.UntilPresent(By.CssSelector("header"), 10);
+        }
+
+        public void DismissContactUpdatePopup()
+        {
+            if (_wait.UntilPresent(By.CssSelector("mat-dialog-container"), 3))
             {
-                var iframe = Driver.FindElements(By.Id("servisbot-messenger-iframe-roundel"));
-                if (iframe.Count > 0)
+                if (_wait.UntilPresent(By.XPath("//button[normalize-space()='Update Later']"), 2))
                 {
-                    ((IJavaScriptExecutor)Driver).ExecuteScript("arguments[0].style.display='none';", iframe[0]);
+                    _wait.UntilClickable(By.XPath("//button[normalize-space()='Update Later']")).Click();
+                }
+                else if (_wait.UntilPresent(By.XPath("//button[normalize-space()='Continue']"), 2))
+                {
+                    _wait.UntilClickable(By.XPath("//button[normalize-space()='Continue']")).Click();
                 }
             }
-            catch { }
+        }
+
+        public void DismissChatbotIframe()
+        {
+            try
+            {
+                var iframe = _driver.FindElement(By.Id("servisbot-messenger-iframe-roundel"));
+                ((IJavaScriptExecutor)_driver).ExecuteScript("arguments[0].style.display='none';", iframe);
+            }
+            catch { /* Ignore if not present */ }
         }
 
         public void SelectLoanAccount(string loanNumber)
         {
-            Wait.UntilClickable(By.CssSelector("button[logaction='Open Loan Selection Window']")).Click();
-            Wait.UntilClickable(By.XPath($"//p[contains(normalize-space(.),'Account - {loanNumber}')]")).Click();
+            _wait.UntilClickable(By.CssSelector("button[logaction='Open Loan Selection Window']")).Click();
+            _wait.UntilClickable(By.XPath($"//p[contains(normalize-space(.),'Account - {loanNumber}')]")).Click();
+            Thread.Sleep(1000); // Allow loan details to load
+        }
+
+        public bool IsLoanDetailsLoaded(string loanNumber)
+        {
+            return _wait.UntilPresent(By.XPath($"//p[contains(normalize-space(.),'Account - {loanNumber}')]"), 10);
         }
 
         public void ClickMakePayment()
         {
-            Wait.UntilClickable(By.CssSelector("p.make-payment")).Click();
+            _wait.UntilClickable(By.CssSelector("p.make-payment")).Click();
         }
 
-        public void HandleScheduledPaymentPopupIfPresent()
+        public void ContinueScheduledPaymentPopupIfPresent()
         {
-            Popup.HandleIfPresent(By.XPath("//button[normalize-space()='Continue']"));
+            if (_wait.UntilPresent(By.XPath("//button[normalize-space()='Continue']"), 3))
+            {
+                _wait.UntilClickable(By.XPath("//button[normalize-space()='Continue']")).Click();
+            }
         }
     }
 }
