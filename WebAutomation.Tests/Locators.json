@@ -1,0 +1,7 @@
+{
+  "Login.PageReady": { "type": "css", "value": "form" },
+  "Login.Username": { "type": "id", "value": "email" },
+  "Login.Password": { "type": "id", "value": "password" },
+  "Login.Submit.Button": { "type": "css", "value": "button[type='submit']" },
+  "Dashboard.PageReady": { "type": "css", "value": "header" }
+}
